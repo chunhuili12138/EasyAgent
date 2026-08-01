@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { $t } from '@/locales';
+import { useFormRules } from '@/hooks/common/form';
 import { useAuthStore } from '@/store/modules/auth';
 import {
   fetchCreateUser,
@@ -21,6 +22,7 @@ import {
 defineOptions({ name: 'SystemUser' });
 
 const authStore = useAuthStore();
+const { formRules } = useFormRules();
 
 const loading = ref(false);
 const dataList = ref<any[]>([]);
@@ -312,7 +314,7 @@ onMounted(() => {
         <ElFormItem :label="$t('page.manage.user.userEmail')" prop="email">
           <ElInput v-model="formData.email" :placeholder="$t('page.manage.user.form.userEmail')" />
         </ElFormItem>
-        <ElFormItem v-if="isCreate" :label="$t('form.pwd.required')" prop="password" :rules="[{ required: true, message: $t('form.pwd.required') }]">
+        <ElFormItem v-if="isCreate" :label="$t('form.pwd.required')" prop="password" :rules="formRules.pwd">
           <ElInput v-model="formData.password" type="password" show-password :placeholder="$t('form.pwd.required')" />
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.user.userStatus')" prop="status">
@@ -369,7 +371,7 @@ onMounted(() => {
 
     <ElDialog v-model="resetPwdVisible" :title="$t('page.manage.user.resetPwdTitle')" width="400px">
       <ElForm ref="resetPwdFormRef" :model="resetPwdData" label-width="100px">
-        <ElFormItem :label="$t('form.pwd.required')" prop="newPassword" :rules="[{ required: true, message: $t('form.pwd.required') }]">
+        <ElFormItem :label="$t('form.pwd.required')" prop="newPassword" :rules="formRules.pwd">
           <ElInput v-model="resetPwdData.newPassword" type="password" show-password :placeholder="$t('form.pwd.required')" />
         </ElFormItem>
       </ElForm>

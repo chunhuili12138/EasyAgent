@@ -22,11 +22,11 @@ const model = ref<FormModel>({
 });
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
-  const { formRules } = useFormRules();
+  const { formRules, createRequiredRule } = useFormRules();
 
   return {
     phone: formRules.phone,
-    password: formRules.pwd
+    password: [createRequiredRule($t('form.pwd.required'))]
   };
 });
 
