@@ -1,0 +1,80 @@
+name: Deploy frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: ${{ vars.VITE_SERVICE_BASE_URL != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Configure GitHub Pages build
+        env:
+          API_BASE_URL: ${{ vars.VITE_SERVICE_BASE_URL }}
+        shell: bash
+        run: |
+          if [[ -z "$API_BASE_URL" || "$API_BASE_URL" != https://*/api ]]; then
+            echo "Repository variable VITE_SERVICE_BASE_URL must look like https://api.example.com/api."
+            exit 1
+          fi
+          REPOSITORY_NAME="${GITHUB_REPOSITORY#*/}"
+          cp .env.example .env
+          cat > .env.pages.local <<EOF
+          VITE_BASE_URL=/$REPOSITORY_NAME/
+          VITE_ROUTER_HISTORY_MODE=hash
+          VITE_HTTP_PROXY=N
+          VITE_SERVICE_BASE_URL=$API_BASE_URL
+          VITE_OTHER_SERVICE_BASE_URL={}
+          EOF
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm build --mode pages
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
