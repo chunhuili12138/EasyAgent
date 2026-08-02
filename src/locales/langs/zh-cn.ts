@@ -211,12 +211,33 @@ const local = {
     'rag.skill': 'Skill 管理', 'rag.datasource': '数据源管理', 'rag.tool': '工具管理',
     'rag.experience': '经验池', 'rag.sql-log': 'SQL 审计', 'rag.bad-case': 'Bad Case 分析',
     'rag.audit': '操作审计', 'rag.chat': '智能会话',
+    docs: '操作手册',
     exception: '异常页',
     exception_403: '403',
     exception_404: '404',
     exception_500: '500'
   },
   page: {
+    docs: {
+      button: '操作手册',
+      title: '操作手册',
+      subtitle: '平台功能与使用说明',
+      menu: '目录',
+      back: '返回平台',
+      lang: '语言',
+      darkMode: '切换浅色模式',
+      lightMode: '切换深色模式',
+      searchPlaceholder: '搜索文档',
+      searchEmpty: '未找到匹配文档',
+      toc: '本页目录',
+      tocEmpty: '暂无目录',
+      print: '打印',
+      prev: '上一篇',
+      next: '下一篇',
+      copy: '复制',
+      copied: '已复制',
+      underConstruction: '本文档编写中，敬请期待'
+    },
     login: {
       common: {
         loginOrRegister: '登录 / 注册',
@@ -1064,7 +1085,7 @@ const local = {
     responseRule: '成功响应规则',
     enums: { public: '公开', department: '授权部门', post: '授权岗位', user: '授权用户', authNone: '无认证', authApiKey: 'API 密钥', authBearer: 'Bearer 令牌', authBasic: 'Basic 认证', authHmac: 'AK/SK 签名', apiCall: 'API 调用', sqlExec: 'SQL 执行', pending: '待确认', riskLow: '低', riskMedium: '中', riskHigh: '高', failed: '失败' },
     common: { search: '搜索', create: '新建', edit: '编辑', delete: '删除', save: '保存', cancel: '取消', detail: '详情', export: '导出', copy: '复制', copySuccess: '复制成功', status: '状态', action: '操作', keywordPlaceholder: '请输入关键词', startDate: '开始日期', endDate: '结束日期', requiredFields: '请填写必填项', invalidJson: '{field} 不是有效的 JSON' },
-    chat: { newSession: '新对话', noSession: '暂无会话', selectSession: '选择或创建会话', inputPlaceholder: '输入您的问题... (Enter 发送, Shift+Enter 换行)', send: '发送', stop: '停止', noMessages: '发送消息开始对话', scope: '知识库范围', statusAnalyzing: '正在分析问题...', messageCount: '{count} 条消息', source: '来源', chunk: '片段', evidence: '证据内容', like: '点赞', dislike: '点踩', copyAnswer: '复制回答', feedbackTitle: '问题反馈', feedbackType: '请选择反馈类型', feedbackTypeRequired: '请选择反馈类型', feedbackReasonOptional: '补充说明（选填）', feedbackPlaceholder: '可以补充说明具体哪里不准确或不符合预期。', submitFeedback: '提交反馈', feedbackSubmitted: '反馈已提交', feedbackTypes: { factualMismatch: '内容与事实不符', instructionNotFollowed: '回答与指令不符', formatIssue: '回答格式不正确', contentError: '内容存在错误', incompleteAnswer: '回答不完整', irrelevantAnswer: '答非所问', other: '其他问题' }, addAttachment: '添加会话附件', removeAttachment: '删除附件', retryAttachment: '重试处理', attachmentUploadFailed: '附件上传失败', waitForAttachments: '附件正在解析和处理，完成后即可发送消息', attachmentStatus: { uploaded: '已上传', parsing: '解析中', processing: '处理中', ready: '可用', failed: '处理失败' } },
+    chat: { newSession: '新对话', noSession: '暂无会话', selectSession: '选择或创建会话', inputPlaceholder: '输入您的问题... (Enter 发送, Shift+Enter 换行)', send: '发送', stop: '停止', noMessages: '发送消息开始对话', scope: '知识库范围', statusAnalyzing: '正在分析问题...', messageCount: '{count} 条消息', source: '来源', chunk: '片段', evidence: '证据内容', like: '点赞', dislike: '点踩', copyAnswer: '复制回答', modeAuto: '智能模式', modeKnowledge: '仅知识库', modeGeneral: '通用对话', modeHint: { auto: '自动判断知识问答或通用对话；有附件时优先依据附件回答', knowledge: '只依据知识库和会话附件回答，资料不足时不会编造', general: '使用模型公共知识回答，不代表企业制度或内部事实' }, answerGenerally: '按通用知识回答', rephrase: '换个问法', feedbackTitle: '问题反馈', feedbackType: '请选择反馈类型', feedbackTypeRequired: '请选择反馈类型', feedbackReasonOptional: '补充说明（选填）', feedbackPlaceholder: '可以补充说明具体哪里不准确或不符合预期。', submitFeedback: '提交反馈', feedbackSubmitted: '反馈已提交', feedbackTypes: { factualMismatch: '内容与事实不符', instructionNotFollowed: '回答与指令不符', formatIssue: '回答格式不正确', contentError: '内容存在错误', incompleteAnswer: '回答不完整', irrelevantAnswer: '答非所问', other: '其他问题' }, addAttachment: '添加会话附件', removeAttachment: '删除附件', retryAttachment: '重试处理', attachmentUploadFailed: '附件上传失败', waitForAttachments: '附件正在解析和处理，完成后即可发送消息', attachmentStatus: { uploaded: '已上传', parsing: '解析中', processing: '处理中', ready: '可用', failed: '处理失败' } },
     help: { description: '用途与工作方式', steps: '配置步骤', stepTypes: '步骤类型配置手册', parameters: '全部参数说明', required: '必填', optional: '选填', exampleValue: '示例值', howToConfigure: '具体配置', stepOutput: '步骤输出', exampleConfig: '配置示例', rules: '字段规则', examples: '完整示例', effects: '保存后的影响', notes: '安全与常见问题' },
     editor: { format: '格式化', useExample: '填入示例', jsonHint: '支持 JSON 语法高亮、括号匹配、实时校验和错误行定位。', yamlHint: '支持 YAML 语法高亮、实时解析和错误行定位；修改后请应用到表单。', arrayRequired: '根节点必须是 JSON 数组，例如 []。', objectRequired: '根节点必须是 JSON 对象，例如 {}。', invalidContent: '配置格式不正确', errorDetail: '第 {line} 行，第 {column} 列：{message}' },
     skill: {

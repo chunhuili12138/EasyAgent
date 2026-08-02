@@ -28,6 +28,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   automation_statistics: () => import("@/views/automation/statistics/index.vue"),
   automation_trigger: () => import("@/views/automation/trigger/index.vue"),
   automation_workflow: () => import("@/views/automation/workflow/index.vue"),
+  docs: () => import("@/views/docs/index.vue"),
   document_file: () => import("@/views/document/file/index.vue"),
   document_kb: () => import("@/views/document/kb/index.vue"),
   document_parse: () => import("@/views/document/parse/index.vue"),

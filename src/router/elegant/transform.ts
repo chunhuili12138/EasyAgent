@@ -180,6 +180,7 @@ const routeMap: RouteMap = {
   "automation_statistics": "/automation/statistics",
   "automation_trigger": "/automation/trigger",
   "automation_workflow": "/automation/workflow",
+  "docs": "/docs",
   "document": "/document",
   "document_file": "/document/file",
   "document_kb": "/document/kb",

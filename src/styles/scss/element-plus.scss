@@ -150,6 +150,12 @@ html .el-collapse {
   .cell {
     padding: 0;
   }
+  th.is-left .cell,
+  td.is-left .cell,
+  th:not(.is-center):not(.is-right) .cell,
+  td:not(.is-center):not(.is-right) .cell {
+    padding-left: 10px;
+  }
 }
 
 .el-tabs {

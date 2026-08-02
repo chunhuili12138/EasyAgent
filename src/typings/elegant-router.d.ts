@@ -34,6 +34,7 @@ declare module "@elegant-router/types" {
     "automation_statistics": "/automation/statistics";
     "automation_trigger": "/automation/trigger";
     "automation_workflow": "/automation/workflow";
+    "docs": "/docs";
     "document": "/document";
     "document_file": "/document/file";
     "document_kb": "/document/kb";
@@ -101,6 +102,7 @@ declare module "@elegant-router/types" {
     | "500"
     | "agent-workbench"
     | "automation"
+    | "docs"
     | "document"
     | "home"
     | "iframe-page"
@@ -137,6 +139,7 @@ declare module "@elegant-router/types" {
     | "automation_statistics"
     | "automation_trigger"
     | "automation_workflow"
+    | "docs"
     | "document_file"
     | "document_kb"
     | "document_parse"

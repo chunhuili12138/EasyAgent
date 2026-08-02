@@ -29,6 +29,7 @@ import {
   fetchDeleteSessionAttachment,
   fetchRetrySessionAttachment,
   type SessionAttachment,
+  type ChatMode,
   createChatStreamUrl
 } from '@/service/api/rag';
 
@@ -50,6 +51,10 @@ interface Message {
   clarificationPlanId?: number;
   clarificationQuestions?: string[];
   clarificationResolved?: boolean;
+  answerMode?: ChatMode;
+  answerOptions?: string[];
+  answerOptionReason?: string;
+  sourceQuestion?: string;
 }
 
 function hitlDetailEntries(msg: Message) {
@@ -120,6 +125,16 @@ const feedbackTarget = ref<Message | null>(null);
 const feedbackType = ref('');
 const feedbackReason = ref('');
 const submittingFeedback = ref(false);
+const CHAT_MODE_STORAGE_KEY = 'easy-agent-chat-mode';
+const storedChatMode = localStorage.getItem(CHAT_MODE_STORAGE_KEY);
+const chatMode = ref<ChatMode>(
+  storedChatMode === 'knowledge' || storedChatMode === 'general' ? storedChatMode : 'auto'
+);
+const chatModeOptions = [
+  { label: $t('rag.chat.modeAuto'), value: 'auto' },
+  { label: $t('rag.chat.modeKnowledge'), value: 'knowledge' },
+  { label: $t('rag.chat.modeGeneral'), value: 'general' }
+];
 const feedbackTypeOptions = [
   { label: $t('rag.chat.feedbackTypes.factualMismatch'), value: 'factual_mismatch' },
   { label: $t('rag.chat.feedbackTypes.instructionNotFollowed'), value: 'instruction_not_followed' },
@@ -143,6 +158,8 @@ onUnmounted(() => {
 watch(() => messages.value.length, () => {
   nextTick(() => scrollToBottom());
 }, { flush: 'post' });
+
+watch(chatMode, value => localStorage.setItem(CHAT_MODE_STORAGE_KEY, value));
 
 async function loadSessions() {
   const res = await fetchSessions({ page: sessionPage.value, size: 20, keyword: searchKeyword.value || undefined });
@@ -296,15 +313,15 @@ async function togglePin(session: Session) {
   session.isPinned = newPinned;
 }
 
-async function sendMessage() {
-  const text = inputText.value.trim();
+async function sendMessage(overrideText?: string, overrideMode?: ChatMode) {
+  const text = (overrideText ?? inputText.value).trim();
   if (!text || sending.value || hasPendingAttachments()) return;
   if (!currentSession.value) {
     await createSession();
   }
   if (!currentSession.value) return;
 
-  inputText.value = '';
+  if (!overrideText) inputText.value = '';
   sending.value = true;
 
   const userMsg: Message = { role: 'user', content: text };
@@ -314,7 +331,8 @@ async function sendMessage() {
     role: 'assistant',
     content: '',
     streaming: true,
-    status: $t('rag.chat.statusAnalyzing')
+    status: $t('rag.chat.statusAnalyzing'),
+    sourceQuestion: text
   });
   const assistantMsg = messages.value[messages.value.length - 1];
   const clarificationPlanId = pendingClarificationPlanId.value;
@@ -322,7 +340,14 @@ async function sendMessage() {
   currentExecutionId.value = executionId;
 
   try {
-    await streamChat(currentSession.value.id, text, assistantMsg, clarificationPlanId, executionId);
+    await streamChat(
+      currentSession.value.id,
+      text,
+      assistantMsg,
+      clarificationPlanId,
+      executionId,
+      overrideMode ?? chatMode.value
+    );
     if (clarificationPlanId && pendingClarificationPlanId.value === clarificationPlanId) {
       pendingClarificationPlanId.value = null;
       const card = messages.value.find(item => item.clarificationPlanId === clarificationPlanId);
@@ -347,19 +372,20 @@ async function streamChat(
   msg: string,
   aiMsg: Message,
   clarificationPlanId: number | null,
-  executionId: string
+  executionId: string,
+  mode: ChatMode
 ) {
   const controller = new AbortController();
   abortController.value = controller;
 
-  const url = createChatStreamUrl(sessionId, msg);
+  const url = createChatStreamUrl();
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${getToken()}`
     },
-    body: JSON.stringify({ executionId, sessionId, message: msg, clarificationPlanId }),
+    body: JSON.stringify({ executionId, sessionId, message: msg, clarificationPlanId, mode }),
     signal: controller.signal
   });
 
@@ -404,6 +430,13 @@ function handleSSEEvent(type: string, payload: any, aiMsg: Message) {
       break;
     case 'thinking':
       aiMsg.status = typeof payload.content === 'string' ? payload.content : '';
+      break;
+    case 'answer_mode':
+      if (payload.mode === 'knowledge' || payload.mode === 'general') aiMsg.answerMode = payload.mode;
+      break;
+    case 'answer_options':
+      aiMsg.answerOptions = Array.isArray(payload.actions) ? payload.actions.map(String) : [];
+      aiMsg.answerOptionReason = typeof payload.reason === 'string' ? payload.reason : undefined;
       break;
     case 'token':
       if (typeof payload.content === 'string' && payload.content) {
@@ -462,6 +495,23 @@ function handleSSEEvent(type: string, payload: any, aiMsg: Message) {
       aiMsg.status = undefined;
       break;
   }
+}
+
+function answerModeLabel(mode?: ChatMode) {
+  if (mode === 'knowledge') return $t('rag.chat.modeKnowledge');
+  if (mode === 'general') return $t('rag.chat.modeGeneral');
+  return $t('rag.chat.modeAuto');
+}
+
+function answerGenerally(msg: Message) {
+  if (!msg.sourceQuestion || sending.value) return;
+  void sendMessage(msg.sourceQuestion, 'general');
+}
+
+function rephraseQuestion(msg: Message) {
+  if (!msg.sourceQuestion) return;
+  inputText.value = msg.sourceQuestion;
+  nextTick(() => document.querySelector<HTMLTextAreaElement>('.chat-composer textarea')?.focus());
 }
 
 async function cancelClarification(msg: Message) {
@@ -710,12 +760,35 @@ function normalizeAssistantContent(content: string) {
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">AI</div>
             <div class="max-w-85%">
               <div class="bg-white rounded-lg px-4 py-2.5 shadow-sm border overflow-hidden">
+                <ElTag v-if="msg.answerMode" size="small" effect="plain" class="mb-2">
+                  {{ answerModeLabel(msg.answerMode) }}
+                </ElTag>
                 <div v-if="msg.streaming && msg.status" class="flex items-center gap-2 text-sm text-gray-500">
                   <SvgIcon icon="mdi:loading" class="animate-spin text-base text-blue-500" />
                   <span>{{ msg.status }}</span>
                 </div>
                 <div v-if="msg.content" class="rag-markdown text-sm break-words" v-html="renderContent(msg.content)" />
                 <div v-if="msg.streaming && msg.content" class="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-0.5 align-middle" />
+              </div>
+              <div v-if="msg.answerOptions?.length" class="answer-actions mt-2 flex flex-wrap gap-2">
+                <ElButton
+                  v-if="msg.answerOptions.includes('general')"
+                  size="small"
+                  plain
+                  type="primary"
+                  :disabled="sending"
+                  @click="answerGenerally(msg)"
+                >
+                  <SvgIcon icon="mdi:chat-outline" class="mr-1" />{{ $t('rag.chat.answerGenerally') }}
+                </ElButton>
+                <ElButton
+                  v-if="msg.answerOptions.includes('rephrase')"
+                  size="small"
+                  plain
+                  @click="rephraseQuestion(msg)"
+                >
+                  <SvgIcon icon="mdi:pencil-outline" class="mr-1" />{{ $t('rag.chat.rephrase') }}
+                </ElButton>
               </div>
               <!-- Citations -->
               <div v-if="msg.citations?.length" class="flex flex-wrap gap-1.5 mt-2">
@@ -871,6 +944,10 @@ function normalizeAssistantContent(content: string) {
       <!-- Input -->
       <div class="px-4 py-3 border-t bg-white flex-shrink-0">
         <div class="max-w-4xl mx-auto">
+          <div class="mode-toolbar mb-2 flex items-center justify-between gap-3">
+            <ElSegmented v-model="chatMode" :options="chatModeOptions" size="small" />
+            <span class="mode-hint text-xs text-gray-500">{{ $t(`rag.chat.modeHint.${chatMode}` as any) }}</span>
+          </div>
           <div v-if="attachments.length" class="flex flex-wrap gap-2 mb-2">
             <div
               v-for="attachment in attachments"
@@ -932,12 +1009,12 @@ function normalizeAssistantContent(content: string) {
             :placeholder="$t('rag.chat.inputPlaceholder')"
             @keydown="handleKeydown"
             :disabled="sending || hasPendingAttachments()"
-            class="flex-1"
+            class="chat-composer flex-1"
           />
           <ElButton v-if="sending" type="danger" size="small" @click="stopGeneration">
             <SvgIcon icon="mdi:stop" class="mr-1" />{{ $t('rag.chat.stop') }}
           </ElButton>
-          <ElButton v-else type="primary" size="small" @click="sendMessage" :disabled="!inputText.trim() || hasPendingAttachments()">
+          <ElButton v-else type="primary" size="small" @click="sendMessage()" :disabled="!inputText.trim() || hasPendingAttachments()">
             <SvgIcon icon="mdi:send" class="mr-1" />{{ $t('rag.chat.send') }}
           </ElButton>
           </div>
@@ -956,6 +1033,27 @@ function normalizeAssistantContent(content: string) {
   border-radius: 8px;
   padding: 0.6rem 1rem;
   font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+  .mode-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .mode-toolbar :deep(.el-segmented) {
+    width: 100%;
+  }
+
+  .mode-toolbar :deep(.el-segmented__item) {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .mode-hint {
+    line-height: 1.35;
+  }
 }
 
 .rag-markdown {

@@ -31,6 +31,13 @@ declare module 'vue-router' {
      */
     constant?: boolean | undefined;
     /**
+     * Whether the constant route still requires login
+     *
+     * Only works when "constant" is true: the route does not depend on backend menus,
+     * but users who are not logged in will be redirected to the login page
+     */
+    requiresLogin?: boolean | undefined;
+    /**
      * Iconify icon
      *
      * It can be used in the menu or breadcrumb

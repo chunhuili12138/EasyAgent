@@ -134,6 +134,16 @@ export const generatedRoutes: GeneratedRoute[] = [
     ]
   },
   {
+    name: 'docs',
+    path: '/docs',
+    component: 'layout.blank$view.docs',
+    meta: {
+      title: 'docs',
+      i18nKey: 'route.docs',
+      constant: true
+    }
+  },
+  {
     name: 'document',
     path: '/document',
     component: 'layout.base',

@@ -139,7 +139,9 @@ export function fetchSearch(data: { query: string; topK?: number; enableRerank?:
   return request<any>({ url: '/search', method: 'post', data });
 }
 
-export function createChatStreamUrl(sessionId: number, message: string, scope?: any): string {
+export type ChatMode = 'auto' | 'knowledge' | 'general';
+
+export function createChatStreamUrl(): string {
   const baseUrl = import.meta.env.VITE_SERVICE_BASE_URL || '/api';
   return `${baseUrl}/rag/chat/stream`;
 }
