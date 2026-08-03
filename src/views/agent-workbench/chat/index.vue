@@ -117,6 +117,7 @@ const sessionTotal = ref(0);
 const abortController = ref<AbortController | null>(null);
 const currentExecutionId = ref<string | null>(null);
 const attachments = ref<SessionAttachment[]>([]);
+const attachmentsExpanded = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const uploadingAttachment = ref(false);
 const pendingClarificationPlanId = ref<number | null>(null);
@@ -131,9 +132,9 @@ const chatMode = ref<ChatMode>(
   storedChatMode === 'knowledge' || storedChatMode === 'general' ? storedChatMode : 'auto'
 );
 const chatModeOptions = [
-  { label: $t('rag.chat.modeAuto'), value: 'auto' },
-  { label: $t('rag.chat.modeKnowledge'), value: 'knowledge' },
-  { label: $t('rag.chat.modeGeneral'), value: 'general' }
+  { label: $t('rag.chat.modeAuto'), value: 'auto', title: $t('rag.chat.modeHint.auto') },
+  { label: $t('rag.chat.modeKnowledge'), value: 'knowledge', title: $t('rag.chat.modeHint.knowledge') },
+  { label: $t('rag.chat.modeGeneral'), value: 'general', title: $t('rag.chat.modeHint.general') }
 ];
 const feedbackTypeOptions = [
   { label: $t('rag.chat.feedbackTypes.factualMismatch'), value: 'factual_mismatch' },
@@ -169,6 +170,7 @@ async function loadSessions() {
 
 async function selectSession(session: Session) {
   currentSession.value = session;
+  attachmentsExpanded.value = false;
   pendingClarificationPlanId.value = null;
   if (window.innerWidth < 768) showSidebar.value = false;
   messages.value = [];
@@ -225,6 +227,15 @@ async function checkPendingClarification(sessionId: number) {
   } catch {}
 }
 
+function activateSession(session: Session, options: { resetMessages?: boolean; resetAttachments?: boolean } = {}) {
+  currentSession.value = session;
+  pendingClarificationPlanId.value = null;
+  attachmentsExpanded.value = false;
+  if (options.resetMessages !== false) messages.value = [];
+  if (options.resetAttachments !== false) attachments.value = [];
+  if (window.innerWidth < 768) showSidebar.value = false;
+}
+
 async function createSession() {
   const res = await fetchCreateSession({ title: $t('rag.chat.newSession') });
   const s: Session = {
@@ -236,7 +247,8 @@ async function createSession() {
     createdAt: ''
   };
   sessions.value.unshift(s);
-  selectSession(s);
+  activateSession(s);
+  return s;
 }
 
 async function loadAttachments(sessionId: number) {
@@ -259,6 +271,7 @@ async function handleAttachmentFiles(event: Event) {
   const files = Array.from(input.files || []);
   input.value = '';
   if (!currentSession.value || !files.length) return;
+  attachmentsExpanded.value = true;
   uploadingAttachment.value = true;
   try {
     for (const file of files) await fetchUploadSessionAttachment(currentSession.value.id, file);
@@ -293,6 +306,24 @@ function formatFileSize(size: number) {
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function formatAttachmentType(attachment: SessionAttachment) {
+  const type = attachment.fileType?.split('/').pop();
+  if (type) return type.toUpperCase();
+  const extension = attachment.fileName.split('.').pop();
+  return extension && extension !== attachment.fileName ? extension.toUpperCase() : $t('rag.chat.unknownFormat');
+}
+
+function attachmentPanelSummary() {
+  const ready = attachments.value.filter(item => item.status === 'ready').length;
+  const failed = attachments.value.filter(item => item.status === 'failed').length;
+  const processing = attachments.value.length - ready - failed;
+  return [
+    ready ? $t('rag.chat.attachmentSummaryReady', { count: ready }) : '',
+    processing ? $t('rag.chat.attachmentSummaryProcessing', { count: processing }) : '',
+    failed ? $t('rag.chat.attachmentSummaryFailed', { count: failed }) : ''
+  ].filter(Boolean).join(' · ');
+}
+
 function hasPendingAttachments() {
   return attachments.value.some(item => item.status !== 'ready' && item.status !== 'failed');
 }
@@ -304,6 +335,7 @@ async function deleteSession(session: Session) {
     currentSession.value = null;
     messages.value = [];
     attachments.value = [];
+    attachmentsExpanded.value = false;
   }
 }
 
@@ -320,6 +352,7 @@ async function sendMessage(overrideText?: string, overrideMode?: ChatMode) {
     await createSession();
   }
   if (!currentSession.value) return;
+  const sessionId = currentSession.value.id;
 
   if (!overrideText) inputText.value = '';
   sending.value = true;
@@ -341,7 +374,7 @@ async function sendMessage(overrideText?: string, overrideMode?: ChatMode) {
 
   try {
     await streamChat(
-      currentSession.value.id,
+      sessionId,
       text,
       assistantMsg,
       clarificationPlanId,
@@ -696,7 +729,7 @@ function normalizeAssistantContent(content: string) {
         </ElInput>
       </div>
       <div class="p-2 border-b">
-        <ElButton size="small" class="w-full" @click="createSession">
+        <ElButton size="small" class="w-full" @click="createSession()">
           <SvgIcon icon="mdi:plus" class="mr-1" />{{ $t('rag.chat.newSession') }}
         </ElButton>
       </div>
@@ -944,79 +977,113 @@ function normalizeAssistantContent(content: string) {
       <!-- Input -->
       <div class="px-4 py-3 border-t bg-white flex-shrink-0">
         <div class="max-w-4xl mx-auto">
-          <div class="mode-toolbar mb-2 flex items-center justify-between gap-3">
-            <ElSegmented v-model="chatMode" :options="chatModeOptions" size="small" />
-            <span class="mode-hint text-xs text-gray-500">{{ $t(`rag.chat.modeHint.${chatMode}` as any) }}</span>
-          </div>
-          <div v-if="attachments.length" class="flex flex-wrap gap-2 mb-2">
-            <div
-              v-for="attachment in attachments"
-              :key="attachment.id"
-              class="attachment-chip"
-              :class="{ 'is-failed': attachment.status === 'failed' }"
-              :title="attachment.errorMessage || attachment.fileName"
+          <div v-if="attachments.length" class="attachment-panel mb-2">
+            <button
+              type="button"
+              class="attachment-panel-header"
+              :title="$t(attachmentsExpanded ? 'rag.chat.collapseAttachments' : 'rag.chat.expandAttachments')"
+              :aria-expanded="attachmentsExpanded"
+              @click="attachmentsExpanded = !attachmentsExpanded"
             >
-              <SvgIcon icon="mdi:file-document-outline" class="text-base flex-shrink-0" />
-              <div class="min-w-0">
-                <div class="truncate text-xs font-medium">{{ attachment.fileName }}</div>
-                <div class="text-10px text-gray-500">
-                  {{ formatFileSize(attachment.fileSize) }} · {{ attachmentStatusLabel(attachment.status) }}
-                  <span v-if="attachment.qualityScore"> · {{ attachment.qualityScore }}</span>
+              <span class="attachment-panel-title">
+                <SvgIcon icon="mdi:folder-multiple-outline" class="text-base" />
+                {{ $t('rag.chat.attachments') }}
+                <span class="attachment-count">{{ attachments.length }}</span>
+              </span>
+              <span class="attachment-panel-summary">{{ attachmentPanelSummary() }}</span>
+              <SvgIcon :icon="attachmentsExpanded ? 'mdi:chevron-up' : 'mdi:chevron-down'" class="text-base" />
+            </button>
+            <div v-show="attachmentsExpanded" class="attachment-list">
+              <div
+                v-for="attachment in attachments"
+                :key="attachment.id"
+                class="attachment-row"
+                :class="{ 'is-failed': attachment.status === 'failed' }"
+              >
+                <SvgIcon icon="mdi:file-document-outline" class="text-lg flex-shrink-0" />
+                <div class="attachment-file-info">
+                  <div class="attachment-file-name" :title="attachment.fileName">{{ attachment.fileName }}</div>
+                  <div class="attachment-file-meta">
+                    {{ formatAttachmentType(attachment) }} · {{ formatFileSize(attachment.fileSize) }} ·
+                    {{ attachmentStatusLabel(attachment.status) }}
+                    <span v-if="attachment.qualityScore != null">
+                      · {{ $t('rag.chat.attachmentQuality', { score: attachment.qualityScore }) }}
+                    </span>
+                  </div>
+                  <div v-if="attachment.errorMessage" class="attachment-error" :title="attachment.errorMessage">
+                    {{ attachment.errorMessage }}
+                  </div>
                 </div>
+                <SvgIcon
+                  v-if="['uploaded', 'parsing', 'processing'].includes(attachment.status)"
+                  icon="mdi:loading"
+                  class="animate-spin"
+                />
+                <ElButton
+                  v-if="attachment.status === 'failed'"
+                  text
+                  circle
+                  size="small"
+                  :title="$t('rag.chat.retryAttachment')"
+                  @click.stop="retryAttachment(attachment)"
+                ><SvgIcon icon="mdi:refresh" /></ElButton>
+                <ElButton
+                  text
+                  circle
+                  size="small"
+                  :title="$t('rag.chat.removeAttachment')"
+                  @click.stop="removeAttachment(attachment)"
+                ><SvgIcon icon="mdi:delete-outline" /></ElButton>
               </div>
-              <SvgIcon
-                v-if="['uploaded', 'parsing', 'processing'].includes(attachment.status)"
-                icon="mdi:loading"
-                class="animate-spin"
-              />
-              <ElButton
-                v-if="attachment.status === 'failed'"
-                text
-                circle
-                size="small"
-                :title="$t('rag.chat.retryAttachment')"
-                @click="retryAttachment(attachment)"
-              ><SvgIcon icon="mdi:refresh" /></ElButton>
-              <ElButton
-                text
-                circle
-                size="small"
-                :title="$t('rag.chat.removeAttachment')"
-                @click="removeAttachment(attachment)"
-              ><SvgIcon icon="mdi:close" /></ElButton>
             </div>
           </div>
-          <div class="flex gap-2 items-end">
-          <input
-            ref="fileInput"
-            type="file"
-            multiple
-            class="hidden"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.html,.csv,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
-            @change="handleAttachmentFiles"
-          />
-          <ElButton
-            circle
-            :loading="uploadingAttachment"
-            :title="$t('rag.chat.addAttachment')"
-            @click="openAttachmentPicker"
-          ><SvgIcon icon="mdi:paperclip" class="text-base" /></ElButton>
-          <ElInput
-            v-model="inputText"
-            type="textarea"
-            :rows="1"
-            :autosize="{ minRows: 1, maxRows: 5 }"
-            :placeholder="$t('rag.chat.inputPlaceholder')"
-            @keydown="handleKeydown"
-            :disabled="sending || hasPendingAttachments()"
-            class="chat-composer flex-1"
-          />
-          <ElButton v-if="sending" type="danger" size="small" @click="stopGeneration">
-            <SvgIcon icon="mdi:stop" class="mr-1" />{{ $t('rag.chat.stop') }}
-          </ElButton>
-          <ElButton v-else type="primary" size="small" @click="sendMessage()" :disabled="!inputText.trim() || hasPendingAttachments()">
-            <SvgIcon icon="mdi:send" class="mr-1" />{{ $t('rag.chat.send') }}
-          </ElButton>
+          <div class="composer-shell">
+            <input
+              ref="fileInput"
+              type="file"
+              multiple
+              class="hidden"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.html,.csv,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp"
+              @change="handleAttachmentFiles"
+            />
+            <ElInput
+              v-model="inputText"
+              type="textarea"
+              :rows="1"
+              :autosize="{ minRows: 1, maxRows: 5 }"
+              :placeholder="$t('rag.chat.inputPlaceholder')"
+              @keydown="handleKeydown"
+              :disabled="sending || hasPendingAttachments()"
+              class="chat-composer"
+            />
+            <div class="composer-footer">
+              <div class="composer-tools">
+                <ElButton
+                  circle
+                  size="small"
+                  :loading="uploadingAttachment"
+                  :title="$t('rag.chat.addAttachment')"
+                  @click="openAttachmentPicker"
+                ><SvgIcon icon="mdi:paperclip" class="text-base" /></ElButton>
+                <div class="chat-mode-control" role="group" :aria-label="$t('rag.chat.answerMode')">
+                  <button
+                    v-for="option in chatModeOptions"
+                    :key="option.value"
+                    type="button"
+                    class="chat-mode-button"
+                    :class="{ active: chatMode === option.value }"
+                    :title="option.title"
+                    @click="chatMode = option.value as ChatMode"
+                  >{{ option.label }}</button>
+                </div>
+              </div>
+              <ElButton v-if="sending" type="danger" size="small" @click="stopGeneration">
+                <SvgIcon icon="mdi:stop" class="mr-1" />{{ $t('rag.chat.stop') }}
+              </ElButton>
+              <ElButton v-else type="primary" size="small" @click="sendMessage()" :disabled="!inputText.trim() || hasPendingAttachments()">
+                <SvgIcon icon="mdi:send" class="mr-1" />{{ $t('rag.chat.send') }}
+              </ElButton>
+            </div>
           </div>
           <div v-if="hasPendingAttachments()" class="mt-1 text-xs text-gray-500">
             {{ $t('rag.chat.waitForAttachments') }}
@@ -1033,27 +1100,6 @@ function normalizeAssistantContent(content: string) {
   border-radius: 8px;
   padding: 0.6rem 1rem;
   font-size: 0.875rem;
-}
-
-@media (max-width: 640px) {
-  .mode-toolbar {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-
-  .mode-toolbar :deep(.el-segmented) {
-    width: 100%;
-  }
-
-  .mode-toolbar :deep(.el-segmented__item) {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .mode-hint {
-    line-height: 1.35;
-  }
 }
 
 .rag-markdown {
@@ -1099,22 +1145,164 @@ function normalizeAssistantContent(content: string) {
   padding: 0;
 }
 
-.attachment-chip {
+.attachment-panel {
+  border: 1px solid var(--el-border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--el-bg-color);
+}
+
+.attachment-panel-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.65rem;
+  border: 0;
+  background: var(--el-fill-color-extra-light);
+  color: var(--el-text-color-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.attachment-panel-title,
+.composer-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.attachment-panel-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.attachment-count {
+  min-width: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--el-fill-color-darker);
+  font-size: 0.6875rem;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.attachment-panel-summary {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-list {
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.attachment-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 0.4rem;
-  width: min(18rem, 100%);
-  min-height: 2.75rem;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--el-border-color);
-  border-radius: 6px;
-  background: var(--el-fill-color-extra-light);
+  gap: 0.55rem;
+  min-height: 3.5rem;
+  padding: 0.5rem 0.65rem;
 }
 
-.attachment-chip.is-failed {
+.attachment-row + .attachment-row {
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.attachment-row.is-failed {
   border-color: var(--el-color-danger-light-5);
   color: var(--el-color-danger);
+}
+
+.attachment-file-info {
+  min-width: 0;
+}
+
+.attachment-file-name {
+  overflow-wrap: anywhere;
+  color: var(--el-text-color-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.attachment-file-meta,
+.attachment-error {
+  margin-top: 0.15rem;
+  color: var(--el-text-color-secondary);
+  font-size: 0.6875rem;
+  line-height: 1.35;
+}
+
+.attachment-error {
+  overflow: hidden;
+  color: var(--el-color-danger);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-shell {
+  padding: 0.45rem;
+  border: 1px solid var(--el-border-color);
+  border-radius: 6px;
+  background: var(--el-bg-color);
+}
+
+.chat-composer {
+  width: 100%;
+}
+
+.chat-composer :deep(.el-textarea__inner) {
+  padding: 0.35rem 0.45rem 0.5rem;
+  border: 0;
+  box-shadow: none;
+  resize: none;
+}
+
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.chat-mode-control {
+  display: inline-flex;
+  align-items: center;
+  height: 1.75rem;
+  padding: 2px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 5px;
+  background: var(--el-fill-color-light);
+}
+
+.chat-mode-button {
+  height: 1.375rem;
+  padding: 0 0.55rem;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--el-text-color-secondary);
+  cursor: pointer;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.chat-mode-button:hover {
+  color: var(--el-color-primary);
+}
+
+.chat-mode-button.active {
+  background: var(--el-bg-color);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+  color: var(--el-color-primary);
+  font-weight: 600;
 }
 
 .hitl-details {
@@ -1171,8 +1359,5 @@ function normalizeAssistantContent(content: string) {
     box-shadow: var(--el-box-shadow-light);
   }
 
-  .attachment-chip {
-    width: 100%;
-  }
 }
 </style>

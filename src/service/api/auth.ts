@@ -38,8 +38,21 @@ export function fetchRefreshToken(refreshToken: string) {
 }
 
 /** Logout */
-export function fetchLogout() {
-  return request({ url: '/auth/logout', method: 'post' });
+export function fetchLogout(refreshToken?: string) {
+  return request({
+    url: '/auth/logout',
+    method: 'post',
+    data: refreshToken ? { refreshToken } : undefined
+  });
+}
+
+/** Change the current user's password */
+export function fetchChangeCurrentPassword(currentPassword: string, newPassword: string) {
+  return request({
+    url: '/system/user/current/password',
+    method: 'put',
+    data: { currentPassword, newPassword }
+  });
 }
 
 /** Switch tenant */

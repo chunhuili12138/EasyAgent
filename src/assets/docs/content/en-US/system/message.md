@@ -4,7 +4,7 @@
 
 ## Entry and Scope
 
-- Main menu: **Account & Organization → Messages**.
+- Main menu: **Messages**.
 - A concrete tenant must be selected after login. A system administrator may also view personal global messages while no tenant is selected.
 - The page never exposes messages belonging to another user or tenant.
 

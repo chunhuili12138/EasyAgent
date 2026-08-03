@@ -1,5 +1,6 @@
 import { request } from '../request';
 import { putFileDirectly } from '@/utils/direct-upload';
+import { getServiceBaseURL } from '@/utils/service';
 
 const pendingAttachmentCompletions = new Map<string, string>();
 
@@ -142,8 +143,9 @@ export function fetchSearch(data: { query: string; topK?: number; enableRerank?:
 export type ChatMode = 'auto' | 'knowledge' | 'general';
 
 export function createChatStreamUrl(): string {
-  const baseUrl = import.meta.env.VITE_SERVICE_BASE_URL || '/api';
-  return `${baseUrl}/rag/chat/stream`;
+  const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
+  const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
+  return `${baseURL.replace(/\/$/, '')}/rag/chat/stream`;
 }
 
 export function fetchBadCases(params?: {

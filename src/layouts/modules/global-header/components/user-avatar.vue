@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import type { VNode } from 'vue';
+import type { FormInstance, FormRules } from 'element-plus';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouterPush } from '@/hooks/common/router';
 import { useSvgIcon } from '@/hooks/common/icon';
+import { useFormRules } from '@/hooks/common/form';
+import { fetchChangeCurrentPassword, fetchLogout } from '@/service/api';
+import { localStg } from '@/utils/storage';
 import { $t } from '@/locales';
 
 defineOptions({ name: 'UserAvatar' });
@@ -11,12 +15,50 @@ defineOptions({ name: 'UserAvatar' });
 const authStore = useAuthStore();
 const { toLogin } = useRouterPush();
 const { SvgIconVNode } = useSvgIcon();
+const { formRules } = useFormRules();
+
+const passwordDialogVisible = ref(false);
+const passwordSubmitting = ref(false);
+const passwordFormRef = ref<FormInstance>();
+const passwordForm = reactive({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+});
+
+const passwordRules = computed<FormRules>(() => ({
+  currentPassword: [{ required: true, message: $t('common.currentPasswordRequired'), trigger: 'blur' }],
+  newPassword: [
+    ...formRules.pwd,
+    {
+      asyncValidator: () => {
+        if (passwordForm.newPassword === passwordForm.currentPassword) {
+          return Promise.reject(new Error($t('common.newPasswordSame')));
+        }
+        return Promise.resolve();
+      },
+      trigger: 'blur'
+    }
+  ],
+  confirmPassword: [
+    { required: true, message: $t('form.confirmPwd.required'), trigger: 'blur' },
+    {
+      asyncValidator: () => {
+        if (passwordForm.confirmPassword !== passwordForm.newPassword) {
+          return Promise.reject(new Error($t('form.confirmPwd.invalid')));
+        }
+        return Promise.resolve();
+      },
+      trigger: 'input'
+    }
+  ]
+}));
 
 function loginOrRegister() {
   toLogin();
 }
 
-type DropdownKey = 'logout';
+type DropdownKey = 'changePassword' | 'logout';
 
 type DropdownOption = {
   key: DropdownKey;
@@ -26,6 +68,11 @@ type DropdownOption = {
 
 const options = computed(() => {
   const opts: DropdownOption[] = [
+    {
+      label: $t('common.changePassword'),
+      key: 'changePassword',
+      icon: SvgIconVNode({ icon: 'ph:key', fontSize: 18 })
+    },
     {
       label: $t('common.logout'),
       key: 'logout',
@@ -43,13 +90,48 @@ function logout() {
       cancelButtonText: $t('common.cancel'),
       type: 'warning'
     })
-    .then(() => {
-      authStore.resetStore();
+    .then(async () => {
+      await logoutAndReset();
     });
 }
 
-function handleDropdown() {
-  logout();
+async function logoutAndReset() {
+  const refreshToken = localStg.get('refreshToken');
+  await fetchLogout(refreshToken || undefined);
+  await authStore.resetStore();
+}
+
+function resetPasswordForm() {
+  passwordForm.currentPassword = '';
+  passwordForm.newPassword = '';
+  passwordForm.confirmPassword = '';
+  passwordFormRef.value?.clearValidate();
+}
+
+function openPasswordDialog() {
+  resetPasswordForm();
+  passwordDialogVisible.value = true;
+}
+
+async function submitPasswordChange() {
+  const valid = await passwordFormRef.value?.validate().catch(() => false);
+  if (!valid) return;
+
+  passwordSubmitting.value = true;
+  try {
+    const { error } = await fetchChangeCurrentPassword(passwordForm.currentPassword, passwordForm.newPassword);
+    if (error) return;
+    passwordDialogVisible.value = false;
+    window.$message?.success($t('common.changePasswordSuccess'));
+    await logoutAndReset();
+  } finally {
+    passwordSubmitting.value = false;
+  }
+}
+
+function handleDropdown(key: DropdownKey) {
+  if (key === 'changePassword') openPasswordDialog();
+  else logout();
 }
 </script>
 
@@ -77,6 +159,53 @@ function handleDropdown() {
       <span class="text-16px font-medium">{{ authStore.userInfo.nickname }}</span>
     </div>
   </ElDropdown>
+
+  <ElDialog
+    v-model="passwordDialogVisible"
+    :title="$t('common.changePasswordTitle')"
+    width="440px"
+    append-to-body
+    destroy-on-close
+    :close-on-click-modal="false"
+    @closed="resetPasswordForm"
+  >
+    <ElForm ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-position="top">
+      <ElFormItem :label="$t('common.currentPassword')" prop="currentPassword">
+        <ElInput
+          v-model="passwordForm.currentPassword"
+          type="password"
+          show-password
+          autocomplete="current-password"
+          :placeholder="$t('common.currentPasswordPlaceholder')"
+        />
+      </ElFormItem>
+      <ElFormItem :label="$t('common.newPassword')" prop="newPassword">
+        <ElInput
+          v-model="passwordForm.newPassword"
+          type="password"
+          show-password
+          autocomplete="new-password"
+          :placeholder="$t('common.newPasswordPlaceholder')"
+        />
+      </ElFormItem>
+      <ElFormItem :label="$t('common.confirmNewPassword')" prop="confirmPassword">
+        <ElInput
+          v-model="passwordForm.confirmPassword"
+          type="password"
+          show-password
+          autocomplete="new-password"
+          :placeholder="$t('common.confirmNewPasswordPlaceholder')"
+          @keyup.enter="submitPasswordChange"
+        />
+      </ElFormItem>
+    </ElForm>
+    <template #footer>
+      <ElButton @click="passwordDialogVisible = false">{{ $t('common.cancel') }}</ElButton>
+      <ElButton type="primary" :loading="passwordSubmitting" @click="submitPasswordChange">
+        {{ $t('common.confirm') }}
+      </ElButton>
+    </template>
+  </ElDialog>
 </template>
 
 <style scoped></style>
