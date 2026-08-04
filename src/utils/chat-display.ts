@@ -1,3 +1,6 @@
+import type { Tokens } from 'marked';
+import { marked } from 'marked';
+
 export interface ChatCitation {
   fileName?: string;
   chunkId?: number | string;
@@ -46,6 +49,22 @@ export function formatCitationAnchor(anchor: ChatCitation['anchor']): string {
   }
   if (typeof anchor === 'string' && anchor.trim()) return anchor.trim();
   return '';
+}
+
+export function normalizeAssistantContent(content: string): string {
+  return content
+    .replace(/^(?:null){2,}/, '')
+    .replace(/(?:null)+$/, '')
+    .trim();
+}
+
+export function parseAssistantMarkdown(content: string): string {
+  const renderer = new marked.Renderer();
+  const renderTable = renderer.table.bind(renderer);
+  renderer.table = (token: Tokens.Table) => `<div class="rag-table-wrap">${renderTable(token)}</div>`;
+
+  const markdown = normalizeAssistantContent(content).replace(/<ref\s+id=["'][^"']+["']\s*\/?\s*>/gi, '');
+  return marked.parse(markdown, { breaks: true, gfm: true, renderer, async: false }) as string;
 }
 
 function isCitation(value: unknown): value is ChatCitation {

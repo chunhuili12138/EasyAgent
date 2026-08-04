@@ -96,7 +96,20 @@ export function fetchRetrySessionAttachment(sessionId: number, attachmentId: num
 }
 
 export function fetchSessionMessages(sessionId: number, params?: { page?: number; size?: number }) {
-  return request<{ records: any[]; total: number }>({
+  return request<{
+    records: Array<{
+      id: number;
+      role: string;
+      content: string;
+      citations?: unknown[];
+      feedback?: number;
+      feedbackType?: string;
+      feedbackReason?: string;
+      answerMode?: ChatMode;
+      createdAt?: string;
+    }>;
+    total: number;
+  }>({
     url: `/rag/sessions/${sessionId}/messages`,
     method: 'get',
     params

@@ -2,14 +2,15 @@
 import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import DOMPurify from 'dompurify';
-import { marked } from 'marked';
 import { $t } from '@/locales';
 import { getToken } from '@/store/modules/auth/shared';
 import { createSseParser } from '@/utils/sse';
 import {
   formatCitationAnchor,
   groupCitations,
+  normalizeAssistantContent,
   normalizeCitations,
+  parseAssistantMarkdown,
   type ChatCitation
 } from '@/utils/chat-display';
 import {
@@ -55,6 +56,7 @@ interface Message {
   answerOptions?: string[];
   answerOptionReason?: string;
   sourceQuestion?: string;
+  createdAt?: string;
 }
 
 function hitlDetailEntries(msg: Message) {
@@ -188,7 +190,9 @@ async function loadMessages(sessionId: number) {
     citations: m.citations,
     feedback: m.feedback,
     feedbackType: m.feedbackType,
-    feedbackReason: m.feedbackReason
+    feedbackReason: m.feedbackReason,
+    answerMode: m.answerMode,
+    createdAt: m.createdAt
   })) as Message[];
   messages.value = msgs;
   nextTick(() => scrollToBottom());
@@ -357,7 +361,8 @@ async function sendMessage(overrideText?: string, overrideMode?: ChatMode) {
   if (!overrideText) inputText.value = '';
   sending.value = true;
 
-  const userMsg: Message = { role: 'user', content: text };
+  const createdAt = new Date().toISOString();
+  const userMsg: Message = { role: 'user', content: text, createdAt };
   messages.value.push(userMsg);
 
   messages.value.push({
@@ -365,7 +370,9 @@ async function sendMessage(overrideText?: string, overrideMode?: ChatMode) {
     content: '',
     streaming: true,
     status: $t('rag.chat.statusAnalyzing'),
-    sourceQuestion: text
+    sourceQuestion: text,
+    answerMode: overrideMode ?? chatMode.value,
+    createdAt
   });
   const assistantMsg = messages.value[messages.value.length - 1];
   const clarificationPlanId = pendingClarificationPlanId.value;
@@ -465,7 +472,6 @@ function handleSSEEvent(type: string, payload: any, aiMsg: Message) {
       aiMsg.status = typeof payload.content === 'string' ? payload.content : '';
       break;
     case 'answer_mode':
-      if (payload.mode === 'knowledge' || payload.mode === 'general') aiMsg.answerMode = payload.mode;
       break;
     case 'answer_options':
       aiMsg.answerOptions = Array.isArray(payload.actions) ? payload.actions.map(String) : [];
@@ -694,9 +700,10 @@ function handleKeydown(e: Event | KeyboardEvent) {
   }
 }
 
-function formatTime(t: string) {
+function formatTime(t?: string) {
   if (!t) return '';
   const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return '';
   return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
@@ -709,13 +716,8 @@ function copyContent(content: string) {
 }
 
 function renderContent(content: string) {
-  const markdown = normalizeAssistantContent(content).replace(/<ref\s+id=["'][^"']+["']\s*\/?\s*>/gi, '');
-  const html = marked.parse(markdown, { breaks: true, gfm: true, async: false }) as string;
+  const html = parseAssistantMarkdown(content);
   return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
-}
-
-function normalizeAssistantContent(content: string) {
-  return content.replace(/^(?:null){2,}/, '').replace(/(?:null)+$/, '').trim();
 }
 </script>
 
@@ -783,19 +785,21 @@ function normalizeAssistantContent(content: string) {
         <div v-for="(msg, idx) in messages" :key="idx" class="mb-4">
           <!-- User message -->
           <div v-if="msg.role === 'user'" class="flex justify-end">
-            <div class="max-w-75% bg-blue-500 text-white rounded-lg px-4 py-2.5 text-sm shadow-sm">
-              {{ msg.content }}
+            <div class="max-w-75% flex flex-col items-end gap-1">
+              <div class="bg-blue-500 text-white rounded-lg px-4 py-2.5 text-sm shadow-sm">
+                {{ msg.content }}
+              </div>
+              <time v-if="formatTime(msg.createdAt)" class="px-1 text-xs text-gray-400" :datetime="msg.createdAt">
+                {{ formatTime(msg.createdAt) }}
+              </time>
             </div>
           </div>
 
           <!-- AI message -->
-          <div v-else-if="msg.role === 'assistant'" class="flex gap-3">
+          <div v-else-if="msg.role === 'assistant'" class="min-w-0 flex gap-3">
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">AI</div>
-            <div class="max-w-85%">
+            <div class="min-w-0 max-w-85%">
               <div class="bg-white rounded-lg px-4 py-2.5 shadow-sm border overflow-hidden">
-                <ElTag v-if="msg.answerMode" size="small" effect="plain" class="mb-2">
-                  {{ answerModeLabel(msg.answerMode) }}
-                </ElTag>
                 <div v-if="msg.streaming && msg.status" class="flex items-center gap-2 text-sm text-gray-500">
                   <SvgIcon icon="mdi:loading" class="animate-spin text-base text-blue-500" />
                   <span>{{ msg.status }}</span>
@@ -884,6 +888,14 @@ function normalizeAssistantContent(content: string) {
                 <ElButton size="small" text :title="$t('rag.chat.copyAnswer')" :aria-label="$t('rag.chat.copyAnswer')" @click="copyContent(msg.content)">
                   <SvgIcon icon="mdi:content-copy" class="text-sm" />
                 </ElButton>
+                <div class="ml-auto flex flex-shrink-0 items-center gap-2">
+                  <ElTag v-if="msg.answerMode" size="small" effect="plain">
+                    {{ answerModeLabel(msg.answerMode) }}
+                  </ElTag>
+                  <time v-if="formatTime(msg.createdAt)" class="whitespace-nowrap text-xs text-gray-400" :datetime="msg.createdAt">
+                    {{ formatTime(msg.createdAt) }}
+                  </time>
+                </div>
               </div>
             </div>
           </div>
@@ -1103,8 +1115,11 @@ function normalizeAssistantContent(content: string) {
 }
 
 .rag-markdown {
+  min-width: 0;
+  max-width: 100%;
   line-height: 1.7;
   color: var(--el-text-color-primary);
+  overflow-wrap: anywhere;
 }
 
 .rag-markdown :deep(p) {
@@ -1125,24 +1140,172 @@ function normalizeAssistantContent(content: string) {
   margin-top: 0.25rem;
 }
 
+.rag-markdown :deep(li > ul),
+.rag-markdown :deep(li > ol) {
+  margin-bottom: 0.25rem;
+}
+
+.rag-markdown :deep(h1),
+.rag-markdown :deep(h2),
+.rag-markdown :deep(h3),
+.rag-markdown :deep(h4) {
+  margin: 1rem 0 0.5rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.rag-markdown :deep(h1:first-child),
+.rag-markdown :deep(h2:first-child),
+.rag-markdown :deep(h3:first-child),
+.rag-markdown :deep(h4:first-child) {
+  margin-top: 0;
+}
+
+.rag-markdown :deep(h1) {
+  font-size: 1.2rem;
+}
+
+.rag-markdown :deep(h2) {
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  font-size: 1.08rem;
+}
+
+.rag-markdown :deep(h3),
+.rag-markdown :deep(h4) {
+  font-size: 0.95rem;
+}
+
+.rag-markdown :deep(strong) {
+  font-weight: 600;
+}
+
+.rag-markdown :deep(a) {
+  color: var(--el-color-primary);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.rag-markdown :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.rag-markdown :deep(blockquote) {
+  margin: 0.65rem 0;
+  border-left: 3px solid var(--el-color-primary-light-5);
+  border-radius: 0 4px 4px 0;
+  background: var(--el-color-primary-light-9);
+  padding: 0.55rem 0.8rem;
+  color: var(--el-text-color-regular);
+}
+
+.rag-markdown :deep(blockquote p:last-child) {
+  margin-bottom: 0;
+}
+
+.rag-markdown :deep(hr) {
+  margin: 0.9rem 0;
+  border: 0;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
 .rag-markdown :deep(code) {
   border-radius: 4px;
   background: var(--el-fill-color-light);
   padding: 0.1rem 0.3rem;
   font-size: 0.85em;
+  font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+  overflow-wrap: anywhere;
 }
 
 .rag-markdown :deep(pre) {
+  margin: 0.65rem 0;
   max-width: 100%;
   overflow-x: auto;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  background: var(--el-fill-color-light);
-  padding: 0.75rem;
+  background: var(--el-bg-color-page);
+  padding: 0.75rem 0.9rem;
+  tab-size: 2;
 }
 
 .rag-markdown :deep(pre code) {
   background: transparent;
   padding: 0;
+  white-space: pre;
+  overflow-wrap: normal;
+  line-height: 1.6;
+}
+
+.rag-markdown :deep(.rag-table-wrap) {
+  max-width: 100%;
+  margin: 0.65rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--el-border-color) transparent;
+}
+
+.rag-markdown :deep(.rag-table-wrap::-webkit-scrollbar) {
+  height: 8px;
+}
+
+.rag-markdown :deep(.rag-table-wrap::-webkit-scrollbar-thumb) {
+  border-radius: 4px;
+  background: var(--el-border-color);
+}
+
+.rag-markdown :deep(table) {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.rag-markdown :deep(th),
+.rag-markdown :deep(td) {
+  min-width: 7rem;
+  max-width: 24rem;
+  border-right: 1px solid var(--el-border-color-lighter);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.rag-markdown :deep(th) {
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rag-markdown :deep(td:last-child),
+.rag-markdown :deep(th:last-child) {
+  border-right: 0;
+}
+
+.rag-markdown :deep(tr:last-child td) {
+  border-bottom: 0;
+}
+
+.rag-markdown :deep(tbody tr:nth-child(even)) {
+  background: var(--el-fill-color-extra-light);
+}
+
+.rag-markdown :deep(tbody tr:hover) {
+  background: var(--el-color-primary-light-9);
+}
+
+.rag-markdown :deep(img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.65rem 0;
+  border-radius: 6px;
 }
 
 .attachment-panel {
