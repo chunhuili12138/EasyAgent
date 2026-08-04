@@ -45,6 +45,7 @@ interface Message {
   feedbackType?: string;
   feedbackReason?: string;
   streaming?: boolean;
+  generationStopped?: boolean;
   status?: string;
   hitlCard?: { summary: string; riskLevel: string; actionType: string; toolCode: string; toolName?: string; details?: any };
   hitlResolved?: boolean;
@@ -394,7 +395,10 @@ async function sendMessage(overrideText?: string, overrideMode?: ChatMode) {
       if (card) card.clarificationResolved = true;
     }
   } catch (error) {
-    if (!(error instanceof DOMException && error.name === 'AbortError')) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      assistantMsg.generationStopped = true;
+      assistantMsg.status = undefined;
+    } else {
       assistantMsg.content = assistantMsg.content || `[${$t('common.requestFailed')}]`;
       ElMessage.error($t('common.requestFailed'));
       console.error('Chat stream failed', error);
@@ -532,6 +536,7 @@ function handleSSEEvent(type: string, payload: any, aiMsg: Message) {
     case 'cancelled':
       aiMsg.streaming = false;
       aiMsg.status = undefined;
+      aiMsg.generationStopped = true;
       break;
   }
 }
@@ -685,7 +690,11 @@ async function stopGeneration() {
   controller?.abort();
   sending.value = false;
   const aiMsg = messages.value.find(m => m.streaming);
-  if (aiMsg) aiMsg.streaming = false;
+  if (aiMsg) {
+    aiMsg.streaming = false;
+    aiMsg.status = undefined;
+    aiMsg.generationStopped = true;
+  }
 }
 
 function scrollToBottom() {
@@ -806,6 +815,16 @@ function renderContent(content: string) {
                 </div>
                 <div v-if="msg.content" class="rag-markdown text-sm break-words" v-html="renderContent(msg.content)" />
                 <div v-if="msg.streaming && msg.content" class="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-0.5 align-middle" />
+                <div
+                  v-if="msg.generationStopped"
+                  class="generation-stopped-notice"
+                  :class="{ 'mt-2 border-t pt-2': msg.content }"
+                >
+                  <SvgIcon icon="mdi:stop-circle-outline" class="flex-shrink-0 text-base" />
+                  <span>
+                    {{ msg.content ? $t('rag.chat.generationStoppedPartial') : $t('rag.chat.generationStopped') }}
+                  </span>
+                </div>
               </div>
               <div v-if="msg.answerOptions?.length" class="answer-actions mt-2 flex flex-wrap gap-2">
                 <ElButton
@@ -863,31 +882,39 @@ function renderContent(content: string) {
               </div>
               <!-- Feedback -->
               <div class="flex items-center gap-2 mt-2">
-                <ElButton
-                  size="small"
-                  text
-                  :title="$t('rag.chat.like')"
-                  :aria-label="$t('rag.chat.like')"
-                  :type="msg.feedback === 1 ? 'success' : 'default'"
-                  @click="handleFeedback(msg, 1)"
-                  :disabled="!!msg.feedback"
-                >
-                  <SvgIcon icon="mdi:thumb-up-outline" class="text-sm" />
-                </ElButton>
-                <ElButton
-                  size="small"
-                  text
-                  :title="$t('rag.chat.dislike')"
-                  :aria-label="$t('rag.chat.dislike')"
-                  :type="msg.feedback === -1 ? 'danger' : 'default'"
-                  @click="handleFeedback(msg, -1)"
-                  :disabled="!!msg.feedback"
-                >
-                  <SvgIcon icon="mdi:thumb-down-outline" class="text-sm" />
-                </ElButton>
-                <ElButton size="small" text :title="$t('rag.chat.copyAnswer')" :aria-label="$t('rag.chat.copyAnswer')" @click="copyContent(msg.content)">
-                  <SvgIcon icon="mdi:content-copy" class="text-sm" />
-                </ElButton>
+                <template v-if="msg.content">
+                  <ElButton
+                    size="small"
+                    text
+                    :title="$t('rag.chat.like')"
+                    :aria-label="$t('rag.chat.like')"
+                    :type="msg.feedback === 1 ? 'success' : 'default'"
+                    :disabled="!!msg.feedback"
+                    @click="handleFeedback(msg, 1)"
+                  >
+                    <SvgIcon icon="mdi:thumb-up-outline" class="text-sm" />
+                  </ElButton>
+                  <ElButton
+                    size="small"
+                    text
+                    :title="$t('rag.chat.dislike')"
+                    :aria-label="$t('rag.chat.dislike')"
+                    :type="msg.feedback === -1 ? 'danger' : 'default'"
+                    :disabled="!!msg.feedback"
+                    @click="handleFeedback(msg, -1)"
+                  >
+                    <SvgIcon icon="mdi:thumb-down-outline" class="text-sm" />
+                  </ElButton>
+                  <ElButton
+                    size="small"
+                    text
+                    :title="$t('rag.chat.copyAnswer')"
+                    :aria-label="$t('rag.chat.copyAnswer')"
+                    @click="copyContent(msg.content)"
+                  >
+                    <SvgIcon icon="mdi:content-copy" class="text-sm" />
+                  </ElButton>
+                </template>
                 <div class="ml-auto flex flex-shrink-0 items-center gap-2">
                   <ElTag v-if="msg.answerMode" size="small" effect="plain">
                     {{ answerModeLabel(msg.answerMode) }}
@@ -1163,6 +1190,16 @@ function renderContent(content: string) {
 
 .rag-markdown :deep(h1) {
   font-size: 1.2rem;
+}
+
+.generation-stopped-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-color: var(--el-border-color-lighter);
+  color: var(--el-text-color-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .rag-markdown :deep(h2) {
