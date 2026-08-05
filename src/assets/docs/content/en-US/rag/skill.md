@@ -152,10 +152,10 @@ steps:
       temperature: 0.2
 ```
 
-## Saving, Disabling, and Automation References
+## Saving, Disabling, Deleting, and Automation References
 
 - Saving validates IDs, dependencies, type-specific fields, JSON/YAML, and execution limits. It does not prove business correctness.
-- Disabling or deleting removes a Skill from routing. Deletion is currently a soft disable and retains history.
+- Disabling removes a Skill from routing while retaining its configuration for later re-enabling. Deleting permanently removes the Skill configuration and cannot be undone; historical runs remain.
 - Check workflow references manually before deletion. Deletion does not currently block on an Automation reference, so later workflow runs may fail.
 - Workflow publication freezes the Skill version and YAML. Automation Skill nodes are for Skills without API calls; use explicit API nodes for external calls.
 
