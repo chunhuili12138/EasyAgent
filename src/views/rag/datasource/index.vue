@@ -15,12 +15,14 @@ import {
   fetchUpdateSchema
 } from '@/service/api/rag';
 import { $t } from '@/locales';
+import { useAppStore } from '@/store/modules/app';
 import ConfigHelp from '../shared/config-help.vue';
 import ConfigCodeEditor from '../shared/config-code-editor.vue';
 import { visibilityLabel } from '../shared/display';
 
 defineOptions({ name: 'RagDatasource' });
 const t = $t;
+const appStore = useAppStore();
 const list = ref<any[]>([]);
 const total = ref(0);
 const page = ref(1);
@@ -46,23 +48,29 @@ const schemaTestLoading = ref(false);
 const aclOptions = ref<any>({ departments: [], posts: [], users: [] });
 const schemaAllowedFunctions = ref<string[]>([]);
 const commonSqlFunctions = [
-  'COUNT',
-  'SUM',
-  'AVG',
-  'MIN',
-  'MAX',
-  'ROUND',
-  'COALESCE',
-  'NULLIF',
-  'DATE_FORMAT',
-  'DATE_TRUNC',
-  'YEAR',
-  'MONTH',
-  'DAY',
-  'CONCAT',
-  'LOWER',
-  'UPPER'
+  { value: 'COUNT', zhName: '计数' },
+  { value: 'SUM', zhName: '求和' },
+  { value: 'AVG', zhName: '平均值' },
+  { value: 'MIN', zhName: '最小值' },
+  { value: 'MAX', zhName: '最大值' },
+  { value: 'ROUND', zhName: '四舍五入' },
+  { value: 'COALESCE', zhName: '取首个非空值' },
+  { value: 'NULLIF', zhName: '相等置空' },
+  { value: 'DATE_FORMAT', zhName: '日期格式化' },
+  { value: 'DATE_TRUNC', zhName: '日期截断' },
+  { value: 'YEAR', zhName: '年份' },
+  { value: 'MONTH', zhName: '月份' },
+  { value: 'DAY', zhName: '日期' },
+  { value: 'CONCAT', zhName: '字符串拼接' },
+  { value: 'LOWER', zhName: '转为小写' },
+  { value: 'UPPER', zhName: '转为大写' }
 ];
+const sqlFunctionOptions = computed(() =>
+  commonSqlFunctions.map(item => ({
+    value: item.value,
+    label: appStore.locale === 'zh-CN' ? `${item.value}（${item.zhName}）` : item.value
+  }))
+);
 const schemaHelpExamples = {
   columns: '[{"name":"record_status","type":"VARCHAR","description":"业务状态：pending=待处理，completed=已完成"}]',
   fewShot:
@@ -555,7 +563,7 @@ function previewRows(rows: any[]) {
             </ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn :label="t('rag.common.action')" width="170" fixed="right" align="center">
+        <ElTableColumn :label="t('rag.common.action')" width="250" fixed="right" align="center">
           <template #default="{ row }">
             <ElButton link type="primary" @click="openSchemaTest(row)">{{ t('rag.datasource.testSchema') }}</ElButton>
             <ElButton link @click="openSchemaEdit(row)">{{ t('rag.common.edit') }}</ElButton>
@@ -662,7 +670,7 @@ function previewRows(rows: any[]) {
             class="w-full"
             :placeholder="t('rag.datasource.allowedFunctionsPlaceholder')"
           >
-            <ElOption v-for="item in commonSqlFunctions" :key="item" :label="item" :value="item" />
+            <ElOption v-for="item in sqlFunctionOptions" :key="item.value" :label="item.label" :value="item.value" />
           </ElSelect>
         </ElFormItem>
         <ElFormItem :label="t('rag.datasource.sensitiveColumns')">

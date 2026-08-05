@@ -11,6 +11,7 @@ import {
   fetchUpdateTool
 } from '@/service/api/rag';
 import { $t } from '@/locales';
+import { useAppStore } from '@/store/modules/app';
 import ConfigHelp from '../shared/config-help.vue';
 import ConfigCodeEditor from '../shared/config-code-editor.vue';
 import { authTypeLabel, operationTypeLabel, visibilityLabel } from '../shared/display';
@@ -18,6 +19,7 @@ import { authTypeLabel, operationTypeLabel, visibilityLabel } from '../shared/di
 defineOptions({ name: 'RagTool' });
 
 const t = $t;
+const appStore = useAppStore();
 const list = ref<any[]>([]);
 const total = ref(0);
 const page = ref(1);
@@ -48,6 +50,37 @@ const authFields = ref({
   accessKey: '',
   secretKey: ''
 });
+const requestHeaderPreset = ref('');
+const requestHeaderPresetPlaceholder = computed(() =>
+  appStore.locale === 'zh-CN' ? '选择标准请求头模板' : 'Select a standard request-header template'
+);
+const requestHeaderPresets = computed(() => [
+  {
+    value: 'accept-json',
+    label: appStore.locale === 'zh-CN' ? '仅接收 JSON' : 'Accept JSON only',
+    content: '{"Accept":"application/json"}'
+  },
+  {
+    value: 'json',
+    label: appStore.locale === 'zh-CN' ? 'JSON 请求' : 'JSON request',
+    content: '{"Accept":"application/json","Content-Type":"application/json"}'
+  },
+  {
+    value: 'form-url-encoded',
+    label: appStore.locale === 'zh-CN' ? '表单请求' : 'URL-encoded form request',
+    content: '{"Accept":"application/json","Content-Type":"application/x-www-form-urlencoded"}'
+  },
+  {
+    value: 'xml',
+    label: appStore.locale === 'zh-CN' ? 'XML 请求' : 'XML request',
+    content: '{"Accept":"application/xml","Content-Type":"application/xml"}'
+  },
+  {
+    value: 'text',
+    label: appStore.locale === 'zh-CN' ? '纯文本请求' : 'Plain text request',
+    content: '{"Accept":"text/plain","Content-Type":"text/plain"}'
+  }
+]);
 const toolHelpExamples = {
   auth: 'Bearer: {"token":"your-token"}\nBasic: {"username":"api-user","password":"your-password"}\nAPI Key: {"header":"X-API-Key","value":"your-key"}\nAK/SK: {"accessKey":"your-ak","secretKey":"your-sk"}',
   schema:
@@ -213,6 +246,7 @@ function openCreate() {
   };
   originalAuthType.value = 'none';
   resetAuthFields();
+  requestHeaderPreset.value = '';
   activeTab.value = 'basic';
   dialogVisible.value = true;
 }
@@ -222,6 +256,7 @@ async function openEdit(row: any) {
   form.value = { ...res.data, authConfig: '' };
   originalAuthType.value = form.value.authType || 'none';
   resetAuthFields();
+  requestHeaderPreset.value = '';
   activeTab.value = 'basic';
   dialogVisible.value = true;
 }
@@ -283,6 +318,11 @@ function resetAuthFields() {
 
 function handleAuthTypeChange() {
   resetAuthFields();
+}
+
+function applyRequestHeaderPreset(value?: string) {
+  const preset = requestHeaderPresets.value.find(item => item.value === value);
+  if (preset) form.value.requestHeaders = preset.content;
 }
 
 function buildAuthConfig() {
@@ -462,7 +502,7 @@ function formatPreview(value: any) {
       </div>
     </ElCard>
 
-    <ElDialog v-model="dialogVisible" width="min(640px, 95vw)" class="config-editor-dialog" align-center>
+    <ElDialog v-model="dialogVisible" width="min(820px, 95vw)" class="config-editor-dialog" align-center>
       <template #header>
         <div class="flex items-center">
           <span class="text-base font-medium">{{ isEdit ? t('common.edit') : t('common.create') }}</span>
@@ -493,7 +533,7 @@ function formatPreview(value: any) {
       </template>
       <ElTabs v-model="activeTab">
         <ElTabPane :label="t('rag.tool.basicInfo')" name="basic">
-          <ElForm :model="form" label-width="90px" class="mt-2">
+          <ElForm :model="form" label-width="160px" class="mt-2">
             <ElFormItem :label="t('rag.tool.name')">
               <ElInput v-model="form.name" :placeholder="t('rag.tool.namePlaceholder')" />
             </ElFormItem>
@@ -575,7 +615,7 @@ function formatPreview(value: any) {
           </ElForm>
         </ElTabPane>
         <ElTabPane :label="t('rag.tool.authConfig')" name="auth">
-          <ElForm :model="form" label-width="90px" class="mt-2">
+          <ElForm :model="form" label-width="160px" class="mt-2">
             <ElFormItem :label="t('rag.tool.authType')">
               <ElSelect v-model="form.authType" @change="handleAuthTypeChange">
                 <ElOption
@@ -641,7 +681,7 @@ function formatPreview(value: any) {
           </ElForm>
         </ElTabPane>
         <ElTabPane :label="t('rag.tool.paramSchema')" name="params">
-          <ElForm :model="form" label-width="90px" class="mt-2">
+          <ElForm :model="form" label-width="160px" class="mt-2">
             <ElFormItem :label="t('rag.tool.paramSchema')">
               <template #label>
                 <span>{{ t('rag.tool.paramSchema') }}</span>
@@ -660,12 +700,23 @@ function formatPreview(value: any) {
               />
             </ElFormItem>
             <ElFormItem :label="t('rag.tool.requestHeaders')">
-              <ConfigCodeEditor
-                v-model="form.requestHeaders"
-                :rows="5"
-                expected-root="object"
-                example='{"Accept":"application/json","X-Client-Version":"1.0"}'
-              />
+              <div class="w-full">
+                <ElSelect
+                  v-model="requestHeaderPreset"
+                  class="mb-2 w-full"
+                  clearable
+                  :placeholder="requestHeaderPresetPlaceholder"
+                  @change="applyRequestHeaderPreset"
+                >
+                  <ElOption
+                    v-for="preset in requestHeaderPresets"
+                    :key="preset.value"
+                    :label="preset.label"
+                    :value="preset.value"
+                  />
+                </ElSelect>
+                <ConfigCodeEditor v-model="form.requestHeaders" :rows="5" expected-root="object" />
+              </div>
             </ElFormItem>
             <ElFormItem :label="t('rag.tool.requestTemplate')">
               <template #label>
