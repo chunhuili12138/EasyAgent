@@ -1139,7 +1139,7 @@ function buildPublishWarnings() {
   if (steps.value.some(step => step.type === 'nl2sql' && !step.datasourceCode)) {
     warnings.push(t('rag.skill.nl2sqlDatasourceWarning'));
   }
-  if (steps.value.some(step => step.type === 'llm' && !step.dependsOn.length)) {
+  if (steps.value.some(step => step.type === 'llm' && !step.dependsOn.length && !step.outputSchema.trim())) {
     warnings.push(t('rag.skill.llmDependencyWarning'));
   }
   if (steps.value.some(step => step.type === 'foreach')) {
