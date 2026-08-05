@@ -1,141 +1,167 @@
 ## Overview
 
-A **Skill** is a reusable Agent capability: it combines knowledge retrieval, database queries, external APIs, built-in tools, LLM generation, data transformation or batch loops into a dependency-aware execution chain for chat and automation workflows.
+A **Skill** is a reusable, controlled Agent execution chain. It combines knowledge retrieval, read-only data queries, external APIs, built-in tools, LLM generation, deterministic transformation, and batch loops into a dependency-aware DAG for Chat or Automation Center.
 
-Skills support seven step types. Human approval is determined by the operation type of an API tool: an `action` tool enters HITL before execution; a normal Skill step is not a standalone approval step.
+A Skill has one of three intent types and may use seven step types. The intent type guides chat routing; the steps define what is actually executed. Keep them consistent.
 
-## Roles & Prerequisites
+## Roles and Prerequisites
 
-- **Roles**: Agent Admin (`rag:skill:list`).
-- **Prerequisites**: Prepare a datasource, Schema, API tool or other resource required by the selected step types.
+- **Role**: an Agent configurator with `rag:skill:list`.
+- **Prerequisites**: save and test the required data sources, Schemas, and API tools first. For knowledge Skills, ensure the relevant documents have been processed and indexed.
 
-## How to Access
+## Access
 
 Main menu: **Agent Management → Skill Management**.
 
-## Steps
+## Recommended Setup Flow
 
-### 1. Create a Skill
+1. Click **Create** and choose the template closest to the business goal.
+2. Enter a name, unique code, capability description, and intent type.
+3. Configure trigger words, positive examples, exclusion examples, and minimum confidence.
+4. Split the task by outputs and configure each step's ID, type, description, dependencies, and type-specific fields.
+5. Use **Trial Run Current Config** to inspect every step. YAML changes must be **Applied to Form** before they can be saved.
+6. Save and enable the Skill, then use **Match Test** for rule matching.
+7. Finally, use natural multi-turn business requests in Chat to validate routing, permissions, clarification, HITL, and result presentation.
 
-1. Click **Create**.
-2. Fill in the name, tenant-unique code, description, trigger keywords, minimum match score and status.
-3. Add steps and configure each step's ID, type, description and fields.
-4. Add dependencies for steps that must run in sequence; steps without dependencies may run in parallel.
-5. Click **Dry-run** to verify the chain, then click **Save**.
+## Basic Fields
 
-### 2. Configure Dependencies
+| Field | Required | Description |
+|---|---|---|
+| Name | Yes | Business-readable name shown to configurators and users |
+| Code | Yes | Stable tenant-unique code containing letters, digits, and underscores |
+| Description | No, strongly recommended | Scenario, required input, main output, and boundaries; an empty description makes Agent selection less reliable |
+| Intent type | Yes | `knowledge`, `action`, or `composite` |
+| Trigger words | No | Comma-separated intent phrases; at least one trigger must match before the chat semantic fallback can consider this Skill |
+| Positive examples | No | One expected request per line; a substring rule match raises the rule score to 1.0 |
+| Exclusion examples | No | One similar request that must not run the Skill per line; a substring match sets the rule score to 0 |
+| Minimum confidence | Yes | UI range 0.50–1.00 in 0.05 steps; default 0.65 |
+| Status | Yes | Only enabled Skills enter chat routing and the executable catalog |
 
-- Use `depends_on` to reference other step IDs; the step runs after all dependencies complete.
-- Dependencies cannot be duplicated, reference missing steps or form a cycle.
+### Choosing an Intent Type
 
-### 3. Configure Output Structure
+- **Knowledge Answer**: primarily answers from knowledge evidence and does not change external business state.
+- **Data Query or Tool Action**: performs NL2SQL, built-in, or API work and is treated as an operational capability by routing.
+- **Multi-step Composite Task**: combines several query, transform, call, and summary stages.
 
-- LLM, Transform and other structured steps may define an `output_schema` object.
-- Transform steps require input bindings and at least one operation; JSON structure and operation types are validated before saving.
+Intent type does not create or restrict steps. The backend infers it for legacy Skills without a value, but new Skills should set it explicitly.
 
-### 4. Use the Skill
+### Positive and Exclusion Examples
 
-- **Chat**: the system selects a Skill using its description, trigger keywords and minimum match score.
-- **Automation Center**: bind a saved Skill from a workflow's Skill node.
+Use complete phrases a real user would say, not broad words such as “query” or “process.” Positive examples describe requests that should run the Skill; exclusion examples separate similar requests that must not. Exclusions take precedence over triggers and positive examples.
 
 ## Step Types
 
 | Type | Purpose | Key configuration |
 |---|---|---|
-| `rag` | Retrieve from the current tenant knowledge index | `query` (may reference an upstream step) |
+| `rag` | Search the current tenant knowledge index | `query`; blank uses the current user request |
 | `nl2sql` | Generate and execute read-only SQL | `datasource_code`, `query_hint` |
 | `api` | Call a configured HTTP tool | `tool_code`, `params` or `arguments` |
-| `builtin` | Call a built-in tool | `tool_code`, `arguments` |
-| `llm` | Standalone LLM generation | `prompt_template`, `temperature` |
-| `transform` | Deterministic data transformation | `inputs`/`input`, `operations` |
-| `foreach` | Execute an API or built-in tool for each list item | `items`, `body`, `max_items` |
+| `builtin` | Date, calculation, conversion, or web search | `tool_code`, `arguments` |
+| `llm` | Generate content from the request and upstream results | `prompt_template`, `temperature` |
+| `transform` | Deterministic mapping, filtering, aggregation, and assembly | `inputs`/`input`, `operations` |
+| `foreach` | Run an API or built-in tool for each list item | `items`, `body`, `max_items` |
 
-> **Tip** RAG uses the current tenant index and runtime ACL. It does not require a separately created "knowledge base" resource in the Skill form.
+### Common Step Fields
 
-## Configuration Reference
+- `id`: starts with a letter, uses at most 64 letters, digits, or underscores, and is unique within the Skill.
+- `description`: states the step output and success criteria. NL2SQL uses it when `query_hint` is blank.
+- `depends_on`: upstream step IDs that must complete first. Dependencies must exist and cannot form a cycle; independent steps may run in parallel.
+- `output_schema`: optional JSON Schema for RAG, NL2SQL, API, built-in, or LLM. A mismatch stops downstream execution; an LLM with a Schema must return conforming JSON.
 
-### Skill Basics
+### RAG
 
-| Field | Required | Description |
-|---|---|---|
-| Name | Yes | Skill name shown to administrators and users |
-| Code | Yes | Stable, tenant-unique English code used by execution and audit records |
-| Description | Yes | Scenario, invocation conditions, result and limitations |
-| Trigger keywords | No | Helps chat match the Skill |
-| Minimum match score | Yes | The Skill is not selected below this score |
-| Status | Yes | Disabled Skills are excluded from later chat and execution |
+Leave `query` blank to use the current request, or provide fixed text or an upstream reference. Retrieval always uses the current tenant index and runtime user ACL. No separate knowledge-base resource is selected in the Skill form.
 
-### Common step fields
+### NL2SQL
 
-Each step should have a valid `id` (starts with a letter and is at most 64 characters), a `type`, and optional `description` and `depends_on`. IDs may contain letters, digits and underscores and must be unique within the Skill.
+Select an enabled data source. `query_hint` should state entities, filters, time range, metric definitions, and returned fields; the executor does not append the current user request automatically. Runtime still enforces the current user's Schema ACL, read-only SQL, row limit, and timeout.
 
-### Step-specific fields
+### API
 
-- **RAG**: use `query` for the retrieval question; it may reference an upstream result with `{{step_id}}`. Runtime ACL filters results.
-- **NL2SQL**: `datasource_code` is required; use `query_hint` to describe the query semantics, or put the description in the step `description`.
-- **API**: `tool_code` is required; use `params` or `arguments` to bind upstream values. HITL depends on the tool `operationType` (`query`/`action`).
-- **Builtin**: `tool_code` must be `current_datetime`, `date_calculate`, `calculator` or `unit_convert`; arguments go under `arguments`.
-- **LLM**: `prompt_template` is required and may reference upstream steps; `temperature` must be within the supported range.
-- **Transform**: define bindings in `inputs` (or `input`), provide no more than 20 `operations`, and optionally define `output_schema`.
-- **Foreach**: `items` must reference a list; `body` must be an `api` or `builtin` step with `body.config.tool_code`. Use `max_items`, `max_attempts` and `continue_on_error` to bound execution.
+Select an enabled tool available to the current user. Enter literals directly; upstream bindings must define `source`, restricted JSONPath, `one`/`many` cardinality, and empty, multiple, and overflow policies. Runtime does not guess same-name fields or silently select the first row.
 
-## Example
+In Chat, an `action` tool freezes the request and enters HITL. A standalone Skill trial run cannot complete chat approval. Automation Skill nodes currently reject Skills containing API calls; use an Automation API node and an explicit wait-event or approval callback when the workflow needs approval.
 
-The following uses the YAML fields accepted by the Skill page's expert mode. Replace resource codes and prompts with real values:
+### Built-in
+
+The normal form offers `current_datetime`, `date_calculate`, `calculator`, and `unit_convert`.
+
+Expert YAML also supports `web_search`. It requires Tavily backend configuration and accepts `query`, `topic`, `search_depth`, `max_results`, and `time_range`. It cannot run inside `foreach`; follow it with an LLM step to synthesize results while preserving source links.
+
+### LLM
+
+`prompt_template` is required, and every referenced upstream step must also be a dependency. Supported forms are:
+
+- `{{step_id}}` for the complete output;
+- `{{step_id.path}}` or `{{step_id.$.path}}` for an upstream field;
+- `{{#each step_id}}...{{this.field}}...{{@index}}...{{/each}}` for a read-only array loop; nested loops are not supported.
+
+The current user request is also appended to the LLM context. Use Transform, not the LLM, for field mapping, money calculations, filtering, and aggregation.
+
+### Transform
+
+Bind structured upstream data through `input` or `inputs`, then configure at most 20 operations: `select`, `filter`, `project`, `rename`, `distinct`, `sort`, `slice`, `limit`, `aggregate`, `object`, `merge`, `default`, and `cast`. `limit` is a bounded list-slice alias and accepts `limit` or `count`.
+
+Paths are limited to `$`, fields, numeric indexes, and array wildcards. Runtime limits are 200 items, 1 MB JSON, and 32 levels of nesting. Scripts, network access, and file access are not supported.
+
+### Foreach
+
+`items` references an upstream array, with optional `item_path`; `body` supports only `api` or ordinary `builtin`. The body may use `{{item}}`, `{{item.id}}`, and `{{index}}`. `max_items` cannot exceed 200, and `continue_on_error` controls whether execution continues after an item fails. Web search is not allowed in a loop.
+
+## What the Test Actions Actually Do
+
+### Match Test
+
+Match Test checks local rules for **saved, enabled** Skills only: exclusion examples, positive examples, trigger words, and minimum confidence. It does not test unsaved editor content or the LLM semantic fallback used by Chat. A no-match does not prove Chat will never select the Skill, and a match does not prove its execution chain succeeds.
+
+### Trial Run Current Config
+
+Trial Run can execute the unsaved definition currently in the editor:
+
+- with action checking disabled, `action` API steps return a dry-run skip and do not call the endpoint;
+- with action checking enabled, standalone execution has no chat session, so the HITL gate cancels the action and still does not call the endpoint;
+- query APIs, RAG, NL2SQL, built-ins, and LLM steps may still access real endpoints, databases, models, or indexes.
+
+To test a real action, save the Skill and complete HITL in Chat. A tool's own Real Request test bypasses chat HITL and must be used only with test or recoverable data.
+
+## YAML Example
 
 ```yaml
-description: Generate an answer using the current time
+description: Query after-sales records and produce a readable conclusion
+intent_type: composite
+positive_examples:
+  - Check whether this after-sales request follows policy
+negative_examples:
+  - Explain the policy only; do not query my records
 steps:
-  - id: current_time
-    type: builtin
+  - id: query_records
+    type: nl2sql
+    description: Query after-sales records visible to the current user
     config:
-      tool_code: current_datetime
-      arguments:
-        timezone: Asia/Shanghai
+      datasource_code: business_readonly
+      query_hint: Return the records relevant to the request with id, status, amount, and created_at
   - id: generate_answer
     type: llm
-    depends_on:
-      - current_time
+    depends_on: [query_records]
     config:
-      prompt_template: "Use {{current_time}} to answer the user clearly and accurately."
-      temperature: 0.3
+      prompt_template: |
+        Answer from the query result and identify missing fields instead of guessing.
+        {{#each query_records}}
+        - ID: {{this.id}}, status: {{this.status}}, amount: {{this.amount}}
+        {{/each}}
+      temperature: 0.2
 ```
 
-Minimal NL2SQL and API step example:
+## Saving, Disabling, and Automation References
 
-```yaml
-- id: query_records
-  type: nl2sql
-  config:
-    datasource_code: business_readonly
-    query_hint: Return completed records from the last 30 days with id and amount
-- id: call_record_api
-  type: api
-  depends_on: [query_records]
-  config:
-    tool_code: update_record
-    params:
-      recordId:
-        source: query_records
-        path: "$[0].id"
-        cardinality: one
-        on_empty: fail
-        on_multiple: fail
-```
+- Saving validates IDs, dependencies, type-specific fields, JSON/YAML, and execution limits. It does not prove business correctness.
+- Disabling or deleting removes a Skill from routing. Deletion is currently a soft disable and retains history.
+- Check workflow references manually before deletion. Deletion does not currently block on an Automation reference, so later workflow runs may fail.
+- Workflow publication freezes the Skill version and YAML. Automation Skill nodes are for Skills without API calls; use explicit API nodes for external calls.
 
-## FAQ
+## Security Boundaries
 
-**Why does saving fail with a step configuration error?**
-Check the step ID, type, dependencies and type-specific required fields. NL2SQL, API, Builtin, LLM, Foreach and Transform each have dedicated validation.
-
-**What is the difference between dry-run and real execution?**
-Dry-run verifies the chain quickly. Real execution also enforces tenant, ACL, quota and tool-operation checks and writes audit records.
-
-**Why are some steps skipped?**
-Dependencies, an upstream failure or the upstream failure policy may skip later steps; inspect the execution details.
-
-## Tips & Boundaries
-
-- API `action` tools enter HITL before execution; Skill configuration cannot bypass this gate.
-- External APIs are protected by the SSRF host allowlist. NL2SQL permits only read-only single statements and enforces Schema, row and timeout limits.
-- Before deleting a Skill, confirm that no automation workflow references it.
+- Data sources, Schemas, tools, and retrieval remain tenant- and execution-identity-scoped.
+- NL2SQL permits only controlled read-only single statements.
+- External APIs remain subject to authentication, parameter Schema, SSRF egress policy, timeouts, and audit.
+- A Skill cannot bypass chat HITL or disguise a side-effecting operation as a query.

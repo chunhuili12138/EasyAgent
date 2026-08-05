@@ -16,22 +16,27 @@ Main menu: **Agent Management → Datasource Management**.
 ### 1. Create a Datasource
 
 1. Click **Create**, fill in name, code, type, JDBC URL, username and password.
-2. Click **Test Connection** to verify, then save.
+2. Set max connections, query timeout and status, then click **Save**. A password is required when creating a datasource and is never displayed again after saving.
+3. Back in the datasource list, click **Test Connection** in that row. If it fails, edit the URL, account or network settings, save, and test again.
 
 > **Note** The code **cannot be changed** after saving; use a meaningful unique code (e.g. `sales_db`) referenced by Skills and logs.
+
+> **Database drivers** The UI and backend validate JDBC URL formats for MySQL, PostgreSQL, Oracle, and SQL Server, but the standard distribution bundles only the MySQL driver. Before using another database, the deployment owner must add its JDBC driver and verify connectivity, dialect handling, and row-limit syntax. A successful save alone does not prove the connection can run.
 
 ### 2. Configure Schema Permissions
 
 1. Click **Schema Permissions** on the row to open the schema list of this datasource.
 2. Click **Add Schema**, fill in domain code, domain name, view name and column metadata.
 3. Set the **visibility scope** (public / department / post / user) and select authorized objects.
-4. Click **Test Schema**: enter a business question; the system generates SQL and previews up to **20 rows**; save once the query behaves as expected.
+4. Save the Schema, then click **Test Schema** from its row. Enter a realistic business question. The system calls the LLM to generate SQL and executes a real read-only query using the current signed-in user's Schema permissions; the page previews up to **20 rows**.
+5. Review the generated SQL, row count and fields. Cover normal lookup, time range, enum filters and aggregation. Testing is rejected if the current account is outside the Schema's visibility scope.
 
 ### 3. Maintain
 
 - **Enable/Disable**: disabled datasources block NL2SQL/Skill steps using them;
 - **Edit**: leaving the password empty keeps it unchanged;
-- **Delete**: also deletes all its Schema configurations.
+- **Delete datasource**: deletion is blocked while an **enabled** Skill references it. After disabling or updating those Skills, deletion also removes all child Schema configurations;
+- **Delete Schema**: a Schema is deleted directly without a Skill dependency check. NL2SQL steps can then use only the remaining visible Schemas; if none remain, the query is blocked.
 
 ## Configuration Reference
 
@@ -41,7 +46,7 @@ Main menu: **Agent Management → Datasource Management**.
 |---|---|---|---|
 | Name | Yes | - | Display name |
 | Code | Yes | - | Unique per tenant; immutable after save |
-| Type | Yes | mysql | mysql / postgresql / oracle / sqlserver |
+| Type | Yes | mysql | mysql / postgresql / oracle / sqlserver; the standard distribution bundles only the MySQL driver |
 | JDBC URL | Yes | - | Host, port, database; charset/timezone parameters recommended |
 | Username/password | Yes | - | Read-only database account |
 | Max connections | No | 10 | 1–100; 5–10 recommended |
@@ -54,9 +59,9 @@ Main menu: **Agent Management → Datasource Management**.
 |---|---|---|
 | Domain code / name | Yes | Unique per datasource; business-readable name |
 | View name | Yes | Real read-only table or masked view |
-| Column metadata | Yes | JSON array of name/type/description; acts as a field whitelist, forbids SELECT * |
-| Examples | No | JSON array of `{"question","sql"}` for few-shot |
-| Allowed functions | No | Function whitelist (COUNT, SUM, AVG, ROUND, etc.); empty = no restriction |
+| Column metadata | Strongly recommended | JSON array whose items should contain name/type/description. A non-empty array enables the field whitelist and blocks SELECT *. An empty array does not restrict queryable columns and must not be used in production |
+| Examples | No | `fewShotExamples` JSON array whose items contain `question` and `sql`, used to teach business definitions and SQL patterns |
+| Allowed functions | No | `allowedFunctions` array. The UI provides common values and accepts custom ones. A non-empty list limits business functions while built-in safe date/null functions remain allowed; empty adds no function restriction |
 | Sensitive columns | No | Extra guard, e.g. `["customer_phone","id_card_number"]` |
 | Visibility | Yes | public / department / post / user (filtered by user organization at runtime) |
 | Authorized objects | Per scope | Multi-select departments/posts/users |
@@ -84,7 +89,9 @@ Main menu: **Agent Management → Datasource Management**.
 }
 ```
 
-> **Note** NL2SQL only allows read-only, single-statement queries constrained by schema scope, row limits and timeouts; all generated SQL is audited.
+> **Note** NL2SQL allows only read-only, single-statement queries and enforces Schema scope, a 1,000-row maximum, and timeout limits. Once a request enters the NL2SQL executor, successful, blocked, and failed attempts are audited, including unavailable datasources, no visible Schema, and SQL-generation failures. The Schema test page previews only the first 20 returned rows.
+
+> **Testing note** Test Schema is not a SQL-only preview. It executes a real SELECT against the target database and writes a SQL audit record. Use a read-only account and non-sensitive test questions.
 
 ## FAQ
 
@@ -92,13 +99,18 @@ Main menu: **Agent Management → Datasource Management**.
 Check the view name, the read-only account's query permission, and that column metadata matches the view fields.
 
 **Why does generated SQL include fields I didn't authorize?**
-Column metadata is the whitelist: only configured fields are exposed to the model. Keep sensitive fields out of the metadata.
+First verify that column metadata is not an empty array. Only non-empty metadata enables the column whitelist and blocks SELECT *. Also list absolutely forbidden columns under Sensitive Columns and, preferably, remove them from the database view.
 
 **Does disabling a datasource remove history?**
 No. It only blocks new queries; SQL logs and audits remain.
+
+**Why can I select PostgreSQL, Oracle, or SQL Server but not connect?**
+First confirm that the matching JDBC driver was added to the deployment. The type controls both URL validation and SQL dialect behavior, so changing only the type or URL is insufficient. After adding the driver, verify account permissions, row-limit syntax, and common functions for that database.
 
 ## Tips & Boundaries
 
 - Prefer **read-only/masked views** on the database side as a second line of defense.
 - Visibility filtering applies by user organization at runtime; no RLS predicates are needed in Schema.
-- Deleting a datasource is irreversible and removes Schema configurations; confirm no Skills reference it.
+- Schema tests run with the current signed-in user's ACL. Before testing a restricted scope, include that account in the authorized department, post or user list.
+- Datasource deletion is irreversible. Only references from **enabled Skills** block deletion. Disabling a Skill does not rewrite its definition, so bind it to a valid datasource before enabling it again.
+- Individual Schema deletion has no dependency guard or restore action. Record the configuration and assess impact before deleting it.

@@ -1,141 +1,172 @@
 ## 功能概述
 
-**Skill（技能）** 是 Agent 的可复用能力单元：把知识检索、数据库查询、外部 API、内置工具、大模型、数据转换或批量循环组织成有依赖关系的执行链，供智能会话和自动化工作流调用。
+**Skill（技能）** 是 Agent 可复用的受控执行链。它把知识检索、只读数据查询、外部 API、内置工具、LLM 生成、确定性数据转换和批量循环按依赖关系组成一个 DAG，供智能会话或自动化工作流调用。
 
-Skill 支持七类步骤。高风险 API 工具是否需要人工审批由工具的操作类型决定：`action` 类型在执行前进入 HITL，普通 Skill 步骤不是独立的审批步骤。
+Skill 支持三种意图类型和七类步骤。意图类型用于会话路由，步骤配置决定实际执行内容；两者应保持一致。
 
 ## 适用角色与前置条件
 
-- **适用角色**：Agent 管理员（`rag:skill:list` 权限）。
-- **前置条件**：按步骤类型准备数据源、Schema、API 工具或其他所需资源。
+- **适用角色**：具有 `rag:skill:list` 权限的 Agent 配置人员。
+- **前置条件**：先准备并测试 Skill 所需的数据源、Schema 和 API 工具；知识问答 Skill 还应确保相关文档已解析并完成索引。
 
 ## 进入路径
 
 主菜单：**Agent 管理 → Skill 管理**。
 
-## 操作步骤
+## 推荐配置顺序
 
-### 1. 新建 Skill
+1. 点击页面右上角 **新建**，选择最接近业务目标的模板。
+2. 填写名称、唯一编码和能力描述，再选择意图类型。
+3. 配置触发词、正向示例、排除示例和最低置信度。
+4. 按产物拆分步骤，配置每一步的 ID、类型、说明、依赖和专用字段。
+5. 点击 **试运行当前配置** 检查每一步输出。复杂配置可查看或编辑 YAML，但修改后必须先 **应用到表单**。
+6. 保存并启用 Skill，再使用列表中的 **命中测试** 检查规则匹配。
+7. 最后到智能会话中用自然、多轮的业务表达验证真实路由、权限、追问、HITL 和结果展示。
 
-1. 点击页面右上角 **新建** 按钮。
-2. 填写名称、租户内唯一编码、描述、触发关键词、命中最低分和启用状态。
-3. 在步骤编排区域添加步骤，填写步骤 ID、类型、描述和配置。
-4. 为需要顺序执行的步骤选择依赖关系；无依赖的步骤可以并行执行。
-5. 点击 **试运行** 验证执行链，确认无误后点击 **保存**。
-
-### 2. 配置步骤依赖
-
-- 每个步骤使用 `depends_on` 引用其他步骤 ID；被依赖步骤完成后才会执行。
-- 依赖关系不能重复、不能引用不存在的步骤，也不能形成循环。
-
-### 3. 配置输出结构
-
-- LLM、Transform 或其他需要结构化输出的步骤可配置 `output_schema` 对象。
-- Transform 必须配置输入绑定和至少一个转换操作；保存前会校验 JSON 结构和操作类型。
-
-### 4. 使用 Skill
-
-- **智能会话**：系统根据 Skill 的描述、触发关键词和最低命中分选择 Skill。
-- **自动化中心**：在工作流的 Skill 节点中绑定已保存的 Skill。
-
-## 步骤类型总览
-
-| 步骤类型 | 用途 | 关键配置 |
-|---|---|---|
-| `rag` | 在当前租户知识索引中检索 | `query`（可引用上游步骤） |
-| `nl2sql` | 生成并执行只读 SQL | `datasource_code`、`query_hint` |
-| `api` | 调用已配置的 HTTP 工具 | `tool_code`、`params` 或 `arguments` |
-| `builtin` | 调用内置工具 | `tool_code`、`arguments` |
-| `llm` | 独立大模型生成 | `prompt_template`、`temperature` |
-| `transform` | 确定性数据转换 | `inputs`/`input`、`operations` |
-| `foreach` | 对列表逐项执行 API 或内置工具 | `items`、`body`、`max_items` |
-
-> **提示** RAG 检索使用当前租户索引和运行时 ACL，不需要在 Skill 中填写一个可独立创建的“知识库”资源。
-
-## 配置项说明
-
-### Skill 基础信息
+## 基础字段说明
 
 | 配置项 | 必填 | 说明 |
 |---|---|---|
-| 名称 | 是 | 面向配置者和最终用户的 Skill 名称 |
-| 编码 | 是 | 租户内稳定且唯一的英文编码，供执行链和审计引用 |
-| 描述 | 是 | 说明适用场景、调用条件、返回内容和限制 |
-| 触发关键词 | 否 | 帮助会话命中 Skill |
-| 最低命中分 | 是 | 命中分低于此值时不会自动选择该 Skill |
-| 状态 | 是 | 停用后不进入后续会话和执行链 |
+| 名称 | 是 | 面向配置人员和最终用户的业务名称 |
+| 编码 | 是 | 租户内唯一且稳定的英文编码，只使用字母、数字和下划线 |
+| 描述 | 否，强烈建议 | 写清适用场景、所需输入、主要输出和能力边界；描述过空会降低 Agent 选择稳定性 |
+| 意图类型 | 是 | `knowledge` 知识问答、`action` 数据查询或工具操作、`composite` 多步骤组合任务 |
+| 触发词 | 否 | 逗号分隔的典型意图短语；至少命中一个触发词后才可能进入聊天语义兜底候选 |
+| 正向示例 | 否 | 每行一个应命中的完整表达；规则匹配时包含命中可将分数提升为 1.0 |
+| 排除示例 | 否 | 每行一个不应执行本 Skill 的相似表达；包含命中时规则分数直接为 0 |
+| 最低置信度 | 是 | 页面范围为 0.50～1.00，步长 0.05；默认 0.65 |
+| 状态 | 是 | 只有启用的 Skill 才会进入会话路由和可执行目录 |
+
+### 意图类型怎么选
+
+- **知识问答**：主要依据知识库内容生成回答，不改变外部业务状态。
+- **数据查询或工具操作**：包含 NL2SQL、内置工具或 API 等执行任务。会话路由会将其视为操作型能力。
+- **多步骤组合任务**：需要查询、转换、调用、汇总等多个阶段共同完成的任务。
+
+意图类型不会自动生成或限制步骤。旧 Skill 未设置时，后端会按步骤类型推断；新配置应明确选择，避免路由优先级与实际能力不一致。
+
+### 正向示例和排除示例
+
+示例应使用真实用户会说的完整句子，而不是只写“查询”“处理”等词。正向示例覆盖明确应触发的表达；排除示例用于区分相似但不该执行的请求。排除示例优先于触发词和正向示例。
+
+## 步骤类型与配置
+
+| 类型 | 用途 | 关键配置 |
+|---|---|---|
+| `rag` | 检索当前租户知识索引 | `query`，留空时使用当前用户问题 |
+| `nl2sql` | 生成并执行只读 SQL | `datasource_code`、`query_hint` |
+| `api` | 调用已配置的 HTTP 工具 | `tool_code`、`params` 或 `arguments` |
+| `builtin` | 日期、计算、换算或联网搜索 | `tool_code`、`arguments` |
+| `llm` | 根据当前问题及上游结果生成内容 | `prompt_template`、`temperature` |
+| `transform` | 确定性字段映射、过滤、聚合和组装 | `inputs`/`input`、`operations` |
+| `foreach` | 对列表逐项执行 API 或内置工具 | `items`、`body`、`max_items` |
 
 ### 通用步骤字段
 
-每个步骤都应有符合格式的 `id`（字母开头，最多 64 个字符）、`type`、可选 `description` 和 `depends_on`。步骤 ID 只能使用字母、数字和下划线，并且在同一 Skill 内不能重复。
+- `id`：字母开头，最多 64 个字符，只能包含字母、数字和下划线；同一 Skill 内唯一。
+- `description`：说明本步骤产物和成功标准。NL2SQL 未填写 `query_hint` 时会使用该说明。
+- `depends_on`：当前步骤必须等待的上游步骤 ID。依赖必须存在且不能形成循环；无依赖步骤可能并行执行。
+- `output_schema`：可为 RAG、NL2SQL、API、内置工具或 LLM 声明 JSON Schema。校验失败会终止下游；LLM 配置后必须返回符合 Schema 的 JSON。
 
-### 各步骤字段
+### RAG
 
-- **RAG**：用 `query` 指定检索问题，可使用 `{{step_id}}` 引用上游输出；检索结果受当前用户 ACL 过滤。
-- **NL2SQL**：`datasource_code` 必填；使用 `query_hint` 描述查询口径，也可以把说明写在步骤 `description` 中。
-- **API**：`tool_code` 必填；用 `params` 或 `arguments` 将上游结果绑定到工具参数。工具是否触发 HITL 由工具的 `operationType`（`query`/`action`）决定。
-- **Builtin**：`tool_code` 必须是 `current_datetime`、`date_calculate`、`calculator` 或 `unit_convert` 之一；参数放在 `arguments` 中。
-- **LLM**：`prompt_template` 必填，可引用上游步骤；`temperature` 必须在允许范围内。
-- **Transform**：`inputs`（或 `input`）定义绑定，`operations` 为不超过 20 个的转换操作，可选 `output_schema`。
-- **Foreach**：`items` 必须引用一个列表，`body` 只能是 `api` 或 `builtin` 步骤，并配置 `body.config.tool_code`；可用 `max_items`、`max_attempts` 和 `continue_on_error` 控制批量边界。
+`query` 可留空以使用当前用户问题，也可填写固定问题或引用依赖步骤。检索始终按当前租户、当前用户 ACL 和可用索引执行；Skill 表单内不需要选择单独的“知识库”资源。
 
-## 配置示例
+### NL2SQL
 
-下面示例使用 Skill 页面“专家模式”支持的 YAML 字段；应用前请将资源编码和问题改成实际值：
+必须选择已启用的数据源。`query_hint` 应明确查询对象、条件、时间范围、统计口径和返回字段；执行器不会自动把当前用户问题拼接到该字段。实际查询仍受当前用户可见 Schema、只读 SQL、行数和超时限制。
+
+### API
+
+必须选择已启用且当前用户有权使用的工具。固定值可直接填写；上游绑定必须明确 `source`、受限 JSONPath、`one`/`many` 基数和空值、多值、超量策略。系统不会猜测同名字段或自动取第一行。
+
+智能会话调用 `action` 工具时会冻结参数并进入 HITL。独立 Skill 试运行不能完成聊天审批；自动化工作流的 Skill 节点当前禁止包含 API 步骤，工作流内的外部调用应使用 API 节点，并按需要显式增加等待事件或审批回调。
+
+### Builtin
+
+普通表单可选择：
+
+- `current_datetime`：当前日期时间；
+- `date_calculate`：日期计算；
+- `calculator`：数学计算；
+- `unit_convert`：单位换算。
+
+专家 YAML 还支持 `web_search`，它依赖后端已配置 Tavily，参数包括 `query`、`topic`、`search_depth`、`max_results` 和 `time_range`。`web_search` 不能放在 `foreach` 中；建议在其后增加 LLM 步骤整理结果并保留来源链接。
+
+### LLM
+
+`prompt_template` 必填，引用的每个上游步骤都必须同时加入依赖。支持：
+
+- `{{step_id}}`：引用完整输出；
+- `{{step_id.path}}` 或 `{{step_id.$.path}}`：读取上游字段；
+- `{{#each step_id}}...{{this.field}}...{{@index}}...{{/each}}`：只读遍历数组；不支持嵌套循环。
+
+系统还会把当前用户问题追加到 LLM 上下文。字段映射、金额计算、过滤和聚合应交给 Transform，不应依赖 LLM 猜测。
+
+### Transform
+
+使用 `input` 或 `inputs` 显式绑定上游结构化数据，最多配置 20 个操作。支持 `select`、`filter`、`project`、`rename`、`distinct`、`sort`、`slice`、`limit`、`aggregate`、`object`、`merge`、`default` 和 `cast`。`limit` 是有界列表截取的别名，使用 `limit` 或 `count` 指定数量。
+
+路径只允许 `$`、点字段、数字下标和数组通配符。运行时限制为最多 200 项、1 MB JSON 和 32 层嵌套，不支持脚本、网络或文件访问。
+
+### Foreach
+
+`items` 引用上游数组，可选 `item_path`；`body` 只允许 `api` 或普通 `builtin`。循环体可使用 `{{item}}`、`{{item.id}}` 和 `{{index}}`。`max_items` 不得超过 200；`continue_on_error` 决定单项失败后是否继续。联网搜索不能放入循环。
+
+## 测试功能的真实含义
+
+### 命中测试
+
+命中测试只检查**已保存、已启用** Skill 的本地规则匹配：排除示例、正向示例、触发词和最低置信度。它不会测试编辑弹窗中的未保存内容，也不会调用智能会话中的 LLM 语义兜底。因此“未命中”不等于真实会话一定不会选择，“命中”也不等于完整执行链可成功。
+
+### 试运行当前配置
+
+试运行可执行弹窗内尚未保存的当前定义，用于检查依赖关系和每步输出：
+
+- 关闭操作检查时，`action` API 步骤以 dry-run 结果跳过，不会调用外部接口；
+- 开启操作检查时，由于独立试运行没有聊天会话，`action` 步骤应被 HITL 门槛取消，仍不会调用外部接口；
+- 查询型 API、RAG、NL2SQL、内置工具和 LLM 仍可能真实访问外部服务、数据库、模型或索引。
+
+需要验证操作工具真实执行时，应保存 Skill 后到智能会话中完成 HITL；工具自身的真实请求测试则会绕过聊天 HITL，必须只对测试环境或可回滚数据使用。
+
+## YAML 示例
 
 ```yaml
-description: 根据当前时间生成回答
+description: 查询售后记录并生成用户可读结论
+intent_type: composite
+positive_examples:
+  - 帮我核对这笔售后申请是否符合规则
+negative_examples:
+  - 只解释一下售后规则，不要查询我的记录
 steps:
-  - id: current_time
-    type: builtin
+  - id: query_records
+    type: nl2sql
+    description: 查询当前用户可见的售后记录
     config:
-      tool_code: current_datetime
-      arguments:
-        timezone: Asia/Shanghai
+      datasource_code: business_readonly
+      query_hint: 查询用户问题对应的售后记录，返回 id、status、amount 和 created_at
   - id: generate_answer
     type: llm
-    depends_on:
-      - current_time
+    depends_on: [query_records]
     config:
-      prompt_template: "使用 {{current_time}} 回答用户问题，内容清晰准确。"
-      temperature: 0.3
+      prompt_template: |
+        根据查询结果回答用户，字段缺失时明确说明，不要猜测。
+        {{#each query_records}}
+        - 编号：{{this.id}}，状态：{{this.status}}，金额：{{this.amount}}
+        {{/each}}
+      temperature: 0.2
 ```
 
-NL2SQL 和 API 步骤的最小配置示例：
+## 保存、停用与自动化引用
 
-```yaml
-- id: query_records
-  type: nl2sql
-  config:
-    datasource_code: business_readonly
-    query_hint: 查询最近 30 天已完成记录的 id 和 amount
-- id: call_record_api
-  type: api
-  depends_on: [query_records]
-  config:
-    tool_code: update_record
-    params:
-      recordId:
-        source: query_records
-        path: "$[0].id"
-        cardinality: one
-        on_empty: fail
-        on_multiple: fail
-```
+- 保存时会校验步骤 ID、依赖、专用必填字段、JSON/YAML 和执行边界，但保存成功不代表业务结果正确。
+- 停用或删除 Skill 都会使其退出路由；删除当前是软停用，不会清除历史记录。
+- 删除前需人工确认没有工作流引用。当前删除操作不会主动拦截已有自动化引用，引用失效后相关工作流运行会失败。
+- 工作流发布会冻结 Skill 的版本和 YAML；自动化 Skill 节点仅适合不含 API 调用的能力。外部调用请在线性工作流中使用 API 节点配置。
 
-## 常见问题
+## 安全边界
 
-**为什么 Skill 保存时报步骤配置错误？**
-请检查步骤 ID、类型、依赖关系和对应的必填字段；NL2SQL、API、Builtin、LLM、Foreach 和 Transform 都有专用校验。
-
-**试运行与真实调用有什么区别？**
-试运行用于快速验证执行链；真实调用还会执行租户、ACL、限额和工具操作类型校验，并写入审计记录。
-
-**为什么某些步骤没有被执行？**
-步骤存在依赖关系、前序步骤失败，或前序失败策略导致后续步骤跳过时，会出现这种情况；请查看执行详情。
-
-## 使用提示与边界
-
-- API 工具的 `action` 操作会在执行前进入 HITL，不能通过 Skill 配置绕过。
-- 外部 API 受 SSRF 主机白名单保护；NL2SQL 仅允许只读单条查询，并受 Schema、行数和超时限制。
-- 删除 Skill 前请确认没有被自动化工作流引用，否则相关运行会失败。
+- 数据源、Schema、工具和知识检索始终受租户与当前执行身份 ACL 约束。
+- NL2SQL 仅允许受控的只读单语句查询。
+- 外部 API 受认证、参数 Schema、SSRF 出站策略、超时和审计约束。
+- Skill 配置不能绕过聊天 HITL，也不能把高风险操作伪装为查询。
