@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
 import {
   type AutomationAttemptLog,
   type AutomationDeadLetter,
@@ -12,14 +11,16 @@ import {
   fetchDiscardAutomationDeadLetter,
   fetchRetryAutomationDeadLetter
 } from '@/service/api/automation';
-import AutomationConfigHelp from './automation-config-help.vue';
-import AutomationLoadError from './automation-load-error.vue';
+import { formatAutomationTime as formatTime } from '@/utils/automation-time';
+import { $t } from '@/locales';
 import {
   automationEventTypeLabel,
   automationFailureTypeLabel,
   automationSourceTypeLabel,
   automationStatusLabel
 } from '../automation-enum-label';
+import AutomationConfigHelp from './automation-config-help.vue';
+import AutomationLoadError from './automation-load-error.vue';
 
 type Mode = 'log' | 'failure' | 'event';
 
@@ -94,10 +95,6 @@ function reset() {
   query.status = '';
   query.eventType = '';
   search();
-}
-
-function formatTime(value?: string) {
-  return value ? new Date(value).toLocaleString() : '-';
 }
 
 function statusType(status: string) {

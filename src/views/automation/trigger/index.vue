@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
 import {
   type AutomationTrigger,
   type AutomationTriggerSecret,
@@ -14,6 +13,8 @@ import {
   fetchUpdateAutomationTrigger,
   fetchWorkflows
 } from '@/service/api/automation';
+import { formatAutomationTime as formatTime } from '@/utils/automation-time';
+import { $t } from '@/locales';
 import ConfigCodeEditor from '@/views/rag/shared/config-code-editor.vue';
 import AutomationConfigHelp from '../components/automation-config-help.vue';
 import AutomationLoadError from '../components/automation-load-error.vue';
@@ -253,10 +254,6 @@ async function copy(value?: string) {
   await navigator.clipboard.writeText(value);
   ElMessage.success(t('automation.common.copied'));
 }
-function formatTime(value?: string) {
-  return value ? new Date(value).toLocaleString() : '-';
-}
-
 watch(activeType, () => {
   query.page = 1;
   loadData();

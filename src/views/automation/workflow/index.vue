@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { $t } from '@/locales';
 import {
   type AutomationWorkflow,
   type WorkflowDefinition,
@@ -18,6 +17,8 @@ import {
   fetchWorkflowDetail,
   fetchWorkflows
 } from '@/service/api/automation';
+import { formatAutomationTime as formatTime } from '@/utils/automation-time';
+import { $t } from '@/locales';
 import ConfigCodeEditor from '@/views/rag/shared/config-code-editor.vue';
 import AutomationConfigHelp from '../components/automation-config-help.vue';
 import AutomationLoadError from '../components/automation-load-error.vue';
@@ -474,10 +475,6 @@ function statusType(status: string) {
   if (status === 'PUBLISHED') return 'success';
   if (status === 'ARCHIVED') return 'info';
   return 'warning';
-}
-
-function formatTime(value?: string) {
-  return value ? new Date(value).toLocaleString() : '-';
 }
 
 onMounted(loadList);

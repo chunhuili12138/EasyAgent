@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, shallowRef } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { type Edge, MarkerType, type Node, type VueFlowStore, VueFlow } from '@vue-flow/core';
+import { type Edge, MarkerType, type Node, VueFlow, type VueFlowStore } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
@@ -9,7 +9,6 @@ import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
 import '@vue-flow/controls/dist/style.css';
 import '@vue-flow/minimap/dist/style.css';
-import { $t } from '@/locales';
 import {
   type AutomationLoopBatch,
   type AutomationLoopItem,
@@ -24,6 +23,8 @@ import {
   fetchWorkflowRunDetail,
   fetchWorkflowRuns
 } from '@/service/api/automation';
+import { formatAutomationTime as formatTime, parseAutomationTime } from '@/utils/automation-time';
+import { $t } from '@/locales';
 import AutomationConfigHelp from '../components/automation-config-help.vue';
 import AutomationLoadError from '../components/automation-load-error.vue';
 import {
@@ -209,13 +210,10 @@ function statusType(status: string) {
   if (isActive(status)) return 'warning';
   return 'info';
 }
-function formatTime(value?: string) {
-  return value ? new Date(value).toLocaleString() : '-';
-}
 function duration(row: AutomationWorkflowRun) {
   if (!row.startedAt) return '-';
-  const end = row.completedAt ? new Date(row.completedAt).getTime() : Date.now();
-  const ms = Math.max(0, end - new Date(row.startedAt).getTime());
+  const end = row.completedAt ? parseAutomationTime(row.completedAt).getTime() : Date.now();
+  const ms = Math.max(0, end - parseAutomationTime(row.startedAt).getTime());
   return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`;
 }
 
