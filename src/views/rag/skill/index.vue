@@ -1281,7 +1281,7 @@ function goTo(path: string) {
             </ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn :label="$t('rag.common.action')" width="230" fixed="right" align="center">
+        <ElTableColumn :label="$t('rag.common.action')" width="360" fixed="right" align="center">
           <template #default="{ row }">
             <ElButton link type="primary" @click="openRunTest(row)">{{ t('rag.skill.runTest') }}</ElButton>
             <ElButton link @click="openMatchTest(row)">{{ t('rag.skill.matchTest') }}</ElButton>
