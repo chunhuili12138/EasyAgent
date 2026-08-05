@@ -8,12 +8,12 @@ import {
   fetchDatasources,
   fetchDeleteSkill,
   fetchParseSkillYaml,
+  fetchRunSkillTest,
   fetchSkillDetail,
   fetchSkills,
+  fetchTestSkillMatch,
   fetchTools,
   fetchUpdateSkill,
-  fetchRunSkillTest,
-  fetchTestSkillMatch,
   fetchValidateSkill
 } from '@/service/api/rag';
 import { $t } from '@/locales';
@@ -95,56 +95,229 @@ const runTargetSkill = ref<any>(null);
 const runExecuteActions = ref(false);
 const selectedTemplate = ref<SkillTemplateKey>('rag_answer');
 let stepUid = 0;
-const skillTemplates = computed(() => [
-  {
-    key: 'rag_answer',
-    name: t('rag.skill.templateRagName'),
-    description: t('rag.skill.templateRagDescription'),
-    keywords: t('rag.skill.templateRagKeywords'),
-    intentType: 'knowledge' as SkillIntentType
-  },
-  {
-    key: 'data_query',
-    name: t('rag.skill.templateDataName'),
-    description: t('rag.skill.templateDataDescription'),
-    keywords: t('rag.skill.templateDataKeywords'),
-    intentType: 'action' as SkillIntentType
-  },
-  {
-    key: 'api_action',
-    name: t('rag.skill.templateToolName'),
-    description: t('rag.skill.templateToolDescription'),
-    keywords: t('rag.skill.templateToolKeywords'),
-    intentType: 'action' as SkillIntentType
-  },
-  {
-    key: 'data_transform_action',
-    name: t('rag.skill.templateTransformName'),
-    description: t('rag.skill.templateTransformDescription'),
-    keywords: t('rag.skill.templateTransformKeywords'),
-    intentType: 'composite' as SkillIntentType
-  },
-  {
-    key: 'batch_action',
-    name: t('rag.skill.templateBatchName'),
-    description: t('rag.skill.templateBatchDescription'),
-    keywords: t('rag.skill.templateBatchKeywords'),
-    intentType: 'composite' as SkillIntentType
-  }
-] as const);
+const skillTemplates = computed(
+  () =>
+    [
+      {
+        key: 'rag_answer',
+        name: t('rag.skill.templateRagName'),
+        description: t('rag.skill.templateRagDescription'),
+        keywords: t('rag.skill.templateRagKeywords'),
+        intentType: 'knowledge' as SkillIntentType
+      },
+      {
+        key: 'data_query',
+        name: t('rag.skill.templateDataName'),
+        description: t('rag.skill.templateDataDescription'),
+        keywords: t('rag.skill.templateDataKeywords'),
+        intentType: 'action' as SkillIntentType
+      },
+      {
+        key: 'api_action',
+        name: t('rag.skill.templateToolName'),
+        description: t('rag.skill.templateToolDescription'),
+        keywords: t('rag.skill.templateToolKeywords'),
+        intentType: 'action' as SkillIntentType
+      },
+      {
+        key: 'data_transform_action',
+        name: t('rag.skill.templateTransformName'),
+        description: t('rag.skill.templateTransformDescription'),
+        keywords: t('rag.skill.templateTransformKeywords'),
+        intentType: 'composite' as SkillIntentType
+      },
+      {
+        key: 'batch_action',
+        name: t('rag.skill.templateBatchName'),
+        description: t('rag.skill.templateBatchDescription'),
+        keywords: t('rag.skill.templateBatchKeywords'),
+        intentType: 'composite' as SkillIntentType
+      }
+    ] as const
+);
 const skillHelpExamples = {
-  params: 'recordId <- query_record / $[0].id / one\nrecordIds <- query_records / $[*].id / many',
+  params: JSON.stringify(
+    {
+      orderNo: {
+        source: 'query_orders',
+        path: '$[0].orderNo',
+        cardinality: 'one',
+        on_empty: 'fail',
+        on_multiple: 'fail'
+      },
+      evidenceIds: {
+        source: 'query_orders',
+        path: '$[*].evidenceId',
+        cardinality: 'many',
+        on_empty: 'default',
+        default: [],
+        max_items: 20,
+        overflow: 'truncate'
+      },
+      channel: 'agent_chat'
+    },
+    null,
+    2
+  ),
   prompt: '根据规则 {{policy}} 和记录 {{query_record}} 输出结论、依据与待确认事项。',
-  foreach:
-    '{"items":"{{query_records}}","max_items":100,"max_attempts":1,"continue_on_error":true,"body":{"type":"api","config":{"tool_code":"configured_action","params":{"recordId":"{{item.id}}"}}}}',
-  transform:
-    '{"inputs":{"records":{"source":"query_records","path":"$","cardinality":"many"}},"operations":[{"op":"select","path":"$.records"},{"op":"project","fields":{"id":"$.id","amount":"$.amount"}}],"output_schema":{"type":"array","items":{"type":"object","required":["id"]}}}'
+  foreach: JSON.stringify(
+    {
+      items: '{{query_orders}}',
+      item_path: 'records',
+      max_items: 50,
+      max_attempts: 1,
+      continue_on_error: true,
+      body: {
+        type: 'api',
+        config: {
+          tool_code: 'create_follow_up_task',
+          params: {
+            orderNo: '{{item.orderNo}}',
+            reason: '{{item.reason}}',
+            sequence: '{{index}}'
+          }
+        }
+      }
+    },
+    null,
+    2
+  ),
+  transform: JSON.stringify(
+    {
+      inputs: {
+        orders: {
+          source: 'query_orders',
+          path: '$',
+          cardinality: 'many',
+          on_empty: 'fail',
+          max_items: 200,
+          overflow: 'fail'
+        }
+      },
+      operations: [
+        { op: 'select', path: '$.orders' },
+        { op: 'filter', path: '$.status', operator: 'equals', value: 'paid' },
+        { op: 'project', fields: { orderNo: '$.orderNo', refundAmount: '$.paidAmount', reason: '客户申请退款' } },
+        { op: 'slice', offset: 0, limit: 20 }
+      ],
+      output_schema: {
+        type: 'array',
+        maxItems: 20,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['orderNo', 'refundAmount', 'reason'],
+          properties: {
+            orderNo: { type: 'string' },
+            refundAmount: { type: 'number', minimum: 0.01 },
+            reason: { type: 'string', minLength: 2, maxLength: 200 }
+          }
+        }
+      }
+    },
+    null,
+    2
+  )
 };
 const outputSchemaExample = JSON.stringify(
-  { type: 'object', required: ['answer'], properties: { answer: { type: 'string' } } },
+  {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    title: 'RefundDecision',
+    type: 'object',
+    additionalProperties: false,
+    required: ['orderNo', 'refundReason', 'refundAmount', 'priority'],
+    properties: {
+      orderNo: {
+        type: 'string',
+        description: '业务订单号',
+        pattern: '^SO[0-9]{12}$'
+      },
+      refundReason: {
+        type: 'string',
+        description: '面向审批人员的退款原因',
+        minLength: 5,
+        maxLength: 200
+      },
+      refundAmount: {
+        type: 'number',
+        description: '退款金额，单位元',
+        minimum: 0.01,
+        maximum: 50000,
+        multipleOf: 0.01
+      },
+      priority: {
+        type: 'string',
+        description: '处理优先级',
+        enum: ['normal', 'urgent']
+      },
+      evidence: {
+        type: 'array',
+        description: '最多五条证据编号',
+        items: { type: 'string' },
+        maxItems: 5
+      },
+      requestedAt: {
+        type: 'string',
+        description: '申请时间，ISO 8601 格式',
+        format: 'date-time'
+      }
+    }
+  },
   null,
   2
 );
+const outputSchemaParameters = computed(() => [
+  { name: '$schema', description: $t('rag.skill.help.outputSchemaFields.schema'), example: 'http://json-schema.org/draft-07/schema#' },
+  { name: 'title / description', description: $t('rag.skill.help.outputSchemaFields.metadata'), example: 'RefundDecision' },
+  { name: 'type', description: $t('rag.skill.help.outputSchemaFields.type'), example: 'object', required: true },
+  { name: 'properties', description: $t('rag.skill.help.outputSchemaFields.properties'), example: '{"orderNo":{"type":"string"}}' },
+  { name: 'required', description: $t('rag.skill.help.outputSchemaFields.required'), example: '["orderNo","refundAmount"]' },
+  { name: 'additionalProperties', description: $t('rag.skill.help.outputSchemaFields.additionalProperties'), example: 'false' },
+  { name: 'enum / const', description: $t('rag.skill.help.outputSchemaFields.enumConst'), example: '["normal","urgent"]' },
+  { name: 'format / pattern', description: $t('rag.skill.help.outputSchemaFields.formatPattern'), example: 'date-time / ^SO[0-9]{12}$' },
+  { name: 'minLength / maxLength', description: $t('rag.skill.help.outputSchemaFields.stringRange'), example: '5 / 200' },
+  { name: 'minimum / maximum / multipleOf', description: $t('rag.skill.help.outputSchemaFields.numberRange'), example: '0.01 / 50000 / 0.01' },
+  { name: 'items / minItems / maxItems / uniqueItems', description: $t('rag.skill.help.outputSchemaFields.arrayRules'), example: '{"type":"string"} / 1 / 5 / true' }
+]);
+const outputSchemaRules = computed(() => [
+  $t('rag.skill.help.outputSchemaRules.primaryData'),
+  $t('rag.skill.help.outputSchemaRules.requiredProperties'),
+  $t('rag.skill.help.outputSchemaRules.defaultValue'),
+  $t('rag.skill.help.outputSchemaRules.stableNames'),
+  $t('rag.skill.help.outputSchemaRules.validJson')
+]);
+const apiBindingParameters = computed(() => [
+  { name: $t('rag.skill.paramName'), description: $t('rag.skill.help.bindingFields.paramName'), example: 'orderNo', required: true },
+  { name: $t('rag.skill.paramLiteral'), description: $t('rag.skill.help.bindingFields.literal'), example: 'agent_chat' },
+  { name: 'source', description: $t('rag.skill.help.bindingFields.source'), example: 'query_orders', required: true },
+  { name: 'path', description: $t('rag.skill.help.bindingFields.path'), example: '$[0].orderNo' },
+  { name: 'cardinality', description: $t('rag.skill.help.bindingFields.cardinality'), example: 'one | many' },
+  { name: 'on_empty', description: $t('rag.skill.help.bindingFields.onEmpty'), example: 'fail | skip | default' },
+  { name: 'default', description: $t('rag.skill.help.bindingFields.defaultValue'), example: '[]' },
+  { name: 'on_multiple', description: $t('rag.skill.help.bindingFields.onMultiple'), example: 'fail | first' },
+  { name: 'max_items', description: $t('rag.skill.help.bindingFields.maxItems'), example: '20' },
+  { name: 'overflow', description: $t('rag.skill.help.bindingFields.overflow'), example: 'fail | truncate' }
+]);
+const foreachParameters = computed(() => [
+  { name: 'items', description: $t('rag.skill.help.foreachFields.items'), example: '{{query_orders}}', required: true },
+  { name: 'item_path', description: $t('rag.skill.help.foreachFields.itemPath'), example: 'records' },
+  { name: 'max_items', description: $t('rag.skill.help.foreachFields.maxItems'), example: '50' },
+  { name: 'max_attempts', description: $t('rag.skill.help.foreachFields.maxAttempts'), example: '1' },
+  { name: 'continue_on_error', description: $t('rag.skill.help.foreachFields.continueOnError'), example: 'true' },
+  { name: 'body.type', description: $t('rag.skill.help.foreachFields.bodyType'), example: 'api | builtin', required: true },
+  { name: 'body.config.tool_code', description: $t('rag.skill.help.foreachFields.toolCode'), example: 'create_follow_up_task', required: true },
+  { name: 'body.config.params / arguments', description: $t('rag.skill.help.foreachFields.bodyParams'), example: '{{item.orderNo}} / {{index}}' },
+  { name: 'output_schema', description: $t('rag.skill.help.foreachFields.outputSchema'), example: '{"type":"object"}' }
+]);
+const transformParameters = computed(() => [
+  { name: 'inputs / input', description: $t('rag.skill.help.transformFields.inputs'), example: 'orders -> query_orders / $ / many', required: true },
+  { name: 'source / path', description: $t('rag.skill.help.transformFields.sourcePath'), example: 'query_orders / $[*]' },
+  { name: 'cardinality / failure policies', description: $t('rag.skill.help.transformFields.bindingPolicies'), example: 'many / fail / 200 / fail' },
+  { name: 'operations', description: $t('rag.skill.help.transformFields.operations'), example: '[{"op":"select","path":"$.orders"}]', required: true },
+  { name: 'op', description: $t('rag.skill.help.transformFields.op'), example: 'filter | project | aggregate' },
+  { name: 'path / fields / value', description: $t('rag.skill.help.transformFields.operationFields'), example: '$.status / {"orderNo":"$.orderNo"} / paid' },
+  { name: 'output_schema', description: $t('rag.skill.help.transformFields.outputSchema'), example: '{"type":"array","items":{"type":"object"}}' }
+]);
 const transformOperationOptions = [
   { value: 'select', label: 'rag.skill.transformOperations.select' },
   { value: 'filter', label: 'rag.skill.transformOperations.filter' },
@@ -153,6 +326,7 @@ const transformOperationOptions = [
   { value: 'distinct', label: 'rag.skill.transformOperations.distinct' },
   { value: 'sort', label: 'rag.skill.transformOperations.sort' },
   { value: 'slice', label: 'rag.skill.transformOperations.slice' },
+  { value: 'limit', label: 'rag.skill.transformOperations.limit' },
   { value: 'aggregate', label: 'rag.skill.transformOperations.aggregate' },
   { value: 'object', label: 'rag.skill.transformOperations.object' },
   { value: 'merge', label: 'rag.skill.transformOperations.merge' },
@@ -179,9 +353,11 @@ const skillYamlExample = [
 
 const skillStepExamples = {
   rag: 'id: retrieve_policy\ntype: rag\nconfig: {}',
-  nl2sql: 'id: query_records\ntype: nl2sql\nconfig:\n  datasource_code: business_readonly\n  query_hint: Return completed records from the last 30 days with id and amount',
+  nl2sql:
+    'id: query_records\ntype: nl2sql\nconfig:\n  datasource_code: business_readonly\n  query_hint: Return completed records from the last 30 days with id and amount',
   api: 'id: call_record_api\ntype: api\ndepends_on: [query_record]\nconfig:\n  tool_code: update_record\n  params:\n    recordId:\n      source: query_record\n      path: "$[0].id"\n      cardinality: one\n      on_empty: fail\n      on_multiple: fail',
-  builtin: 'id: calculate_total\ntype: builtin\nconfig:\n  tool_code: calculator\n  arguments:\n    expression: "(125.5 + 86.3) * 0.9"',
+  builtin:
+    'id: calculate_total\ntype: builtin\nconfig:\n  tool_code: calculator\n  arguments:\n    expression: "(125.5 + 86.3) * 0.9"',
   llm: 'id: generate_answer\ntype: llm\ndepends_on: [retrieve_policy, query_records]\nconfig:\n  prompt_template: "Use {{retrieve_policy}} and {{query_records}} to produce a conclusion with evidence."\n  temperature: 0.3',
   transform: skillHelpExamples.transform,
   foreach: skillHelpExamples.foreach
@@ -289,13 +465,28 @@ const skillParameters = computed(() => [
   {
     name: $t('rag.tool.description'),
     description: $t('rag.skill.help.fields.description'),
-    example: $t('rag.skill.help.descriptionExample'),
+    example: $t('rag.skill.help.descriptionExample')
+  },
+  {
+    name: $t('rag.skill.intentType'),
+    description: $t('rag.skill.help.fields.intentType'),
+    example: 'composite',
     required: true
   },
   {
     name: $t('rag.skill.triggerKeywords'),
     description: $t('rag.skill.help.fields.triggerKeywords'),
     example: $t('rag.skill.help.triggerExample')
+  },
+  {
+    name: $t('rag.skill.positiveExamples'),
+    description: $t('rag.skill.help.fields.positiveExamples'),
+    example: $t('rag.skill.help.fieldExamples.positiveExamples')
+  },
+  {
+    name: $t('rag.skill.negativeExamples'),
+    description: $t('rag.skill.help.fields.negativeExamples'),
+    example: $t('rag.skill.help.fieldExamples.negativeExamples')
   },
   {
     name: $t('rag.skill.minScore'),
@@ -519,9 +710,12 @@ async function applySkillTemplate(templateKey: SkillTemplateKey, confirmReplace 
   form.value.intentType = template.intentType;
   steps.value = [];
   if (templateKey === 'rag_answer') {
-    steps.value.push(templateStep('retrieve_knowledge', 'rag', {
-      description: t('rag.skill.templateContent.retrieveKnowledge'), ragQuery: ''
-    }));
+    steps.value.push(
+      templateStep('retrieve_knowledge', 'rag', {
+        description: t('rag.skill.templateContent.retrieveKnowledge'),
+        ragQuery: ''
+      })
+    );
     steps.value.push(
       templateStep('generate_answer', 'llm', {
         description: t('rag.skill.templateContent.generateAnswer'),
@@ -574,22 +768,30 @@ async function applySkillTemplate(templateKey: SkillTemplateKey, confirmReplace 
       templateStep('build_request', 'transform', {
         description: t('rag.skill.templateContent.buildRequest'),
         dependsOn: ['query_records'],
-        rawConfig: JSON.stringify({
-          inputs: {
-            records: {
-              source: 'query_records', path: '$', cardinality: 'many',
-              on_empty: 'fail', max_items: 200, overflow: 'fail'
+        rawConfig: JSON.stringify(
+          {
+            inputs: {
+              records: {
+                source: 'query_records',
+                path: '$',
+                cardinality: 'many',
+                on_empty: 'fail',
+                max_items: 200,
+                overflow: 'fail'
+              }
+            },
+            operations: [
+              { op: 'select', path: '$.records' },
+              { op: 'project', fields: { recordId: '$.id', amount: '$.amount' } }
+            ],
+            output_schema: {
+              type: 'array',
+              items: { type: 'object', required: ['recordId'] }
             }
           },
-          operations: [
-            { op: 'select', path: '$.records' },
-            { op: 'project', fields: { recordId: '$.id', amount: '$.amount' } }
-          ],
-          output_schema: {
-            type: 'array',
-            items: { type: 'object', required: ['recordId'] }
-          }
-        }, null, 2)
+          null,
+          2
+        )
       })
     );
     steps.value.push(
@@ -620,10 +822,9 @@ async function applySkillTemplate(templateKey: SkillTemplateKey, confirmReplace 
       templateStep('process_items', 'foreach', {
         description: t('rag.skill.templateContent.processItems'),
         dependsOn: ['query_items'],
-        rawConfig:
-          '{"items":"{{query_items}}","max_items":50,"max_attempts":1,"continue_on_error":true,"body":{"type":"api","config":{"tool_code":"' +
-          (tools.value[0]?.code || 'configured_action') +
-          '","params":{"recordId":"{{item.id}}","_display":{"recordId":"{{item.name}}"}}}}}'
+        rawConfig: `{"items":"{{query_items}}","max_items":50,"max_attempts":1,"continue_on_error":true,"body":{"type":"api","config":{"tool_code":"${
+          tools.value[0]?.code || 'configured_action'
+        }","params":{"recordId":"{{item.id}}","_display":{"recordId":"{{item.name}}"}}}}}`
       })
     );
     steps.value.push(
@@ -705,7 +906,8 @@ async function openEdit(row: any) {
 
 function definitionFromDetail(detail: any) {
   if (Array.isArray(detail.definition?.steps)) return detail.definition;
-  if (!detail.yamlContent) return { description: '', intentType: 'knowledge', positiveExamples: [], negativeExamples: [], steps: [] };
+  if (!detail.yamlContent)
+    return { description: '', intentType: 'knowledge', positiveExamples: [], negativeExamples: [], steps: [] };
   try {
     const parsed = parse(detail.yamlContent);
     return {
@@ -726,7 +928,10 @@ function examplesToText(value: unknown) {
 
 function textToExamples(value: unknown) {
   if (typeof value !== 'string') return [];
-  return value.split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+  return value
+    .split(/\r?\n/)
+    .map(item => item.trim())
+    .filter(Boolean);
 }
 
 function nextStepUid() {
@@ -793,7 +998,13 @@ function rowsFromObject(value: any): ParamRow[] {
     const binding = item && typeof item === 'object' && !Array.isArray(item) && 'source' in item ? (item as any) : null;
     return {
       key,
-      value: binding ? (binding.default === undefined ? '' : JSON.stringify(binding.default)) : typeof item === 'string' ? item : JSON.stringify(item),
+      value: binding
+        ? binding.default === undefined
+          ? ''
+          : JSON.stringify(binding.default)
+        : typeof item === 'string'
+          ? item
+          : JSON.stringify(item),
       mode: binding ? 'binding' : 'literal',
       source: binding?.source || '',
       path: binding?.path || '$',
@@ -808,22 +1019,24 @@ function rowsFromObject(value: any): ParamRow[] {
 
 function rowsToObject(rows: ParamRow[]) {
   return Object.fromEntries(
-    rows.filter(row => row.key.trim()).map(row => {
-      if (row.mode !== 'binding') return [row.key.trim(), parseValue(row.value)];
-      const binding: Record<string, any> = {
-        source: row.source,
-        path: row.path || '$',
-        cardinality: row.cardinality,
-        on_empty: row.onEmpty
-      };
-      if (row.cardinality === 'one') binding.on_multiple = row.onMultiple;
-      if (row.cardinality === 'many') {
-        binding.max_items = row.maxItems;
-        binding.overflow = row.overflow;
-      }
-      if (row.onEmpty === 'default') binding.default = parseValue(row.value);
-      return [row.key.trim(), binding];
-    })
+    rows
+      .filter(row => row.key.trim())
+      .map(row => {
+        if (row.mode !== 'binding') return [row.key.trim(), parseValue(row.value)];
+        const binding: Record<string, any> = {
+          source: row.source,
+          path: row.path || '$',
+          cardinality: row.cardinality,
+          on_empty: row.onEmpty
+        };
+        if (row.cardinality === 'one') binding.on_multiple = row.onMultiple;
+        if (row.cardinality === 'many') {
+          binding.max_items = row.maxItems;
+          binding.overflow = row.overflow;
+        }
+        if (row.onEmpty === 'default') binding.default = parseValue(row.value);
+        return [row.key.trim(), binding];
+      })
   );
 }
 
@@ -966,15 +1179,31 @@ function insertRowVariable(row: ParamRow, dependencyId: string) {
 
 function addRow(rows: ParamRow[]) {
   rows.push({
-    key: '', value: '', mode: 'literal', source: '', path: '$', cardinality: 'one',
-    onEmpty: 'fail', onMultiple: 'fail', maxItems: 200, overflow: 'fail'
+    key: '',
+    value: '',
+    mode: 'literal',
+    source: '',
+    path: '$',
+    cardinality: 'one',
+    onEmpty: 'fail',
+    onMultiple: 'fail',
+    maxItems: 200,
+    overflow: 'fail'
   });
 }
 
 function createBindingRow(key: string, source: string, path = '$'): ParamRow {
   return {
-    key, value: '', mode: 'binding', source, path, cardinality: 'one',
-    onEmpty: 'fail', onMultiple: 'fail', maxItems: 200, overflow: 'fail'
+    key,
+    value: '',
+    mode: 'binding',
+    source,
+    path,
+    cardinality: 'one',
+    onEmpty: 'fail',
+    onMultiple: 'fail',
+    maxItems: 200,
+    overflow: 'fail'
   };
 }
 
@@ -1056,8 +1285,9 @@ function stepValidation(step: SkillStepForm, ids: string[]): string | null {
   if (step.type !== 'foreach' && step.type !== 'transform') return null;
   try {
     const config = JSON.parse(step.rawConfig || '{}');
-    if (step.type === 'transform' && (!config.inputs && !config.input)) return $t('rag.skill.transformInputRequired');
-    if (step.type === 'transform' && !Array.isArray(config.operations)) return $t('rag.skill.transformOperationsRequired');
+    if (step.type === 'transform' && !config.inputs && !config.input) return $t('rag.skill.transformInputRequired');
+    if (step.type === 'transform' && !Array.isArray(config.operations))
+      return $t('rag.skill.transformOperationsRequired');
     return null;
   } catch {
     return $t(step.type === 'transform' ? 'rag.skill.transformJsonInvalid' : 'rag.skill.foreachJsonInvalid');
@@ -1267,7 +1497,7 @@ function goTo(path: string) {
         <ElButton @click="openMatchTest()">{{ t('rag.skill.matchTest') }}</ElButton>
         <ElButton @click="goTo('/rag/bad-case')">{{ t('rag.skill.viewBadCase') }}</ElButton>
       </div>
-      <ElTable v-loading="loading" :data="list" stripe border class="w-full">
+      <ElTable v-loading="loading" :data="list" stripe border class="w-full" :empty-text="t('rag.skill.emptyHint')">
         <ElTableColumn prop="name" :label="$t('rag.skill.name')" min-width="160" show-overflow-tooltip />
         <ElTableColumn prop="code" :label="$t('rag.skill.code')" min-width="140" show-overflow-tooltip />
         <ElTableColumn :label="$t('rag.skill.triggerKeywords')" min-width="180" show-overflow-tooltip>
@@ -1348,7 +1578,7 @@ function goTo(path: string) {
         <ElTabPane :label="$t('rag.skill.basicInfo')" name="basic">
           <ElForm :model="form" label-width="120px" class="mx-auto mt-3 max-w-760px">
             <ElFormItem :label="t('rag.skill.configTemplate')">
-              <div class="flex w-full flex-wrap items-center gap-2">
+              <div class="w-full flex flex-wrap items-center gap-2">
                 <ElSelect v-model="selectedTemplate" class="w-52">
                   <ElOption
                     v-for="template in skillTemplates"
@@ -1407,6 +1637,16 @@ function goTo(path: string) {
               <div class="mt-1 text-xs text-gray-500">{{ $t('rag.skill.intentTypeHint') }}</div>
             </ElFormItem>
             <ElFormItem :label="$t('rag.skill.positiveExamples')">
+              <template #label>
+                <span>{{ $t('rag.skill.positiveExamples') }}</span>
+                <ConfigHelp
+                  field
+                  :title="$t('rag.skill.help.positiveExamplesTitle')"
+                  :description="$t('rag.skill.help.fields.positiveExamples')"
+                  :examples="[$t('rag.skill.help.fieldExamples.positiveExamplesMultiline')]"
+                  :rules="[$t('rag.skill.help.exampleRules.onePerLine'), $t('rag.skill.help.exampleRules.realUtterance')]"
+                />
+              </template>
               <ElInput
                 v-model="form.positiveExamples"
                 type="textarea"
@@ -1415,6 +1655,16 @@ function goTo(path: string) {
               />
             </ElFormItem>
             <ElFormItem :label="$t('rag.skill.negativeExamples')">
+              <template #label>
+                <span>{{ $t('rag.skill.negativeExamples') }}</span>
+                <ConfigHelp
+                  field
+                  :title="$t('rag.skill.help.negativeExamplesTitle')"
+                  :description="$t('rag.skill.help.fields.negativeExamples')"
+                  :examples="[$t('rag.skill.help.fieldExamples.negativeExamplesMultiline')]"
+                  :rules="[$t('rag.skill.help.exampleRules.onePerLine'), $t('rag.skill.help.exampleRules.negativePriority')]"
+                />
+              </template>
               <ElInput
                 v-model="form.negativeExamples"
                 type="textarea"
@@ -1532,6 +1782,16 @@ function goTo(path: string) {
               </ElFormItem>
             </div>
             <ElFormItem v-if="step.type === 'rag'" :label="$t('rag.skill.ragQuery')">
+              <template #label>
+                <span>{{ $t('rag.skill.ragQuery') }}</span>
+                <ConfigHelp
+                  field
+                  :title="$t('rag.skill.help.ragQueryTitle')"
+                  :description="$t('rag.skill.help.fields.ragQuery')"
+                  :examples="[$t('rag.skill.help.fieldExamples.ragQuery')]"
+                  :rules="[$t('rag.skill.help.ragQueryRule1'), $t('rag.skill.help.ragQueryRule2')]"
+                />
+              </template>
               <ElInput
                 v-model="step.ragQuery"
                 type="textarea"
@@ -1556,6 +1816,16 @@ function goTo(path: string) {
                 </ElSelect>
               </ElFormItem>
               <ElFormItem :label="$t('rag.skill.queryHint')">
+                <template #label>
+                  <span>{{ $t('rag.skill.queryHint') }}</span>
+                  <ConfigHelp
+                    field
+                    :title="$t('rag.skill.help.queryHintTitle')"
+                    :description="$t('rag.skill.help.fields.queryHint')"
+                    :examples="[$t('rag.skill.help.fieldExamples.queryHint')]"
+                    :rules="[$t('rag.skill.help.queryHintRule1'), $t('rag.skill.help.queryHintRule2')]"
+                  />
+                </template>
                 <ElInput
                   v-model="step.queryHint"
                   type="textarea"
@@ -1587,7 +1857,14 @@ function goTo(path: string) {
                     field
                     :title="$t('rag.skill.help.paramsTitle')"
                     :description="$t('rag.skill.help.paramsDescription')"
+                    :parameters="apiBindingParameters"
                     :examples="[skillHelpExamples.params]"
+                    :rules="[
+                      $t('rag.skill.help.bindingRules.dependency'),
+                      $t('rag.skill.help.bindingRules.safePath'),
+                      $t('rag.skill.help.bindingRules.toolSchema'),
+                      $t('rag.skill.help.bindingRules.transport')
+                    ]"
                   />
                 </template>
                 <div class="w-full space-y-2">
@@ -1598,7 +1875,13 @@ function goTo(path: string) {
                         <ElRadioButton value="literal">{{ $t('rag.skill.paramLiteral') }}</ElRadioButton>
                         <ElRadioButton value="binding">{{ $t('rag.skill.paramBinding') }}</ElRadioButton>
                       </ElRadioGroup>
-                      <ElButton text circle type="danger" :title="$t('common.delete')" @click="step.params.splice(rowIndex, 1)">
+                      <ElButton
+                        text
+                        circle
+                        type="danger"
+                        :title="$t('common.delete')"
+                        @click="step.params.splice(rowIndex, 1)"
+                      >
                         <SvgIcon icon="mdi:close" />
                       </ElButton>
                     </div>
@@ -1650,6 +1933,16 @@ function goTo(path: string) {
                 </ElSelect>
               </ElFormItem>
               <ElFormItem :label="$t('rag.skill.arguments')">
+                <template #label>
+                  <span>{{ $t('rag.skill.arguments') }}</span>
+                  <ConfigHelp
+                    field
+                    :title="$t('rag.skill.help.argumentsTitle')"
+                    :description="$t('rag.skill.help.fields.arguments')"
+                    :examples="[$t('rag.skill.help.argumentsExample')]"
+                    :rules="[$t('rag.skill.help.argumentsRule1'), $t('rag.skill.help.argumentsRule2')]"
+                  />
+                </template>
                 <div class="w-full space-y-2">
                   <div v-for="(row, rowIndex) in step.arguments" :key="rowIndex" class="flex gap-2">
                     <ElInput v-model="row.key" :placeholder="$t('rag.skill.paramName')" class="w-40" />
@@ -1711,7 +2004,14 @@ function goTo(path: string) {
                   field
                   :title="$t('rag.skill.help.foreachTitle')"
                   :description="$t('rag.skill.help.foreachDescription')"
+                  :parameters="foreachParameters"
                   :examples="[skillHelpExamples.foreach]"
+                  :rules="[
+                    $t('rag.skill.help.foreachRules.dependency'),
+                    $t('rag.skill.help.foreachRules.limit'),
+                    $t('rag.skill.help.foreachRules.retry'),
+                    $t('rag.skill.help.foreachRules.body')
+                  ]"
                 />
               </template>
               <ConfigCodeEditor
@@ -1728,7 +2028,14 @@ function goTo(path: string) {
                   field
                   :title="$t('rag.skill.help.transformTitle')"
                   :description="$t('rag.skill.help.transformDescription')"
+                  :parameters="transformParameters"
                   :examples="[skillHelpExamples.transform]"
+                  :rules="[
+                    $t('rag.skill.help.transformRules.dependency'),
+                    $t('rag.skill.help.transformRules.path'),
+                    $t('rag.skill.help.transformRules.operations'),
+                    $t('rag.skill.help.transformRules.limits')
+                  ]"
                 />
               </template>
               <div class="w-full space-y-2">
@@ -1766,7 +2073,9 @@ function goTo(path: string) {
                   field
                   :title="$t('rag.skill.outputSchema')"
                   :description="$t('rag.skill.outputSchemaHelp')"
+                  :parameters="outputSchemaParameters"
                   :examples="[outputSchemaExample]"
+                  :rules="outputSchemaRules"
                 />
               </template>
               <div class="w-full">
@@ -1828,9 +2137,15 @@ function goTo(path: string) {
     </ElDialog>
 
     <ElDialog v-model="matchDialogVisible" :title="t('rag.skill.matchTest')" width="min(560px, 95vw)" align-center>
+      <ElAlert class="mb-3" type="info" :closable="false" :title="t('rag.skill.matchTestHint')" show-icon />
       <ElForm label-width="90px">
         <ElFormItem :label="t('rag.skill.testQuestion')">
-          <ElInput v-model="matchQuery" type="textarea" :rows="3" :placeholder="t('rag.skill.testQuestionPlaceholder')" />
+          <ElInput
+            v-model="matchQuery"
+            type="textarea"
+            :rows="3"
+            :placeholder="t('rag.skill.testQuestionPlaceholder')"
+          />
         </ElFormItem>
       </ElForm>
       <ElAlert
@@ -1840,7 +2155,11 @@ function goTo(path: string) {
         :closable="false"
         :title="
           matchResult.matched
-            ? t('rag.skill.matchedResult', { name: matchResult.skillName, code: matchResult.skillCode, score: Number(matchResult.score || 0).toFixed(2) })
+            ? t('rag.skill.matchedResult', {
+                name: matchResult.skillName,
+                code: matchResult.skillCode,
+                score: Number(matchResult.score || 0).toFixed(2)
+              })
             : t('rag.skill.noMatch')
         "
       />
@@ -1851,6 +2170,7 @@ function goTo(path: string) {
     </ElDialog>
 
     <ElDialog v-model="runDialogVisible" :title="t('rag.skill.runDialogTitle')" width="min(900px, 95vw)" align-center>
+      <ElAlert class="mb-3" type="info" :closable="false" :title="t('rag.skill.runTestHint')" show-icon />
       <ElForm label-width="100px">
         <ElFormItem :label="t('rag.skill.testTarget')">
           <ElTag>{{ runTargetSkill?.name || t('rag.skill.currentEditingConfig') }}</ElTag>
@@ -1858,9 +2178,9 @@ function goTo(path: string) {
         <ElFormItem :label="t('rag.skill.testQuestion')">
           <ElInput v-model="runQuery" type="textarea" :rows="3" :placeholder="t('rag.skill.runQuestionPlaceholder')" />
         </ElFormItem>
-        <ElFormItem :label="t('rag.skill.executeActions')">
+        <ElFormItem :label="t('rag.skill.actionGateCheck')">
           <ElSwitch v-model="runExecuteActions" />
-          <span class="ml-2 text-xs text-gray-500">{{ t('rag.skill.dryRunActionHint') }}</span>
+          <span class="ml-2 text-xs text-gray-500">{{ t('rag.skill.actionGateCheckHint') }}</span>
         </ElFormItem>
       </ElForm>
       <div v-if="runResult" class="space-y-3">
@@ -1881,7 +2201,9 @@ function goTo(path: string) {
           </ElTableColumn>
           <ElTableColumn :label="t('rag.skill.output')">
             <template #default="{ row }">
-              <pre class="max-h-56 overflow-auto whitespace-pre-wrap rounded bg-gray-50 p-2 text-xs">{{ shortOutput(row.output) }}</pre>
+              <pre class="max-h-56 overflow-auto whitespace-pre-wrap rounded bg-gray-50 p-2 text-xs">{{
+                shortOutput(row.output)
+              }}</pre>
             </template>
           </ElTableColumn>
         </ElTable>

@@ -67,6 +67,94 @@
 | 授权对象 | 按范围 | 部门/岗位/用户多选 |
 | 状态 | 否 | 启用 / 停用 |
 
+### Schema 复杂字段怎么填写
+
+#### 字段元数据 `columnsMeta`
+
+根节点必须是 JSON 数组，每一项描述一个允许查询的真实数据库列：
+
+| 字段 | 是否必填 | 用途 |
+|---|---|---|
+| `name` | 是 | 真实列名，用于后端强制字段白名单；不能填中文展示名或 SQL 别名 |
+| `type` | 建议 | 真实数据库类型和精度，帮助模型正确比较、聚合和格式化；当前不用于 JDBC 类型校验 |
+| `description` | 建议 | 业务含义，写明单位、枚举值、时间语义、是否可聚合及关联关系 |
+
+```json
+[
+  {
+    "name": "order_no",
+    "type": "VARCHAR(32)",
+    "description": "业务订单号，唯一标识一笔订单"
+  },
+  {
+    "name": "status",
+    "type": "VARCHAR(20)",
+    "description": "订单状态：paid=已付款，shipped=已发货，completed=已完成"
+  },
+  {
+    "name": "paid_amount",
+    "type": "DECIMAL(12,2)",
+    "description": "实付金额，单位元，可求和或取平均值"
+  },
+  {
+    "name": "paid_at",
+    "type": "DATETIME",
+    "description": "付款时间，Asia/Shanghai 时区，用于按日或按月统计"
+  },
+  {
+    "name": "customer_name_masked",
+    "type": "VARCHAR(64)",
+    "description": "脱敏后的顾客姓名，仅用于结果展示"
+  }
+]
+```
+
+非空数组会启用字段白名单并禁止 `SELECT *`；`name` 才决定允许查询的列，`type` 和 `description` 只帮助模型理解。空数组不会限制字段，生产配置不要留空。
+
+#### 查询示例 `fewShotExamples`
+
+根节点必须是 JSON 数组，每项包含：
+
+- `question`：业务用户真实会提出的自然语言问题；
+- `sql`：已在目标数据库人工验证通过的单条只读 `SELECT`，只能使用本 Schema 的视图、字段和允许函数。
+
+```json
+[
+  {
+    "question": "查询已付款且实付金额大于 1000 元的订单",
+    "sql": "SELECT order_no, paid_amount FROM v_after_sales_order WHERE status = 'paid' AND paid_amount > 1000 ORDER BY paid_amount DESC LIMIT 20"
+  },
+  {
+    "question": "统计各订单状态的订单数",
+    "sql": "SELECT status, COUNT(*) AS order_count FROM v_after_sales_order GROUP BY status ORDER BY order_count DESC"
+  }
+]
+```
+
+示例不能包含写操作、DDL、多条语句、命名参数、隐藏字段或其他表。不要固定某个用户、订单号或即将过期的绝对日期；少量示例用于解释最容易出错的枚举、时间和统计口径。
+
+#### 允许函数 `allowedFunctions`
+
+页面使用可创建的多选框，保存后对应函数名字符串数组，例如：
+
+```json
+["COUNT", "SUM", "AVG", "ROUND"]
+```
+
+应选择目标数据库实际支持的函数：MySQL 的 `DATE_FORMAT` 与 PostgreSQL 的 `DATE_TRUNC` 不能混用。空数组表示不启用额外函数白名单，并非禁止所有函数；严格环境只保留业务确实需要的函数。
+
+#### 敏感字段 `sensitiveColumns`
+
+填写禁止 NL2SQL 引用的真实列名 JSON 数组：
+
+```json
+["customer_phone", "id_card_number", "bank_card_no"]
+```
+
+这里填写物理列名，不是中文展示名、JSON 路径或脱敏别名。SQL 中出现这些标识符会被拦截，但此配置不能代替脱敏视图和数据库最小权限；最敏感字段应从视图中直接移除。
+
+以上 JSON 字段都必须使用双引号，不能包含注释、单引号或尾随逗号。
+
 ## 配置示例
 
 ```json

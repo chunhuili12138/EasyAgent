@@ -83,13 +83,96 @@ const requestHeaderPresets = computed(() => [
 ]);
 const toolHelpExamples = {
   auth: 'Bearer: {"token":"your-token"}\nBasic: {"username":"api-user","password":"your-password"}\nAPI Key: {"header":"X-API-Key","value":"your-key"}\nAK/SK: {"accessKey":"your-ak","secretKey":"your-sk"}',
-  schema:
-    '{"type":"object","properties":{"recordId":{"type":"integer","description":"业务记录编号"},"reason":{"type":"string","description":"操作原因"}},"required":["recordId"]}',
-  request: '{"record_id":"{{recordId}}","operation_reason":"{{reason}}"}',
+  request: '{"source":"easyagent","operation_reason":"{{reason}}"}',
   responseRule:
     '{"httpSuccessStatuses":[200,201],"successPath":"code","successOperator":"in","successValues":[0,"0","SUCCESS"],"messagePath":"message","dataPath":"data"}',
   response: '{"recordId":"id","recordName":"name","statusName":"status_name"}'
 };
+const toolSchemaExample = computed(() =>
+  appStore.locale === 'zh-CN'
+    ? `{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["orderNo"],
+  "properties": {
+    "orderNo": {
+      "type": "string",
+      "description": "订单编号",
+      "x-in": "path",
+      "x-http-name": "orderNo"
+    },
+    "status": {
+      "type": "string",
+      "description": "订单状态",
+      "enum": ["PAID", "SHIPPED", "COMPLETED"],
+      "x-in": "query",
+      "x-http-name": "order_status"
+    },
+    "page": {
+      "type": "integer",
+      "description": "页码，从 1 开始",
+      "minimum": 1,
+      "default": 1,
+      "x-in": "query"
+    },
+    "reason": {
+      "type": "string",
+      "description": "操作原因",
+      "minLength": 2,
+      "maxLength": 200,
+      "x-in": "body",
+      "x-http-name": "operation_reason"
+    },
+    "requestId": {
+      "type": "string",
+      "description": "调用方请求编号",
+      "x-in": "header",
+      "x-http-name": "X-Request-Id"
+    }
+  }
+}`
+    : `{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["orderNo"],
+  "properties": {
+    "orderNo": {
+      "type": "string",
+      "description": "Order number",
+      "x-in": "path",
+      "x-http-name": "orderNo"
+    },
+    "status": {
+      "type": "string",
+      "description": "Order status",
+      "enum": ["PAID", "SHIPPED", "COMPLETED"],
+      "x-in": "query",
+      "x-http-name": "order_status"
+    },
+    "page": {
+      "type": "integer",
+      "description": "Page number starting from 1",
+      "minimum": 1,
+      "default": 1,
+      "x-in": "query"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for the operation",
+      "minLength": 2,
+      "maxLength": 200,
+      "x-in": "body",
+      "x-http-name": "operation_reason"
+    },
+    "requestId": {
+      "type": "string",
+      "description": "Caller request ID",
+      "x-in": "header",
+      "x-http-name": "X-Request-Id"
+    }
+  }
+}`
+);
 const toolParameters = computed(() => [
   {
     name: t('rag.tool.name'),
@@ -181,7 +264,7 @@ const toolParameters = computed(() => [
   {
     name: t('rag.tool.paramSchema'),
     description: t('rag.configFields.tool.fields.paramSchema'),
-    example: toolHelpExamples.schema
+    example: toolSchemaExample.value
   },
   {
     name: t('rag.tool.requestHeaders'),
@@ -689,14 +772,14 @@ function formatPreview(value: any) {
                   field
                   :title="t('rag.configHelp.tool.schemaTitle')"
                   :description="t('rag.configHelp.tool.schemaDescription')"
-                  :examples="[toolHelpExamples.schema]"
+                  :examples="[toolSchemaExample]"
                 />
               </template>
               <ConfigCodeEditor
                 v-model="form.paramSchema"
                 :rows="6"
                 expected-root="object"
-                :example="toolHelpExamples.schema"
+                :example="toolSchemaExample"
               />
             </ElFormItem>
             <ElFormItem :label="t('rag.tool.requestHeaders')">

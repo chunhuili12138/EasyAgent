@@ -67,6 +67,94 @@ Main menu: **Agent Management → Datasource Management**.
 | Authorized objects | Per scope | Multi-select departments/posts/users |
 | Status | No | Enabled / disabled |
 
+### Filling Complex Schema Fields
+
+#### Column Metadata `columnsMeta`
+
+The root must be a JSON array. Each item describes one real database column that queries may use:
+
+| Field | Required | Purpose |
+|---|---|---|
+| `name` | Yes | Physical column name used by the enforced allowlist; not a display label or SQL alias |
+| `type` | Recommended | Actual database type and precision, helping the model compare, aggregate, and format values; not currently used for JDBC type validation |
+| `description` | Recommended | Business meaning including units, enum values, time semantics, aggregation rules, and relationships |
+
+```json
+[
+  {
+    "name": "order_no",
+    "type": "VARCHAR(32)",
+    "description": "Business order number that uniquely identifies an order"
+  },
+  {
+    "name": "status",
+    "type": "VARCHAR(20)",
+    "description": "Order status: paid, shipped, or completed"
+  },
+  {
+    "name": "paid_amount",
+    "type": "DECIMAL(12,2)",
+    "description": "Paid amount in yuan; may be summed or averaged"
+  },
+  {
+    "name": "paid_at",
+    "type": "DATETIME",
+    "description": "Payment time in Asia/Shanghai, used for daily or monthly statistics"
+  },
+  {
+    "name": "customer_name_masked",
+    "type": "VARCHAR(64)",
+    "description": "Masked customer name for display only"
+  }
+]
+```
+
+A non-empty array enables the column allowlist and rejects `SELECT *`. Only `name` decides whether a column is allowed; `type` and `description` guide the model. An empty array does not restrict columns and should not be used in production.
+
+#### Query Examples `fewShotExamples`
+
+The root must be a JSON array. Each item contains:
+
+- `question`: a realistic natural-language business question;
+- `sql`: one manually verified read-only `SELECT` using only this Schema view, columns, and allowed functions.
+
+```json
+[
+  {
+    "question": "Find paid orders with a paid amount greater than 1000 yuan",
+    "sql": "SELECT order_no, paid_amount FROM v_after_sales_order WHERE status = 'paid' AND paid_amount > 1000 ORDER BY paid_amount DESC LIMIT 20"
+  },
+  {
+    "question": "Count orders by order status",
+    "sql": "SELECT status, COUNT(*) AS order_count FROM v_after_sales_order GROUP BY status ORDER BY order_count DESC"
+  }
+]
+```
+
+Examples must not contain writes, DDL, multiple statements, named parameters, hidden columns, or another table. Avoid one specific user, order, or soon-stale absolute date. Use a few examples to explain error-prone enums, time semantics, and metric definitions.
+
+#### Allowed Functions `allowedFunctions`
+
+The UI stores selected or custom function names as a string array:
+
+```json
+["COUNT", "SUM", "AVG", "ROUND"]
+```
+
+Use functions supported by the target database. Do not mix MySQL `DATE_FORMAT` with PostgreSQL `DATE_TRUNC`. An empty array means no additional function allowlist, not deny all functions. Strict environments should retain only functions required by the domain.
+
+#### Sensitive Columns `sensitiveColumns`
+
+Enter a JSON array of physical columns that NL2SQL must never reference:
+
+```json
+["customer_phone", "id_card_number", "bank_card_no"]
+```
+
+Use physical column names, not display labels, JSON paths, or masked aliases. SQL containing these identifiers is blocked, but this setting does not replace masked views and least-privilege database accounts. Remove highly sensitive fields from the view.
+
+All JSON fields above require double quotes and cannot contain comments, single quotes, or trailing commas.
+
 ## Example
 
 ```json

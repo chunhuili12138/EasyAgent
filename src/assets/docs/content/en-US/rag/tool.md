@@ -16,7 +16,7 @@ Main menu: **Agent Management → Tool Management**.
 ### 1. Create a Tool
 
 1. Click **Create** to open the editor (three tabs).
-2. **Basic info**: name, code, description, URL template (`{{param}}` placeholders), method, operation type, visibility scope, timeout and retry count.
+2. **Basic info**: name, code, description, endpoint base URL, method, operation type, visibility scope, timeout and retry count. Keep `{{param}}` placeholders only for path parameters.
 3. **Authentication**: choose the auth type and fill in credentials (see reference below).
 4. **Parameter schema**: define parameters, headers, request template, success rule and response mapping.
 5. Click **Save**. Back in the tool list, click **Test** on that row. Run dry-run first, then decide whether a real request is safe.
@@ -48,7 +48,7 @@ Prefer separate tools for reads and writes. For example, configure “Get Order�
 | Name | Yes | - | Display name |
 | Code | Yes | - | Immutable after save; referenced by Skills/audit |
 | Description | Strongly recommended | - | Explain when to call, required input, output and boundaries. It can be saved empty, but Agent selection becomes unreliable |
-| URL template | Yes | - | Supports `{{param}}` placeholders |
+| URL template | Yes | - | Normally the endpoint base URL; `path` parameters need `{{param}}`. Legacy URL parameter templates remain compatible without duplicate appends |
 | Method | Yes | GET | GET / POST / PUT / DELETE |
 | Operation type | Yes | Query | query / action (**action forces HITL**) |
 | Visibility | Yes | Public | public / department / post / user |
@@ -88,9 +88,9 @@ Credentials are encrypted with the platform crypto key at rest and are never ret
 
 | Field | Description |
 |---|---|
-| Parameter schema | JSON Schema: types, meanings, enums, required — for extraction and validation |
+| Parameter schema | JSON Schema Draft 7 for logical types, meanings, enums, bounds, and required fields; `x-in`/`in`, `x-http-name`/`httpName`, and `default` declare placement, external names, and defaults |
 | Request headers | JSON object. Values may use `{{param}}`. Choosing a preset **replaces** the current header JSON rather than merging it. Never store secrets here |
-| Request template | JSON body template using `{{param}}`. A value consisting of one placeholder preserves its original type; a placeholder embedded in text becomes a string. Put GET query parameters in the URL and normally leave its body empty |
+| Request template | Optional JSON body template. Ordinary values are assembled from the Schema; use it only for nested JSON, fixed fields, or special composition. A whole-value `{{param}}` preserves its type; an embedded placeholder becomes text |
 | Success rule | Optional. Empty means any HTTP 2xx succeeds with the full response. Configure status codes, business success and `dataPath` extraction when needed |
 | Response mapping | Optional `platform field: external response path` mapping applied after success-rule extraction. A missing path fails the call |
 
@@ -111,26 +111,70 @@ Success rule example:
 
 `successOperator` supports `equals`, `in`, `exists`, and `not_empty`. When `dataPath` is set, response-mapping paths start at the extracted node. For example, with `"dataPath":"data"`, use `"recordId":"id"`, not `"data.id"`.
 
-Parameter schema example:
+Complete parameter schema example:
 
 ```json
 {
   "type": "object",
-  "required": ["orderId"],
+  "additionalProperties": false,
+  "required": ["orderNo"],
   "properties": {
-    "orderId": { "type": "string", "description": "Order number" }
+    "orderNo": {
+      "type": "string",
+      "description": "Order number",
+      "x-in": "path",
+      "x-http-name": "orderNo"
+    },
+    "status": {
+      "type": "string",
+      "description": "Order status",
+      "enum": ["PAID", "SHIPPED", "COMPLETED"],
+      "x-in": "query",
+      "x-http-name": "order_status"
+    },
+    "page": {
+      "type": "integer",
+      "description": "Page number starting from 1",
+      "minimum": 1,
+      "default": 1,
+      "x-in": "query"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for the operation",
+      "minLength": 2,
+      "maxLength": 200,
+      "x-in": "body",
+      "x-http-name": "operation_reason"
+    },
+    "requestId": {
+      "type": "string",
+      "description": "Caller request ID",
+      "x-in": "header",
+      "x-http-name": "X-Request-Id"
+    }
   }
 }
 ```
 
-Request template and response mapping example:
+- A `properties` key is the logical name used by Skills and the Agent.
+- `x-in` (or `in`) accepts `query`, `path`, `body`, or `header`. Without it, GET/DELETE default to query and POST/PUT default to body.
+- `x-http-name` (or `httpName`) is the external HTTP name; without it, the logical name is reused.
+- `default` supplies only a missing value. Optional null or blank-string values are omitted.
+- A `path` parameter needs a same-name URL placeholder, for example `https://api.example.com/orders/{{orderNo}}`.
+
+For nested objects or fixed fields, add an optional request template:
 
 ```json
 {
-  "order_no": "{{orderId}}",
-  "reason": "{{reason}}"
+  "source": "easyagent",
+  "operation_reason": "{{reason}}"
 }
 ```
+
+Explicit `body` parameters merge into an object template without overwriting an existing field, so `operation_reason` above is not duplicated. For a flat body, omit the template and let the Schema create `{"operation_reason":"..."}` automatically.
+
+Response mapping example:
 
 ```json
 {
@@ -140,11 +184,13 @@ Request template and response mapping example:
 }
 ```
 
-GET query example:
+Base URL example:
 
 ```text
-https://api.example.com/orders?orderNo={{orderNo}}&status={{status}}
+https://api.example.com/orders/{{orderNo}}
 ```
+
+At runtime, `orderNo` replaces the path placeholder, `status` is appended as `order_status`, `page` is appended as `page`, and `requestId` is sent as the `X-Request-Id` header. Legacy forms such as `?orderNo={{orderNo}}` remain compatible, and a consumed value is not appended twice.
 
 AK/SK uses the platform's fixed HMAC-SHA256 protocol and automatically sends `X-Platform-Access-Key`, `X-Platform-Timestamp`, `X-Platform-Nonce`, and `X-Platform-Signature`. The algorithm is not configurable in the UI; the external service must implement the EasyAgent verification protocol.
 

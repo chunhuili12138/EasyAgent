@@ -68,17 +68,121 @@ Skill 支持三种意图类型和七类步骤。意图类型用于会话路由�
 - `depends_on`：当前步骤必须等待的上游步骤 ID。依赖必须存在且不能形成循环；无依赖步骤可能并行执行。
 - `output_schema`：可为 RAG、NL2SQL、API、内置工具或 LLM 声明 JSON Schema。校验失败会终止下游；LLM 配置后必须返回符合 Schema 的 JSON。
 
+#### `output_schema` 完整填写方法
+
+`output_schema` 使用 **JSON Schema Draft 7** 校验步骤的主输出本身，不会自动增加 `data`/`result` 包装层，也不会重命名字段。
+
+| 字段 | 用途 |
+|---|---|
+| `$schema` | 可选，声明 Draft 7 版本，建议固定为 `http://json-schema.org/draft-07/schema#` |
+| `title` / `description` | 给配置人员说明整体业务对象，不改变输出 |
+| `type` | 根类型：`object`、`array`、`string`、`integer`、`number`、`boolean` 或 `null` |
+| `properties` | `object` 的字段定义；每个字段至少写 `type` 和业务 `description` |
+| `required` | 必须出现的字段名数组；其中每个名称也应在 `properties` 中定义 |
+| `additionalProperties` | 设为 `false` 时拒绝未声明字段，适合稳定的下游 API 参数 |
+| `enum` / `const` | 限制状态、类型等离散值或固定值 |
+| `format` / `pattern` | 限制日期、时间、邮箱、URI 或自定义字符串格式 |
+| `minLength` / `maxLength` | 限制字符串长度 |
+| `minimum` / `maximum` / `multipleOf` | 限制数值范围和精度 |
+| `items` / `minItems` / `maxItems` / `uniqueItems` | 定义数组元素及数量、去重约束 |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RefundDecision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["orderNo", "refundReason", "refundAmount", "priority"],
+  "properties": {
+    "orderNo": {
+      "type": "string",
+      "description": "业务订单号",
+      "pattern": "^SO[0-9]{12}$"
+    },
+    "refundReason": {
+      "type": "string",
+      "description": "面向审批人员的退款原因",
+      "minLength": 5,
+      "maxLength": 200
+    },
+    "refundAmount": {
+      "type": "number",
+      "description": "退款金额，单位元",
+      "minimum": 0.01,
+      "maximum": 50000,
+      "multipleOf": 0.01
+    },
+    "priority": {
+      "type": "string",
+      "description": "处理优先级",
+      "enum": ["normal", "urgent"]
+    },
+    "evidence": {
+      "type": "array",
+      "description": "最多五条证据编号",
+      "items": { "type": "string" },
+      "maxItems": 5
+    },
+    "requestedAt": {
+      "type": "string",
+      "description": "申请时间，ISO 8601 格式",
+      "format": "date-time"
+    }
+  }
+}
+```
+
+注意：字段名区分大小写并会被下游直接引用；JSON 不能包含注释、单引号或尾随逗号。`required` 只控制字段是否存在，类型和范围仍需在 `properties` 中定义。输出 Schema 中的 `default` 只是注解，不会自动补值；需要补值时使用 Transform 的 `default` 操作或明确要求 LLM 生成。
+
 ### RAG
 
 `query` 可留空以使用当前用户问题，也可填写固定问题或引用依赖步骤。检索始终按当前租户、当前用户 ACL 和可用索引执行；Skill 表单内不需要选择单独的“知识库”资源。
 
 ### NL2SQL
 
-必须选择已启用的数据源。`query_hint` 应明确查询对象、条件、时间范围、统计口径和返回字段；执行器不会自动把当前用户问题拼接到该字段。实际查询仍受当前用户可见 Schema、只读 SQL、行数和超时限制。
+必须选择已启用的数据源。`query_hint` 应明确查询对象、条件、时间范围、统计口径和返回字段；执行器不会自动把当前用户问题拼接到该字段。需要使用上游条件时，可通过 `{{step_id}}` 或字段路径引用已声明依赖的步骤输出。实际查询仍受当前用户可见 Schema、只读 SQL、行数和超时限制。
 
 ### API
 
-必须选择已启用且当前用户有权使用的工具。固定值可直接填写；上游绑定必须明确 `source`、受限 JSONPath、`one`/`many` 基数和空值、多值、超量策略。系统不会猜测同名字段或自动取第一行。
+必须选择已启用且当前用户有权使用的工具。固定值可直接填写；上游绑定必须明确以下字段：
+
+| 字段 | 用途与允许值 |
+|---|---|
+| 参数名 | 必须与 API 工具参数 Schema 的 `properties` 键完全一致，区分大小写 |
+| `source` | 来源步骤 ID，且必须加入当前步骤的 `depends_on` |
+| `path` | 受限 JSONPath，支持 `$`、点字段、数字下标、数组通配符 |
+| `cardinality` | `one` 取单值；`many` 要求数组 |
+| `on_empty` | `fail` 报错、`skip` 不发送参数、`default` 使用默认值 |
+| `default` | `on_empty=default` 时使用，可为任意合法 JSON 值 |
+| `on_multiple` | `one` 得到多值时 `fail` 或明确取 `first` |
+| `max_items` | `many` 最多保留 1–200 项 |
+| `overflow` | 超量时 `fail` 或 `truncate` |
+
+```json
+{
+  "orderNo": {
+    "source": "query_orders",
+    "path": "$[0].orderNo",
+    "cardinality": "one",
+    "on_empty": "fail",
+    "on_multiple": "fail"
+  },
+  "evidenceIds": {
+    "source": "query_orders",
+    "path": "$[*].evidenceId",
+    "cardinality": "many",
+    "on_empty": "default",
+    "default": [],
+    "max_items": 20,
+    "overflow": "truncate"
+  },
+  "channel": "agent_chat"
+}
+```
+
+Skill 只产生逻辑参数，不负责决定 HTTP 位置。API 工具执行器会按工具参数 Schema 中每个属性的 `x-in`/`in`（`query`、`path`、`body`、`header`）与 `x-http-name`/`httpName` 自动构造请求；未提供的参数可使用工具参数 Schema 的 `default`，值为 `null` 或空字符串的可选参数不会发送。原有 `{{param}}` URL 模板仍兼容，已经出现在 URL 中的参数不会重复追加。
+
+系统不会猜测同名字段、静默取第一行或自动执行复杂转换；过滤、聚合、重命名应先使用 Transform。
 
 智能会话调用 `action` 工具时会冻结参数并进入 HITL。独立 Skill 试运行不能完成聊天审批；自动化工作流的 Skill 节点当前禁止包含 API 步骤，工作流内的外部调用应使用 API 节点，并按需要显式增加等待事件或审批回调。
 
@@ -105,13 +209,91 @@ Skill 支持三种意图类型和七类步骤。意图类型用于会话路由�
 
 ### Transform
 
-使用 `input` 或 `inputs` 显式绑定上游结构化数据，最多配置 20 个操作。支持 `select`、`filter`、`project`、`rename`、`distinct`、`sort`、`slice`、`limit`、`aggregate`、`object`、`merge`、`default` 和 `cast`。`limit` 是有界列表截取的别名，使用 `limit` 或 `count` 指定数量。
+使用 `input` 或 `inputs` 显式绑定上游结构化数据。`inputs` 是“输入名 → 绑定对象”，绑定字段与 API 参数绑定一致；每个 `source` 都必须加入 `depends_on`。`operations` 按数组顺序执行，最多 20 个操作，支持 `select`、`filter`、`project`、`rename`、`distinct`、`sort`、`slice`、`limit`、`aggregate`、`object`、`merge`、`default` 和 `cast`。
+
+```json
+{
+  "inputs": {
+    "orders": {
+      "source": "query_orders",
+      "path": "$",
+      "cardinality": "many",
+      "on_empty": "fail",
+      "max_items": 200,
+      "overflow": "fail"
+    }
+  },
+  "operations": [
+    { "op": "select", "path": "$.orders" },
+    { "op": "filter", "path": "$.status", "operator": "equals", "value": "paid" },
+    {
+      "op": "project",
+      "fields": {
+        "orderNo": "$.orderNo",
+        "refundAmount": "$.paidAmount",
+        "reason": "客户申请退款"
+      }
+    },
+    { "op": "slice", "offset": 0, "limit": 20 }
+  ],
+  "output_schema": {
+    "type": "array",
+    "maxItems": 20,
+    "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["orderNo", "refundAmount", "reason"],
+      "properties": {
+        "orderNo": { "type": "string" },
+        "refundAmount": { "type": "number", "minimum": 0.01 },
+        "reason": { "type": "string", "minLength": 2, "maxLength": 200 }
+      }
+    }
+  }
+}
+```
+
+`filter.operator` 仅支持 `equals`、`not_equals`、`in`、`contains`、`exists`、`gt`、`gte`、`lt`、`lte`；`aggregate` 支持 `count`、`sum`、`avg`、`min`、`max`；`sort.direction` 仅支持 `asc`/`desc`。`limit` 是有界列表截取的别名，使用 `limit` 或 `count` 指定数量。
 
 路径只允许 `$`、点字段、数字下标和数组通配符。运行时限制为最多 200 项、1 MB JSON 和 32 层嵌套，不支持脚本、网络或文件访问。
 
 ### Foreach
 
-`items` 引用上游数组，可选 `item_path`；`body` 只允许 `api` 或普通 `builtin`。循环体可使用 `{{item}}`、`{{item.id}}` 和 `{{index}}`。`max_items` 不得超过 200；`continue_on_error` 决定单项失败后是否继续。联网搜索不能放入循环。
+`items` 引用上游数组，可选 `item_path`；`body` 只允许 `api` 或普通 `builtin`。完整示例：
+
+```json
+{
+  "items": "{{query_orders}}",
+  "item_path": "records",
+  "max_items": 50,
+  "max_attempts": 1,
+  "continue_on_error": true,
+  "body": {
+    "type": "api",
+    "config": {
+      "tool_code": "create_follow_up_task",
+      "params": {
+        "orderNo": "{{item.orderNo}}",
+        "reason": "{{item.reason}}",
+        "sequence": "{{index}}"
+      }
+    }
+  }
+}
+```
+
+| 字段 | 用途 |
+|---|---|
+| `items` | 必填，引用已加入依赖的上游步骤 |
+| `item_path` | 上游为对象时指向其中数组，例如 `records` 或 `data.records`；直接数组可省略 |
+| `max_items` | 1–200，输入超过上限会失败 |
+| `max_attempts` | 1–3；非幂等操作 API 不会自动重试 |
+| `continue_on_error` | `true` 记录单项失败并继续；`false` 首次失败即停止 |
+| `body.type` | 仅 `api` 或 `builtin` |
+| `body.config` | API 使用 `params`，内置工具使用 `arguments`；支持 `{{item}}`、`{{item.field}}`、`{{index}}` |
+| `output_schema` | 可选，校验整个批量结果对象，而不是单项工具结果 |
+
+联网搜索和嵌套循环不能放入循环体。操作 API 整个批次只进行一次 HITL。
 
 ## 测试功能的真实含义
 

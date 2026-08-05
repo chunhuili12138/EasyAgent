@@ -214,14 +214,27 @@ const local = {
     'rag_bad-case': 'Bad Case 分析',
     rag_audit: '操作审计',
     'agent-workbench_chat': '智能会话',
-    'system.user': '用户管理', 'system.role': '角色管理', 'system.menu': '菜单管理',
-    'system.tenant': '租户管理', 'system.department': '部门管理', 'system.post': '岗位管理',
-    'system.dict': '字典管理', 'system.message': '消息通知', 'system.log': '日志管理',
-    'document.file': '文件管理', 'document.kb': '知识库数据', 'document.parse': '解析管理',
+    'system.user': '用户管理',
+    'system.role': '角色管理',
+    'system.menu': '菜单管理',
+    'system.tenant': '租户管理',
+    'system.department': '部门管理',
+    'system.post': '岗位管理',
+    'system.dict': '字典管理',
+    'system.message': '消息通知',
+    'system.log': '日志管理',
+    'document.file': '文件管理',
+    'document.kb': '知识库数据',
+    'document.parse': '解析管理',
     'document.process': '数据处理',
-    'rag.skill': 'Skill 管理', 'rag.datasource': '数据源管理', 'rag.tool': '工具管理',
-    'rag.experience': '经验池', 'rag.sql-log': 'SQL 审计', 'rag.bad-case': 'Bad Case 分析',
-    'rag.audit': '操作审计', 'rag.chat': '智能会话',
+    'rag.skill': 'Skill 管理',
+    'rag.datasource': '数据源管理',
+    'rag.tool': '工具管理',
+    'rag.experience': '经验池',
+    'rag.sql-log': 'SQL 审计',
+    'rag.bad-case': 'Bad Case 分析',
+    'rag.audit': '操作审计',
+    'rag.chat': '智能会话',
     docs: '操作手册',
     exception: '异常页',
     exception_403: '403',
@@ -597,13 +610,33 @@ const local = {
         }
       },
       tenantUsage: {
-        tenants: '租户数', documentTotal: '文档总量', monthTokens: '本月 Token', alertTenants: '预警租户',
-        search: '搜索租户名称或编码', refresh: '刷新', tenant: '租户', documentSpace: '文档空间',
-        todayTokens: '今日 Token', qps: 'QPS', status: '状态', configure: '配置', trend: '趋势',
-        normal: '正常', warning: '接近上限', danger: '高风险', exceeded: '已超限',
-        quotaTitle: '配置配额', documentLimit: '文档空间上限', dailyLimit: '每日 Token 上限',
-        monthlyLimit: '每月 Token 上限', qpsLimit: '模型调用 QPS', quotaSaved: '配额已更新',
-        trendTitle: '近 30 天用量', date: '日期', requests: '调用次数', noTrend: '近 30 天暂无模型调用'
+        tenants: '租户数',
+        documentTotal: '文档总量',
+        monthTokens: '本月 Token',
+        alertTenants: '预警租户',
+        search: '搜索租户名称或编码',
+        refresh: '刷新',
+        tenant: '租户',
+        documentSpace: '文档空间',
+        todayTokens: '今日 Token',
+        qps: 'QPS',
+        status: '状态',
+        configure: '配置',
+        trend: '趋势',
+        normal: '正常',
+        warning: '接近上限',
+        danger: '高风险',
+        exceeded: '已超限',
+        quotaTitle: '配置配额',
+        documentLimit: '文档空间上限',
+        dailyLimit: '每日 Token 上限',
+        monthlyLimit: '每月 Token 上限',
+        qpsLimit: '模型调用 QPS',
+        quotaSaved: '配额已更新',
+        trendTitle: '近 30 天用量',
+        date: '日期',
+        requests: '调用次数',
+        noTrend: '近 30 天暂无模型调用'
       },
       tenant: {
         title: '租户管理',
@@ -717,7 +750,8 @@ const local = {
         retry: '重试',
         delete: '删除',
         deleteConfirm: '删除解析记录',
-        deleteConfirmMessage: '确认删除文件「{name}」的解析记录？关联的数据处理结果和知识库数据也会同步删除，文件将恢复为未解析状态。',
+        deleteConfirmMessage:
+          '确认删除文件「{name}」的解析记录？关联的数据处理结果和知识库数据也会同步删除，文件将恢复为未解析状态。',
         deleteSuccess: '解析记录已删除',
         content: '内容',
         viewContent: '查看内容',
@@ -732,7 +766,7 @@ const local = {
         notProcessed: '未处理',
         processing: '处理中',
         processed: '已处理',
-          processFailed: '处理失败',
+        processFailed: '处理失败',
         retryProcess: '重试处理',
         retryProcessConfirm: '确认重新处理文件「{name}」？',
         retryConfirm: '确认重新执行？',
@@ -753,7 +787,8 @@ const local = {
         saveSuccess: '保存成功',
         saveFailed: '保存失败',
         submitProcessMsg: '文件「{name}」解析质量评分 {score}/100，确认提交处理？',
-        reprocessMsgIndexed: '文件「{name}」已处理并入库，重新处理将清除已有的语块、标签、Q&A 和已入库的ES知识库数据，确认继续？',
+        reprocessMsgIndexed:
+          '文件「{name}」已处理并入库，重新处理将清除已有的语块、标签、Q&A 和已入库的ES知识库数据，确认继续？',
         reprocessMsgDone: '文件「{name}」已处理过，重新处理将清除已有的语块、标签和Q&A数据，确认继续？',
         batchProcessConfirm: '确认对 {n} 个文件提交数据处理？',
         durationMinutes: '{count}分钟',
@@ -789,7 +824,8 @@ const local = {
         reprocessSubmitted: '重新处理任务已提交',
         queueDeferred: '执行队列当前已满，任务已保留为待处理，系统会自动重新调度',
         queueDuplicate: '该任务已经在排队或执行中，本次没有重复提交',
-        manualEditScoreWarning: '人工修改 Markdown 后不会自动重新计算质量评分；请检查标题、表格、数字和正文完整性后再提交数据处理。',
+        manualEditScoreWarning:
+          '人工修改 Markdown 后不会自动重新计算质量评分；请检查标题、表格、数字和正文完整性后再提交数据处理。',
         parser: '实际解析器',
         parserFallback: '结构解析回退',
         ocrPages: 'OCR 页码',
@@ -797,11 +833,16 @@ const local = {
         ocrImages: 'OCR 图片数',
         ocrPreprocessing: '图像预处理',
         helpTitle: '文档解析操作指南',
-        helpIntro: '文档解析把上传文件转换为可检查的 Markdown。系统自动选择格式专用解析器，并在 PDF 文本不足时按页启用 OCR。',
-        helpWorkflow: '1. 在文件管理上传文件并创建解析任务。\n2. 等待状态变为“解析成功”，失败任务查看错误后再重试。\n3. 查看“指标”确认实际解析器、OCR 页码、内容覆盖率和数值保留率。\n4. 打开“查看内容”，核对标题、正文、表格、数字和阅读顺序。\n5. 必要时人工修改 Markdown，再提交数据处理。',
-        helpEvidence: 'PDF 正常文本页使用原生解析，低文本或高乱码页自动渲染并 OCR；图片会按需旋转、缩放、增强对比度、去噪和分区。DOCX/PPTX 优先使用结构解析器，失败才回退 Tika。指标中的 pdf-native-ocr、ocrPages、ocrRegions 和 ocrPreprocessing 是增强是否实际发生的证据。',
-        helpActions: '“重试”重新执行失败解析；“重新处理”会清除旧 Chunk、标签、QA，已入库时还会清除对应索引数据；批量处理只接受解析成功且尚未处理的记录。队列已满时任务不会丢失，而是保持待处理并自动再次调度。',
-        helpNotes: '解析成功表示结果通过当前质量门，不代表所有复杂版式都完全恢复。人工修改 Markdown 不会自动重评分，旧分数只代表自动解析版本。扫描件仍依赖视觉模型；透视变形、手写体、复杂公式和特殊 Office 版式需要人工复核。',
+        helpIntro:
+          '文档解析把上传文件转换为可检查的 Markdown。系统自动选择格式专用解析器，并在 PDF 文本不足时按页启用 OCR。',
+        helpWorkflow:
+          '1. 在文件管理上传文件并创建解析任务。\n2. 等待状态变为“解析成功”，失败任务查看错误后再重试。\n3. 查看“指标”确认实际解析器、OCR 页码、内容覆盖率和数值保留率。\n4. 打开“查看内容”，核对标题、正文、表格、数字和阅读顺序。\n5. 必要时人工修改 Markdown，再提交数据处理。',
+        helpEvidence:
+          'PDF 正常文本页使用原生解析，低文本或高乱码页自动渲染并 OCR；图片会按需旋转、缩放、增强对比度、去噪和分区。DOCX/PPTX 优先使用结构解析器，失败才回退 Tika。指标中的 pdf-native-ocr、ocrPages、ocrRegions 和 ocrPreprocessing 是增强是否实际发生的证据。',
+        helpActions:
+          '“重试”重新执行失败解析；“重新处理”会清除旧 Chunk、标签、QA，已入库时还会清除对应索引数据；批量处理只接受解析成功且尚未处理的记录。队列已满时任务不会丢失，而是保持待处理并自动再次调度。',
+        helpNotes:
+          '解析成功表示结果通过当前质量门，不代表所有复杂版式都完全恢复。人工修改 Markdown 不会自动重评分，旧分数只代表自动解析版本。扫描件仍依赖视觉模型；透视变形、手写体、复杂公式和特殊 Office 版式需要人工复核。',
         guideWorkflow: '推荐操作顺序',
         guideEvidence: '系统如何处理和如何判断',
         guideActions: '按钮和状态的实际效果',
@@ -811,12 +852,18 @@ const local = {
       process: {
         title: '数据处理',
         helpTitle: '数据处理操作指南',
-        helpIntro: '数据处理把审核后的 Markdown 转换为可检索的父子 Chunk、关键词、摘要、QA 和向量数据；只有确认结果后才应导入知识库。',
-        helpWorkflow: '1. 从文档解析页提交数据处理。\n2. 依次等待分块、标签、摘要、QA 和保存五个阶段完成。\n3. 打开处理结果，先看 Chunk 数量、QA 覆盖和平均质量分。\n4. 沿左侧标题树逐块检查正文、摘要、标签、权限和 QA。\n5. 保存必要修改，确认没有未保存内容后导入或更新知识库。',
-        helpEvidence: '父 Chunk 用于保留章节上下文，子 Chunk 是主要召回单元；breadcrumb 表示原文标题路径。质量分、最低质量块、章节 QA 覆盖、LLM 调用和 Token 消耗用于判断处理结果是否适合入库。标签中的可见范围会继续约束检索权限。',
-        helpActions: '“查看结果”只检查数据库中的处理结果；“导入知识库”生成向量并写入 Elasticsearch；“更新知识库”用当前结果替换已入库版本；“重试”重新执行失败任务；删除处理记录会按后端生命周期规则清理关联结果。',
-        helpNotes: '编辑 Chunk、摘要、标签或 QA 后不会自动重新生成其他字段，也不会自动重算已有质量分。修改正文后应同步检查摘要和 QA；修改权限标签后应使用不同用户验证检索范围。导入按钮在存在未保存修改时会禁用。',
-        manualEditWarning: '保存只更新当前 Chunk 的正文、摘要、标签和 QA，不会自动重算质量分或重新生成其他字段；请同步检查相关内容。',
+        helpIntro:
+          '数据处理把审核后的 Markdown 转换为可检索的父子 Chunk、关键词、摘要、QA 和向量数据；只有确认结果后才应导入知识库。',
+        helpWorkflow:
+          '1. 从文档解析页提交数据处理。\n2. 依次等待分块、标签、摘要、QA 和保存五个阶段完成。\n3. 打开处理结果，先看 Chunk 数量、QA 覆盖和平均质量分。\n4. 沿左侧标题树逐块检查正文、摘要、标签、权限和 QA。\n5. 保存必要修改，确认没有未保存内容后导入或更新知识库。',
+        helpEvidence:
+          '父 Chunk 用于保留章节上下文，子 Chunk 是主要召回单元；breadcrumb 表示原文标题路径。质量分、最低质量块、章节 QA 覆盖、LLM 调用和 Token 消耗用于判断处理结果是否适合入库。标签中的可见范围会继续约束检索权限。',
+        helpActions:
+          '“查看结果”只检查数据库中的处理结果；“导入知识库”生成向量并写入 Elasticsearch；“更新知识库”用当前结果替换已入库版本；“重试”重新执行失败任务；删除处理记录会按后端生命周期规则清理关联结果。',
+        helpNotes:
+          '编辑 Chunk、摘要、标签或 QA 后不会自动重新生成其他字段，也不会自动重算已有质量分。修改正文后应同步检查摘要和 QA；修改权限标签后应使用不同用户验证检索范围。导入按钮在存在未保存修改时会禁用。',
+        manualEditWarning:
+          '保存只更新当前 Chunk 的正文、摘要、标签和 QA，不会自动重算质量分或重新生成其他字段；请同步检查相关内容。',
         fileName: '文件名',
         status: '状态',
         totalChunks: '总Chunk',
@@ -934,8 +981,8 @@ const local = {
         uploadAclPost: '授权岗位',
         uploadAclUser: '授权用户',
         selectAclSubject: '请选择至少一个授权主体',
-          aclUpdated: '密级已更新；如文档此前已入库，请在数据处理页重新导入',
-          confirmAclSave: '确认保存权限修改？',
+        aclUpdated: '密级已更新；如文档此前已入库，请在数据处理页重新导入',
+        confirmAclSave: '确认保存权限修改？',
         statsTotal: '共',
         stepProgress: '第{current}步/共{total}步',
         step: {
@@ -982,8 +1029,8 @@ const local = {
         startUpload: '开始上传',
         uploadFailed: '失败',
         remove: '移除',
-          cancel: '取消',
-          confirmUpload: '确认上传所选文件？',
+        cancel: '取消',
+        confirmUpload: '确认上传所选文件？',
         batchParseCount: '批量解析({n})',
         batchParseConfirm: '确认解析 {count} 个文件？',
         batchParseTitle: '批量解析确认',
@@ -1038,7 +1085,8 @@ const local = {
         selectFirst: '请先选择',
         unindex: '移出知识库',
         unindexConfirm: '移出知识库',
-        unindexConfirmMessage: '确认将文件「{name}」移出知识库？该操作仅删除文件在 ES 中的检索数据，文件、解析记录和数据处理结果都会保留，可再次导入。',
+        unindexConfirmMessage:
+          '确认将文件「{name}」移出知识库？该操作仅删除文件在 ES 中的检索数据，文件、解析记录和数据处理结果都会保留，可再次导入。',
         unindexSuccess: '已移出知识库'
       }
     }
@@ -1094,72 +1142,1083 @@ const local = {
   },
   rag: {
     responseRule: '成功响应规则',
-    enums: { public: '公开', department: '授权部门', post: '授权岗位', user: '授权用户', authNone: '无认证', authApiKey: 'API 密钥', authBearer: 'Bearer 令牌', authBasic: 'Basic 认证', authHmac: 'AK/SK 签名', apiCall: 'API 调用', sqlExec: 'SQL 执行', pending: '待确认', riskLow: '低', riskMedium: '中', riskHigh: '高', failed: '失败' },
-    common: { search: '搜索', create: '新建', edit: '编辑', delete: '删除', save: '保存', cancel: '取消', detail: '详情', export: '导出', copy: '复制', copySuccess: '复制成功', status: '状态', action: '操作', keywordPlaceholder: '请输入关键词', startDate: '开始日期', endDate: '结束日期', requiredFields: '请填写必填项', invalidJson: '{field} 不是有效的 JSON' },
-    chat: { newSession: '新对话', noSession: '暂无会话', selectSession: '选择或创建会话', inputPlaceholder: '输入您的问题... (Enter 发送, Shift+Enter 换行)', send: '发送', stop: '停止', generationStopped: '回答已停止', generationStoppedPartial: '已停止生成，以上为停止前收到的内容', noMessages: '发送消息开始对话', scope: '知识库范围', statusAnalyzing: '正在分析问题...', messageCount: '{count} 条消息', source: '来源', chunk: '片段', evidence: '证据内容', like: '点赞', dislike: '点踩', copyAnswer: '复制回答', answerMode: '回答模式', modeAuto: '智能模式', modeKnowledge: '仅知识库', modeGeneral: '通用对话', modeHint: { auto: '自动判断知识问答或通用对话；有附件时优先依据附件回答', knowledge: '只依据知识库和会话附件回答，资料不足时不会编造', general: '使用模型公共知识和会话附件回答，不查询系统知识库，也不代表企业制度或内部事实' }, answerGenerally: '按通用知识回答', rephrase: '换个问法', feedbackTitle: '问题反馈', feedbackType: '请选择反馈类型', feedbackTypeRequired: '请选择反馈类型', feedbackReasonOptional: '补充说明（选填）', feedbackPlaceholder: '可以补充说明具体哪里不准确或不符合预期。', submitFeedback: '提交反馈', feedbackSubmitted: '反馈已提交', feedbackTypes: { factualMismatch: '内容与事实不符', instructionNotFollowed: '回答与指令不符', formatIssue: '回答格式不正确', contentError: '内容存在错误', incompleteAnswer: '回答不完整', irrelevantAnswer: '答非所问', other: '其他问题' }, attachments: '会话附件', expandAttachments: '展开附件列表', collapseAttachments: '收起附件列表', attachmentSummaryReady: '{count} 个可用', attachmentSummaryProcessing: '{count} 个处理中', attachmentSummaryFailed: '{count} 个失败', attachmentQuality: '质量 {score}', unknownFormat: '未知格式', addAttachment: '添加会话附件', removeAttachment: '删除附件', retryAttachment: '重试处理', attachmentUploadFailed: '附件上传失败', waitForAttachments: '附件正在解析和处理，完成后即可发送消息', attachmentStatus: { uploaded: '已上传', parsing: '解析中', processing: '处理中', ready: '可用', failed: '处理失败' } },
-    help: { description: '用途与工作方式', steps: '配置步骤', stepTypes: '步骤类型配置手册', parameters: '全部参数说明', required: '必填', optional: '选填', exampleValue: '示例值', howToConfigure: '具体配置', stepOutput: '步骤输出', exampleConfig: '配置示例', rules: '字段规则', examples: '完整示例', effects: '保存后的影响', notes: '安全与常见问题' },
-    editor: { format: '格式化', useExample: '填入示例', jsonHint: '支持 JSON 语法高亮、括号匹配、实时校验和错误行定位。', yamlHint: '支持 YAML 语法高亮、实时解析和错误行定位；修改后请应用到表单。', arrayRequired: '根节点必须是 JSON 数组，例如 []。', objectRequired: '根节点必须是 JSON 对象，例如 {}。', invalidContent: '配置格式不正确', errorDetail: '第 {line} 行，第 {column} 列：{message}' },
-    skill: {
-      name: '名称', code: '编码', triggerKeywords: '触发词', intentType: '意图类型', positiveExamples: '正向示例', negativeExamples: '排除示例', version: '版本', minScore: '最低置信度', yamlPreview: 'YAML预览', yamlConfig: 'YAML 专家模式', basicInfo: '基本信息', createTitle: '新建 Skill', editTitle: '编辑 Skill', validate: '校验语法', validateSuccess: '校验通过', addStep: '添加步骤', stepEdit: '步骤编辑', stepDescription: '步骤描述', type: '类型', dependsOn: '依赖步骤', steps: '执行步骤',
-      namePlaceholder: '请输入便于识别的 Skill 名称', codePlaceholder: '请输入唯一编码，例如 order_query', descriptionPlaceholder: '请说明适用场景和能力边界', triggerPlaceholder: '输入触发词，多个词用逗号分隔', intentTypeHint: '知识问答只回答资料；操作任务和组合任务可优先进入执行链。旧配置会按步骤类型自动推断。', positiveExamplesPlaceholder: '每行一个应命中该 Skill 的典型问题', negativeExamplesPlaceholder: '每行一个容易误命中但不应执行的问题', yamlPlaceholder: '请输入完整的 YAML 配置', requiredFields: '请填写名称和编码', deleteConfirm: '将永久删除该 Skill 配置且无法恢复，历史运行记录不会随之删除。删除前请确认没有自动化工作流引用。确认继续吗？',
-      intentTypes: { knowledge: '知识问答', action: '数据查询或工具操作', composite: '多步骤组合任务' },
-      stepsHint: '无依赖的步骤会并行执行；存在依赖的步骤会等待上游完成。', noSteps: '暂无执行步骤', stepNumber: '步骤 {number}', stepId: '步骤 ID', stepIdPlaceholder: '例如 query_members', stepDescriptionPlaceholder: '说明该步骤要完成什么', dependsPlaceholder: '请选择需要等待的上游步骤', moveUp: '上移', moveDown: '下移',
-      ragQuery: '检索问题', ragQueryPlaceholder: '留空时使用用户原始问题，也可填写固定检索问题', datasource: '数据源', datasourcePlaceholder: '请选择已启用的数据源', queryHint: '查询意图', queryHintPlaceholder: '用自然语言说明要查询的数据和筛选条件', apiTool: 'API 工具', apiToolPlaceholder: '请选择已启用的 API 工具', builtinTool: '内置工具', builtinPlaceholder: '请选择平台内置工具', parameters: '请求参数', arguments: '工具参数', paramName: '参数名', paramValue: '固定值或上游步骤字段引用', addParameter: '添加参数', paramLiteral: '固定值', paramBinding: '上游绑定', paramLiteralPlaceholder: '输入字符串或 JSON 值', bindingSource: '来源步骤', bindingPath: 'JSONPath，例如 $[0].id', cardinalityOne: '单值 one', cardinalityMany: '集合 many', onEmptyFail: '空值时报错', onEmptySkip: '空值时省略参数', onEmptyDefault: '空值时使用默认值', onMultipleFail: '多值时报错', onMultipleFirst: '多值时取第一项', overflowFail: '超量时报错', overflowTruncate: '超量时截断', defaultValue: '默认值（字符串或 JSON）', promptTemplate: 'Prompt 模板', promptPlaceholder: '说明如何使用上游步骤结果生成最终内容', insertOutput: '插入上游结果：', temperature: '生成随机性', foreachConfig: '批量循环配置', transformConfig: '确定性数据转换配置', outputSchema: '输出 Schema', outputSchemaHint: '可选。配置后，步骤成功结果必须满足该 JSON Schema，否则步骤失败。LLM 配置后必须返回合法 JSON。', outputSchemaHelp: '为步骤主数据声明 JSON Schema 合同。RAG、NL2SQL、API、内置工具和 LLM 都会在成功出口校验；LLM 配置后会按结构化 JSON 解析结果，而不是继续返回普通文本。Transform 和 foreach 请在各自高级 JSON 配置中填写 output_schema。',
-      stepsRequired: '请至少添加一个执行步骤', stepIdRequired: '步骤 ID 不能为空', stepIdDuplicate: '步骤 ID 不能重复', selfDependency: '步骤不能依赖自身', missingDependency: '存在已失效的依赖步骤，请重新选择依赖关系', dependencyCycle: '步骤依赖不能形成循环', datasourceRequired: 'NL2SQL 步骤必须选择数据源', toolRequired: '工具步骤必须选择工具', promptRequired: 'LLM 步骤必须填写 Prompt 模板', parameterKeyDuplicate: '同一步骤中的参数名不能重复', outputSchemaInvalid: '输出 Schema 必须是有效的 JSON 对象', foreachJsonInvalid: '批量循环配置不是有效 JSON', transformJsonInvalid: '数据转换配置不是有效 JSON', transformInputRequired: '数据转换必须配置 input 或 inputs', transformOperationsRequired: '数据转换必须配置 operations 数组', yamlApplied: 'YAML 已应用到表单', yamlExpertHint: '专家模式中的修改不会直接保存；请先“应用到表单”。无法识别或校验失败的 YAML 不会覆盖当前表单。', applyYaml: '应用到表单', regenerateYaml: '根据表单重新生成', firstUseGuide: '首次配置建议按顺序完成：1. 配数据源/Schema 或工具，2. 用测试按钮验证，3. 用模板创建 Skill，4. 试运行执行链，5. 到对话页完整验证。', quickDatasource: '数据源', quickTool: '工具', quickChat: '对话测试', matchTest: '命中测试', viewBadCase: '查看 Bad Case', runTest: '试运行', runCurrentConfig: '试运行当前配置', configTemplate: '配置模板', templateRagName: '知识库问答', templateRagDescription: '先检索知识库，再综合生成带依据的回答', templateRagKeywords: '制度, 规则, 政策, 怎么办', templateDataName: '数据查询问答', templateDataDescription: '把自然语言问题转成只读 SQL，再由 LLM 解释查询结果', templateDataKeywords: '统计, 查询, 多少, 排名', templateToolName: '工具查询/操作', templateToolDescription: '调用已配置的外部工具，再汇总工具返回结果', templateToolKeywords: '处理, 查询记录, 同步, 创建', templateBatchName: '批量处理', templateBatchDescription: '先查询候选数据，再对每条数据执行工具步骤', templateBatchKeywords: '批量, 批处理, 多条', applyTemplate: '套用模板', applyTemplateTitle: '套用模板', applyTemplateConfirm: '套用模板会替换当前步骤配置，基础名称和编码不会被覆盖。', publishCheckTitle: '上线前检查', publishCheckHint: '当前配置还有上线前检查提醒，保存时会再次确认', continueSave: '继续保存', returnEdit: '返回修改', testQuestion: '测试问题', testQuestionPlaceholder: '输入用户可能提出的问题', runDialogTitle: 'Skill 执行链试运行', testTarget: '测试对象', currentEditingConfig: '当前编辑配置', runQuestionPlaceholder: '输入用于执行链试运行的问题', executeActions: '执行操作', dryRunActionHint: '关闭时操作类 API 只做 dry-run 跳过', runCompleted: '试运行完成', runCompletedDry: '试运行完成：操作类步骤已跳过', startRun: '开始试运行', startTest: '测试', close: '关闭', stepColumn: '步骤', output: '输出', noMatch: '未命中任何已启用 Skill', matchedResult: '命中 {name} ({code})，分数 {score}', missingTriggerWarning: '未配置触发关键词，用户问题可能无法命中该 Skill。', apiParamWarning: '存在 API 步骤未配置入参，请确认工具不需要参数，或在工具页先完成测试。', nl2sqlDatasourceWarning: '存在 NL2SQL 步骤未选择数据源。', llmDependencyWarning: '存在 LLM 步骤未依赖上游结果，请确认它不是孤立生成。', foreachWarning: '存在批量执行步骤，请先使用试运行确认 max_items 和失败处理符合预期。', testQuestionRequired: '请输入测试问题',
-      typeColumn: '类型', statusColumn: '状态', outputTruncated: '...[输出已截断]',
-      types: { rag: '知识库检索', nl2sql: '数据查询（NL2SQL）', api: 'API 工具', builtin: '内置工具', llm: 'LLM 综合生成', transform: '确定性数据转换', foreach: '批量循环（高级）' },
-      builtins: { currentDatetime: '当前日期时间', dateCalculate: '日期计算', calculator: '数学计算', unitConvert: '单位换算' },
-      templateTransformName: '查询、转换与调用', templateTransformDescription: '查询结构化数据，通过 Transform 组装请求，再显式绑定到 API；需要按实际字段和工具参数调整', templateTransformKeywords: '查询后处理, 数据转换, 组合调用, 统计后操作',
-      insertTransformOperation: '插入操作示例',
-      transformOperations: { select: '选择路径 select', filter: '过滤 filter', project: '字段投影 project', rename: '字段重命名 rename', distinct: '去重 distinct', sort: '排序 sort', slice: '截取 slice', aggregate: '聚合 aggregate', object: '组装对象 object', merge: '合并对象 merge', default: '空值默认 default', cast: '类型转换 cast' },
-      templateContent: { retrieveKnowledge: '检索相关知识', generateAnswer: '综合生成回答', ragPrompt: '请仅基于知识库检索结果回答当前用户问题。\n知识库内容：{output}\n要求：回答清晰、准确；依据不足时明确说明。', queryData: '查询业务数据', queryDataHint: '只查询当前问题需要的字段，限制返回行数，避免查询敏感字段。', summarizeData: '解释查询结果', dataPrompt: '请根据结构化查询结果回答当前用户问题。\n查询结果：{output}\n要求：说明关键数字、统计口径和可能限制。', callTool: '调用外部工具', summarizeTool: '汇总工具结果', toolPrompt: '请把工具结构化返回结果整理成用户可读结论。\n工具结果：{output}', queryRecords: '查询待转换记录', queryRecordsHint: '查询操作所需记录，返回稳定 ID、金额等后续请求必须使用的字段。', buildRequest: '确定性组装请求', callAction: '调用已配置工具', summarizeAction: '汇总调用结果', actionPrompt: '请根据工具结构化结果说明执行状态、影响对象和失败原因。\n工具结果：{output}', queryItems: '查询待处理数据', queryItemsHint: '查询需要批量处理的记录，必须包含记录 id 和展示名称。', processItems: '逐条执行工具', summarizeBatch: '汇总批处理结果', batchPrompt: '请汇总批量处理结果，列出成功、失败和需要人工确认的事项。\n处理结果：{output}' },
-      help: {
-        transformTitle: '确定性数据转换', transformDescription: '使用受限声明式操作完成字段选择、过滤、投影、重命名、去重、排序、截取、聚合、对象组装与合并。最多处理 200 项，不允许脚本、网络或文件访问。',
-        fields: {
-          name: '填写面向业务用户的名称，用于列表、选择器和执行结果展示；应直观表达该 Skill 能完成的任务。', code: '填写租户内唯一且稳定的英文编码，仅允许字母、数字和下划线；保存后不要随意修改，否则已有引用会失效。', description: '说明适用场景、所需输入、主要输出和能力边界；Agent 会据此判断是否选择该 Skill。', triggerKeywords: '填写用户可能使用的意图短语，多个词用逗号分隔；覆盖同义表达，避免“查询”“处理”等宽泛词。', minScore: '设置触发匹配阈值，范围 0 至 1；值越高误触发越少但更可能漏匹配，建议从 0.65 开始验证。', status: '启用后才可被 Agent 选择执行；停用不会删除配置和历史执行记录。', stepId: '填写当前 Skill 内唯一的步骤标识，格式为字母开头、最多 64 位的字母数字下划线；用于依赖和输出引用。', type: '选择知识检索、数据查询、API、内置工具、LLM、确定性数据转换或批量循环执行器；类型决定后续必填配置。', stepDescription: '明确写出本步骤要产生的结果和成功标准；NL2SQL 未填写查询意图时会使用该描述作为查询提示。', dependsOn: '选择必须先成功完成的上游步骤；全部依赖完成后本步骤才执行，无依赖步骤可能并行执行。', ragQuery: '填写固定检索文本，留空则使用用户当前问题；也可引用已声明依赖的上游完整输出，例如双花括号包裹的 step_id。', datasource: '选择当前租户已启用的数据源；运行时仍会按当前用户的 Schema ACL 过滤可见表和字段。', queryHint: '用自然语言写明查询对象、条件、时间范围、统计口径和返回字段；当前执行器不会自动拼接用户原问题。', apiTool: '选择当前租户已启用且有权使用的工具；工具自身的参数 Schema、ACL、认证及查询/操作类型仍会强制生效。', parameters: '固定值直接填写；上游值必须显式选择来源步骤、JSONPath、one/many 基数及空值、多值和超量策略，系统不会猜字段或默认取第一行。', builtinTool: '选择确定性内置能力；只支持 current_datetime、date_calculate、calculator、unit_convert。', arguments: '按内置工具契约填写参数名和值，可使用固定值或 双花括号包裹的 step_id 完整输出；日期、时区和单位必须符合工具格式。', promptTemplate: '写明任务、允许使用的上游证据、输出格式及缺失信息处理方式；用 双花括号包裹的 step_id 引用已加入依赖的完整输出。', temperature: '控制 LLM 随机性，范围 0 至 1；事实抽取和操作参数建议 0 至 0.3，普通总结建议 0.3 至 0.7。', outputSchema: '可为 RAG、NL2SQL、API、内置工具或 LLM 步骤声明 JSON Schema。配置后，成功结果必须满足该合同，否则当前步骤失败且下游不执行；LLM 会按结构化 JSON 解析，不再接受普通文本。Transform 和批量循环请在各自高级 JSON 中配置 output_schema。', foreachConfig: '配置来源数组、可选数组路径、最大数量、重试、失败策略及循环体；最大 200 项，循环体仅支持 API 或内置工具。', transformInputs: '使用 input 或 inputs 显式绑定上游结构化主数据；每个绑定配置 source、受限 JSONPath、one/many 基数和失败策略，并把来源步骤加入依赖。', transformOperations: '按顺序配置最多 20 个声明式操作：select、filter、project、rename、distinct、sort、slice、aggregate、object、merge、default、cast。每个中间结果都会执行数量、大小和嵌套深度限制。', transformOutputSchema: '使用 JSON Schema 校验转换后的最终 JSON。涉及 API 操作、金额、数量或 ID 时应声明类型、required、数组 items 和必要约束，校验失败会终止下游执行。', yamlConfig: '完整 Skill 的专家配置，适合审查、迁移和批量编辑；修改后必须“应用到表单”并通过校验才会保存。'
-        },
-        fieldExamples: { name: '会员优惠券批量发放', stepDescription: '查询当前可用且金额为 100 元的无门槛优惠券', ragQuery: '优惠券发放资格、限制和审批规则', queryHint: '查询仍有效的 100 元无门槛优惠券，返回优惠券 ID、名称和有效期' },
-        title: 'Skill 配置帮助', description: 'Skill 是 Agent 可匹配并执行的受控 DAG。七类步骤统一传递结构化主数据，展示文本只在 LLM 和最终回答中生成；字段映射、过滤和聚合应由确定性数据转换完成。普通配置请使用表单，只有检查或迁移完整配置时才使用 YAML 专家模式。', example: 'NL2SQL 查询 → Transform 过滤、聚合并组装请求 → API 显式绑定 → HITL → LLM 汇总', note1: '只能引用当前租户中已启用且当前用户有权使用的数据源、Schema 和 API 工具。', note2: '操作类 API 无论由哪个 Skill 调用，提交前都会强制进入 HITL；拒绝后整个任务立即终止。', note3: '保存成功只代表配置合法。正式启用前应使用包含信息缺失、同义表达和多轮补充的真实问题验证匹配与执行结果。',
-        step1: '填写名称、唯一编码和能力描述。描述同时写清“能做什么、需要什么输入、不能做什么”，供 Agent 选择能力。', step2: '配置具体且覆盖同义表达的触发词，并设置最低置信度；避免只使用“查询”“处理”等宽泛词。', step3: '按任务产物拆分步骤，为每一步设置唯一 ID、类型和明确描述。相互独立的步骤可不设置依赖以并行执行。', step4: '为下游选择全部来源步骤；简单 API 参数使用显式绑定，复杂过滤、聚合、重命名和请求体组装先通过 Transform，再连接 API、foreach 或 LLM。', step5: '检查操作类工具是否位于正确的依赖链末端，确保查询、转换、Schema 校验和参数组装完成后才发起 HITL。', step6: '先试运行当前配置查看每步结构化输出；再检查 YAML。手工修改 YAML 后必须应用到表单并通过校验，最后保存并进行真实对话测试。',
-        rule1: '步骤 ID 在当前 Skill 内唯一，只使用英文字母、数字和下划线；被依赖后不要随意改名。', rule2: '依赖关系必须是有向无环图；无依赖步骤会并行，有依赖步骤会等待全部上游完成。', rule3: '参数映射中的固定值和上游字段类型必须符合目标工具的参数 Schema。', rule4: '批量循环必须设置来源数组、单次执行体和数量上限，禁止无限循环或绕过操作确认。', rule5: 'Transform 最多 20 个操作、200 项、1 MB JSON 和 32 层嵌套；只允许受限 JSONPath 和声明式操作，不支持脚本、网络、文件或反射。', effect1: '启用后，Agent 会根据用户意图、触发词和置信度决定是否选择该 Skill，并按依赖关系持续执行。', effect2: '执行过程会继承租户、用户和会话权限；下游只能看到当前用户有权访问的数据与工具。',
-        ragGuideTitle: '知识库检索（RAG）', ragGuidePurpose: '从当前用户有权访问的租户知识库和会话附件中检索证据，适合制度、手册、说明和附件内容查询。', ragGuideField1: '步骤 ID：填写稳定且易理解的 ID，例如 retrieve_policy；后续 LLM 可通过该 ID 引用检索结果。', ragGuideField2: '依赖步骤：通常无需依赖，可与数据查询并行；检索问题引用上游步骤时，必须把被引用步骤加入依赖。', ragGuideField3: '检索问题：留空时使用用户当前问题；填写固定文本时也可用双花括号包裹的 step_id 引用上游完整输出，未解析的引用会直接报错。', ragGuideOutput: '输出带文件名、章节、Chunk 标记和正文的检索证据，同时保留引用信息供最终回答展示。',
-        nl2sqlGuideTitle: '数据查询（NL2SQL）', nl2sqlGuidePurpose: '在选定数据源的授权 Schema 内生成并执行只读 SQL，适合统计、筛选、汇总和业务数据查询。', nl2sqlGuideField1: '数据源：只能选择当前租户已启用的数据源；真正可查询的表和字段还会按当前用户的 Schema ACL 过滤。', nl2sqlGuideField2: '查询意图：写清数据对象、筛选条件、统计口径、时间范围和希望返回的字段。当前执行器会直接使用这段查询意图，不会自动拼接用户原问题或替换上游变量。', nl2sqlGuideField3: '依赖步骤：当前 NL2SQL 配置不能消费上游输出，因此通常不设置依赖；需要动态条件时应由 Agent 动态规划，或先配置能接收参数的查询 API。', nl2sqlGuideOutput: '主输出是最多 50 行的结构化行对象数组，并附带 SQL、行数等元数据；Markdown 表格只在最终展示时生成。',
-        apiGuideTitle: 'API 工具', apiGuidePurpose: '调用租户预先配置并授权的外部 HTTP 工具，既可查询数据，也可执行需要 HITL 的业务操作。', apiGuideField1: 'API 工具：选择已启用工具。工具自身定义 URL、认证、参数 Schema、请求模板、响应映射、访问范围和查询/操作类型。', apiGuideField2: '依赖步骤：每个上游绑定的 source 必须同时加入依赖步骤；没有依赖时只能使用固定值。', apiGuideField3: '请求参数：选择固定值或上游绑定。绑定明确配置 source、JSONPath、one/many、空值和多值策略；不会按参数名自动提取字段。', apiGuideField4: '集合绑定必须配置 many 和最大 200 项；复杂过滤、聚合、重命名或请求体组装应先使用 transform。', apiGuideOutput: '查询工具返回映射后的结构化结果；操作工具冻结最终参数、URL、请求体和哈希后显示 HITL，确认后执行冻结请求。',
-        builtinGuideTitle: '内置工具', builtinGuidePurpose: '执行确定性的当前日期、日期计算、数学计算和单位换算，不需要远程 LLM，也不会修改外部业务数据。', builtinGuideField1: '选择工具：当前日期时间 current_datetime；日期计算 date_calculate；数学计算 calculator；单位换算 unit_convert。', builtinGuideField2: '工具参数：当前日期可填 timezone；日期计算按操作填写日期、数量和单位；数学计算填写 expression；单位换算填写 value、from、to。', builtinGuideField3: '参数值可使用固定值，或使用双花括号包裹步骤 ID 引用完整上游输出，但不支持字段点路径。日期使用 yyyy-MM-dd，时区使用 Asia/Shanghai 等 IANA 名称。', builtinGuideOutput: '输出可读的日期、计算结果或换算结果；参数错误会返回具体原因，可由后续 LLM 解释或触发恢复。',
-        llmGuideTitle: 'LLM 综合生成', llmGuidePurpose: '把多个上游步骤的结果整理成最终用户可读内容；确定性字段映射、过滤和聚合应使用 transform。', llmGuideField1: '依赖步骤：选择 Prompt 中需要引用的全部上游步骤。漏选依赖会导致步骤提前执行且变量无法解析。', llmGuideField2: 'Prompt：使用双花括号包裹步骤 ID 引用上游完整输出，并明确任务目标、允许证据、输出格式和缺失信息处理。', llmGuideField3: '不要让 LLM 承担操作 API 的字段映射、过滤或金额聚合；这些规则必须可验证并由 transform 执行。', llmGuideField4: '随机性：事实抽取建议 0 至 0.3；综合表达可使用 0.3 至 0.7。', llmGuideOutput: '输出模型生成的文本。若它是最后一个步骤，则成为主要回答；下游 LLM Prompt 可引用其文本。',
-        transformGuideTitle: '确定性数据转换（Transform）', transformGuidePurpose: '解决上下游 JSON 合同不一致问题，在不调用 LLM、不执行脚本的前提下完成可审计的字段映射、过滤、聚合和请求组装。', transformGuideField1: 'inputs/input：为每个输入命名，并显式填写 source、受限 JSONPath、one/many、on_empty、on_multiple、max_items 和 overflow；source 必须同时加入依赖步骤。', transformGuideField2: 'operations：按数组顺序执行。支持 select、filter、project、rename、distinct、sort、slice、aggregate、object、merge、default、cast，最多 20 个操作。可用“插入操作示例”生成合法骨架后再修改。', transformGuideField3: 'filter 支持 equals、not_equals、in、contains、exists、gt、gte、lt、lte；aggregate 支持 count、sum、avg、min、max；sort 仅支持 asc 或 desc。', transformGuideField4: '路径只允许 $、点字段、数字下标和数组通配符，例如 $.records、$[0].id、$[*].amount；不支持过滤表达式、函数、递归路径或脚本。', transformGuideField5: 'output_schema：使用 JSON Schema 强校验最终输出。运行时限制为最多 200 项、1 MB JSON、32 层嵌套；任何一步超限或类型不符都会失败并阻止下游执行。', transformGuideField6: '配置后使用“试运行当前配置”查看每步结构化输出。涉及操作 API 时先关闭真实操作验证查询和转换，再在受控测试环境开启操作并核对 HITL 冻结参数。', transformGuideOutput: '输出对象、数组或标量形式的结构化主数据，并记录操作数和行数元数据；数组按表格展示，对象按结构化结果展示，下游通过显式绑定消费。',
-        foreachGuideTitle: '批量循环（高级）', foreachGuidePurpose: '当上游返回数组且外部接口不支持批量请求时，对数组中的每一项重复执行同一个 API 或内置工具。该类型目前使用 JSON 配置。', foreachGuideField1: 'items：使用双花括号包裹上游步骤 ID。该上游必须输出 JSON 数组或包含数组的 JSON 对象，并在依赖步骤中选择它。', foreachGuideField2: 'item_path：可选。上游是对象时填写数组路径，例如 data.records；若对象只有一个数组字段或使用 records、rows、list 等常见字段，可省略。', foreachGuideField3: 'max_items：本次允许处理的最大条数，不得超过系统上限 200；max_attempts 为 1 至 3，但操作类非幂等接口不会自动重试。', foreachGuideField4: 'continue_on_error：true 表示单项失败后继续并最终返回部分失败统计；false 表示遇到首个失败立即停止。', foreachGuideField5: 'body：只允许 api 或 builtin。通过双花括号中的 item 引用整项、item.id 引用字段、index 引用从 0 开始的序号；操作 API 整个批次只进行一次 HITL。', foreachGuideOutput: '输出结构化 JSON，包含总数、已处理数、成功数、失败数、是否可重试及每项结果，便于后续 LLM 汇总和部分失败恢复。',
-        descriptionTitle: '能力描述', descriptionField: '说明 Skill 解决的业务目标、适用输入、主要输出和能力边界。Agent 会用这段内容判断是否选择该 Skill，因此不要只复述名称，也不要承诺未配置的工具能力。', descriptionExample: '查询用户授权范围内的业务记录，结合知识库规则生成分析结论；不负责修改业务数据。', triggerTitle: '触发词', triggerDescription: '填写用户可能使用的典型意图短语，多个词用逗号分隔。应覆盖常见同义表达，但避免“帮我”“查询”“处理”等高频宽泛词造成误触发。', triggerExample: '业务记录分析, 规则核验, 生成业务建议', scoreTitle: '最低置信度', scoreDescription: '控制 Skill 匹配的严格程度。值越高越不容易误触发，也越可能漏掉模糊表达；建议从 0.65 开始，并依据真实对话命中率调整。',
-        stepIdTitle: '步骤 ID', stepIdDescription: '当前 Skill 内的稳定唯一标识，用于依赖关系、参数引用和执行日志。推荐使用“动作_对象”格式，例如 query_records；只使用英文字母、数字和下划线。', dependsTitle: '依赖步骤', dependsDescription: '当前步骤会等待所选上游步骤全部成功后执行，并可引用这些步骤的输出。不选择依赖时可能与其他无依赖步骤并行；如果顺序影响结果，必须显式设置依赖。', dependsExample: '“生成结论”依赖“检索规则”和“查询记录”', paramsTitle: '参数映射', paramsDescription: '固定值直接填写；上游绑定选择来源步骤、安全 JSONPath、one/many 基数和失败策略。系统不会语义猜测、自动按同名字段提取或静默取第一行。', paramsExample: 'recordId 绑定 query_record 的 $[0].id；recordIds 绑定 $[*].id 且为 many', promptTitle: 'Prompt 模板', promptDescription: '说明本步骤的任务、可使用的上游资料、输出格式和禁止事项。使用双花括号包裹步骤 ID 引用完整输出；引用的步骤必须同时加入依赖列表。不要要求模型猜测不存在的字段或绕过权限。', promptExample: '综合规则步骤和记录步骤，输出结论、依据与待确认事项。', foreachTitle: '批量循环配置', foreachDescription: '遍历上游步骤返回的 JSON 数组，对每一项执行同一个 API 或内置工具。配置使用 items、max_items、max_attempts、continue_on_error 和 body；操作 API 整批只进行一次 HITL。', foreachExample: 'items 引用 query_records，最多处理 100 项，body 中引用当前记录的 id 字段', transformInputsParameter: 'Transform 输入绑定', transformOperationsParameter: 'Transform 操作序列', transformOutputSchemaParameter: 'Transform 输出 Schema'
+    enums: {
+      public: '公开',
+      department: '授权部门',
+      post: '授权岗位',
+      user: '授权用户',
+      authNone: '无认证',
+      authApiKey: 'API 密钥',
+      authBearer: 'Bearer 令牌',
+      authBasic: 'Basic 认证',
+      authHmac: 'AK/SK 签名',
+      apiCall: 'API 调用',
+      sqlExec: 'SQL 执行',
+      pending: '待确认',
+      riskLow: '低',
+      riskMedium: '中',
+      riskHigh: '高',
+      failed: '失败'
+    },
+    common: {
+      search: '搜索',
+      create: '新建',
+      edit: '编辑',
+      delete: '删除',
+      save: '保存',
+      cancel: '取消',
+      detail: '详情',
+      export: '导出',
+      copy: '复制',
+      copySuccess: '复制成功',
+      status: '状态',
+      action: '操作',
+      keywordPlaceholder: '请输入关键词',
+      startDate: '开始日期',
+      endDate: '结束日期',
+      requiredFields: '请填写必填项',
+      invalidJson: '{field} 不是有效的 JSON'
+    },
+    chat: {
+      newSession: '新对话',
+      noSession: '暂无会话',
+      selectSession: '选择或创建会话',
+      inputPlaceholder: '输入您的问题... (Enter 发送, Shift+Enter 换行)',
+      send: '发送',
+      stop: '停止',
+      generationStopped: '回答已停止',
+      generationStoppedPartial: '已停止生成，以上为停止前收到的内容',
+      noMessages: '发送消息开始对话',
+      scope: '知识库范围',
+      statusAnalyzing: '正在分析问题...',
+      messageCount: '{count} 条消息',
+      source: '来源',
+      chunk: '片段',
+      evidence: '证据内容',
+      like: '点赞',
+      dislike: '点踩',
+      copyAnswer: '复制回答',
+      answerMode: '回答模式',
+      modeAuto: '智能模式',
+      modeKnowledge: '仅知识库',
+      modeGeneral: '通用对话',
+      modeHint: {
+        auto: '自动判断知识问答或通用对话；有附件时优先依据附件回答',
+        knowledge: '只依据知识库和会话附件回答，资料不足时不会编造',
+        general: '使用模型公共知识和会话附件回答，不查询系统知识库，也不代表企业制度或内部事实'
+      },
+      answerGenerally: '按通用知识回答',
+      rephrase: '换个问法',
+      feedbackTitle: '问题反馈',
+      feedbackType: '请选择反馈类型',
+      feedbackTypeRequired: '请选择反馈类型',
+      feedbackReasonOptional: '补充说明（选填）',
+      feedbackPlaceholder: '可以补充说明具体哪里不准确或不符合预期。',
+      submitFeedback: '提交反馈',
+      feedbackSubmitted: '反馈已提交',
+      feedbackTypes: {
+        factualMismatch: '内容与事实不符',
+        instructionNotFollowed: '回答与指令不符',
+        formatIssue: '回答格式不正确',
+        contentError: '内容存在错误',
+        incompleteAnswer: '回答不完整',
+        irrelevantAnswer: '答非所问',
+        other: '其他问题'
+      },
+      attachments: '会话附件',
+      expandAttachments: '展开附件列表',
+      collapseAttachments: '收起附件列表',
+      attachmentSummaryReady: '{count} 个可用',
+      attachmentSummaryProcessing: '{count} 个处理中',
+      attachmentSummaryFailed: '{count} 个失败',
+      attachmentQuality: '质量 {score}',
+      unknownFormat: '未知格式',
+      addAttachment: '添加会话附件',
+      removeAttachment: '删除附件',
+      retryAttachment: '重试处理',
+      attachmentUploadFailed: '附件上传失败',
+      waitForAttachments: '附件正在解析和处理，完成后即可发送消息',
+      attachmentStatus: {
+        uploaded: '已上传',
+        parsing: '解析中',
+        processing: '处理中',
+        ready: '可用',
+        failed: '处理失败'
       }
     },
-    datasource: { name: '名称', code: '编码', dbType: '类型', jdbcUrl: 'JDBC URL', testConn: '测试连接', connSuccess: '连接成功', connFailed: '失败', maxConnections: '最大连接数', queryTimeout: '查询超时(s)', password: '密码', passwordKeep: '留空表示不修改', username: '用户名', schemas: 'Schema 权限', createSchema: '新增 Schema', domainCode: '领域编码', domainName: '领域名称', viewName: '视图名称', columnsMeta: '字段元数据(JSON)', fewShotExamples: '示例(JSON)', allowedFunctions: '允许函数', allowedFunctionsPlaceholder: '选择常用函数，或输入函数名后回车', sensitiveColumns: '敏感字段(JSON)', namePlaceholder: '请输入数据源名称', codePlaceholder: '请输入唯一编码，例如 member_db', dbTypePlaceholder: '请选择数据库类型', jdbcPlaceholder: '请输入完整 JDBC 连接地址', usernamePlaceholder: '请输入只读数据库账号', domainCodePlaceholder: '请输入领域唯一编码', domainNamePlaceholder: '请输入领域名称', viewNamePlaceholder: '请输入允许访问的表或视图名称', descriptionPlaceholder: '请说明该 Schema 的业务含义', jsonArrayPlaceholder: '请输入 JSON 数组，例如 []', requiredFields: '请填写名称、编码、数据库类型、连接地址和用户名', schemaRequiredFields: '请填写领域编码、领域名称和表或视图名称', deleteConfirm: '删除数据源会同时删除其 Schema 配置，确认继续吗？', schemaDeleteConfirm: '确认删除此 Schema 配置吗？', schemaTestTitle: 'Schema 查询测试', testSchema: '测试 Schema', testQuestion: '测试问题', testQuestionPlaceholder: '输入自然语言查询问题', testQuestionRequired: '请输入测试问题', defaultTestQuestion: '查询{name}的前 10 条记录', defaultDomainName: '该业务域', querySuccess: '查询成功，返回 {count} 行', queryFailed: '查询失败', generatedSql: '生成 SQL', close: '关闭', startTest: '开始测试' },
-    tool: { name: '名称', code: '编码', description: '描述', method: '方法', operationType: '操作类型', query: '查询', actionType: '操作', authType: '认证', urlTemplate: 'URL模板', timeout: '超时(s)', retryCount: '重试次数', basicInfo: '基本信息', authConfig: '认证配置', authPlaceholder: '填写 JSON；保存后不会再次回显密钥', identityPropagation: '传递用户身份', identityHeaderName: '身份请求头', paramSchema: '参数Schema', requestHeaders: '请求头', requestTemplate: '请求模板', responseMapping: '响应映射', visibility: '访问范围', department: '授权部门', post: '授权岗位', user: '授权用户', namePlaceholder: '请输入工具名称', codePlaceholder: '请输入唯一编码，例如 query_coupon', descriptionPlaceholder: '请清楚说明工具用途、使用条件和返回内容', urlPlaceholder: '请输入完整请求地址或 URL 模板', departmentPlaceholder: '请选择授权部门', postPlaceholder: '请选择授权岗位', userPlaceholder: '请选择授权用户', identityHeaderPlaceholder: '请输入承载用户身份的请求头名称', paramSchemaPlaceholder: '请输入 JSON Schema', headersPlaceholder: '请输入 JSON 请求头键值对象', requestPlaceholder: '请输入 JSON 请求模板', responsePlaceholder: '请输入 JSON 响应字段映射', requiredFields: '请填写名称、编码和 URL 模板', deleteConfirm: '删除后 Agent 将无法再调用该工具，确认继续吗？', credentialKeepHint: '已保存的认证密钥不会回显。保持以下密钥字段为空将继续使用原密钥；填写任一密钥字段则必须完整填写并整体替换。', unsupportedAuthType: '不支持的认证类型', authFieldRequired: '请填写认证字段：{field}', testTitle: '工具测试', testTool: '测试工具', inputJson: '入参 JSON', realRequest: '真实请求', dryRunHint: '关闭时只校验参数并渲染请求，不访问外部接口', requestMethod: '请求方法', requestUrl: '请求地址', requestHeader: '请求头', requestBody: '请求体', responseResult: '响应结果', errorMessage: '错误信息', dryRunPassed: '配置校验通过，请求已渲染', requestCompleted: '工具请求完成', configInvalid: '工具配置或入参校验失败', close: '关闭', startTest: '开始测试', authFields: { token: 'Bearer Token', username: '用户名', password: '密码', header: '请求头名称', value: 'API Key', accessKey: 'Access Key（AK）', secretKey: 'Secret Key（SK）' } },
-    experience: { queryText: '问题', qualityScore: '质量分', hitCount: '命中', visibility: '可见性', lastHitAt: '最后命中', minScore: '最低质量分', eliminated: '已淘汰', unknownSource: '未知来源', updateScore: '调整分数', updateVisibility: '可见性', deleteConfirm: '删除后该经验将无法再被复用，确认继续吗？', detailTitle: '经验详情', answer: '答案', sourceChunks: '参考资料' },
-    badCase: { pending: '待标注', labeled: '已标注', exported: '已处理', userQuery: '用户问题', feedbackType: '反馈类型', feedbackReason: '补充说明', label: '标注', correctAnswer: '正确回答', labelTitle: '标注 Bad Case', searchPlaceholder: '搜索用户问题', labelPlaceholder: '请填写正确的答案...', detailTitle: 'Bad Case 详情', question: '用户问题', aiAnswer: 'AI 回答', retrievalResults: '检索结果', sessionId: '会话 ID', messageId: '消息 ID' },
-    sqlLog: { naturalQuery: '自然语言查询', generatedSql: '生成SQL', execTime: '耗时(ms)', rowCount: '行数', detailTitle: 'SQL执行详情', finalSql: '最终执行SQL', blockReason: '拦截原因', searchPlaceholder: '搜索自然语言问题或 SQL' },
-    audit: { actionType: '操作类型', toolCode: '工具/代码', riskLevel: '风险', confirmed: '已确认', cancelled: '已取消', timeout: '超时', detailTitle: 'HITL 操作详情', toolInput: '工具输入', cancelReason: '取消原因', contextSnapshot: '上下文快照', userId: '用户ID', user: '用户', userPlaceholder: '请选择用户' },
+    help: {
+      description: '用途与工作方式',
+      steps: '配置步骤',
+      stepTypes: '步骤类型配置手册',
+      parameters: '全部参数说明',
+      required: '必填',
+      optional: '选填',
+      exampleValue: '示例值',
+      howToConfigure: '具体配置',
+      stepOutput: '步骤输出',
+      exampleConfig: '配置示例',
+      rules: '字段规则',
+      examples: '完整示例',
+      effects: '保存后的影响',
+      notes: '安全与常见问题'
+    },
+    editor: {
+      format: '格式化',
+      useExample: '填入示例',
+      jsonHint: '支持 JSON 语法高亮、括号匹配、实时校验和错误行定位。',
+      yamlHint: '支持 YAML 语法高亮、实时解析和错误行定位；修改后请应用到表单。',
+      arrayRequired: '根节点必须是 JSON 数组，例如 []。',
+      objectRequired: '根节点必须是 JSON 对象，例如 {}。',
+      invalidContent: '配置格式不正确',
+      errorDetail: '第 {line} 行，第 {column} 列：{message}'
+    },
+    skill: {
+      name: '名称',
+      code: '编码',
+      triggerKeywords: '触发词',
+      intentType: '意图类型',
+      positiveExamples: '正向示例',
+      negativeExamples: '排除示例',
+      version: '版本',
+      minScore: '最低置信度',
+      yamlPreview: 'YAML预览',
+      yamlConfig: 'YAML 专家模式',
+      basicInfo: '基本信息',
+      createTitle: '新建 Skill',
+      editTitle: '编辑 Skill',
+      validate: '校验语法',
+      validateSuccess: '校验通过',
+      addStep: '添加步骤',
+      stepEdit: '步骤编辑',
+      stepDescription: '步骤描述',
+      type: '类型',
+      dependsOn: '依赖步骤',
+      steps: '执行步骤',
+      namePlaceholder: '请输入便于识别的 Skill 名称',
+      codePlaceholder: '请输入唯一编码，例如 order_query',
+      descriptionPlaceholder: '请说明适用场景和能力边界',
+      triggerPlaceholder: '输入触发词，多个词用逗号分隔',
+      intentTypeHint: '知识问答只回答资料；操作任务和组合任务可优先进入执行链。旧配置会按步骤类型自动推断。',
+      positiveExamplesPlaceholder: '每行一个应命中该 Skill 的典型问题',
+      negativeExamplesPlaceholder: '每行一个容易误命中但不应执行的问题',
+      yamlPlaceholder: '请输入完整的 YAML 配置',
+      requiredFields: '请填写名称和编码',
+      deleteConfirm:
+        '将永久删除该 Skill 配置且无法恢复，历史运行记录不会随之删除。删除前请确认没有自动化工作流引用。确认继续吗？',
+      intentTypes: { knowledge: '知识问答', action: '数据查询或工具操作', composite: '多步骤组合任务' },
+      stepsHint: '无依赖的步骤会并行执行；存在依赖的步骤会等待上游完成。',
+      noSteps: '暂无执行步骤',
+      stepNumber: '步骤 {number}',
+      stepId: '步骤 ID',
+      stepIdPlaceholder: '例如 query_members',
+      stepDescriptionPlaceholder: '说明该步骤要完成什么',
+      dependsPlaceholder: '请选择需要等待的上游步骤',
+      moveUp: '上移',
+      moveDown: '下移',
+      ragQuery: '检索问题',
+      ragQueryPlaceholder: '留空时使用用户原始问题，也可填写固定检索问题',
+      datasource: '数据源',
+      datasourcePlaceholder: '请选择已启用的数据源',
+      queryHint: '查询意图',
+      queryHintPlaceholder: '用自然语言说明要查询的数据和筛选条件',
+      apiTool: 'API 工具',
+      apiToolPlaceholder: '请选择已启用的 API 工具',
+      builtinTool: '内置工具',
+      builtinPlaceholder: '请选择平台内置工具',
+      parameters: '请求参数',
+      arguments: '工具参数',
+      paramName: '参数名',
+      paramValue: '固定值或上游步骤字段引用',
+      addParameter: '添加参数',
+      paramLiteral: '固定值',
+      paramBinding: '上游绑定',
+      paramLiteralPlaceholder: '输入字符串或 JSON 值',
+      bindingSource: '来源步骤',
+      bindingPath: 'JSONPath，例如 $[0].id',
+      cardinalityOne: '单值 one',
+      cardinalityMany: '集合 many',
+      onEmptyFail: '空值时报错',
+      onEmptySkip: '空值时省略参数',
+      onEmptyDefault: '空值时使用默认值',
+      onMultipleFail: '多值时报错',
+      onMultipleFirst: '多值时取第一项',
+      overflowFail: '超量时报错',
+      overflowTruncate: '超量时截断',
+      defaultValue: '默认值（字符串或 JSON）',
+      promptTemplate: 'Prompt 模板',
+      promptPlaceholder: '说明如何使用上游步骤结果生成最终内容',
+      insertOutput: '插入上游结果：',
+      temperature: '生成随机性',
+      foreachConfig: '批量循环配置',
+      transformConfig: '确定性数据转换配置',
+      outputSchema: '输出 Schema',
+      outputSchemaHint: '可选。配置后，步骤成功结果必须满足该 JSON Schema，否则步骤失败。LLM 配置后必须返回合法 JSON。',
+      outputSchemaHelp:
+        '为步骤主数据声明 JSON Schema 合同。RAG、NL2SQL、API、内置工具和 LLM 都会在成功出口校验；LLM 配置后会按结构化 JSON 解析结果，而不是继续返回普通文本。Transform 和 foreach 请在各自高级 JSON 配置中填写 output_schema。',
+      stepsRequired: '请至少添加一个执行步骤',
+      stepIdRequired: '步骤 ID 不能为空',
+      stepIdDuplicate: '步骤 ID 不能重复',
+      selfDependency: '步骤不能依赖自身',
+      missingDependency: '存在已失效的依赖步骤，请重新选择依赖关系',
+      dependencyCycle: '步骤依赖不能形成循环',
+      datasourceRequired: 'NL2SQL 步骤必须选择数据源',
+      toolRequired: '工具步骤必须选择工具',
+      promptRequired: 'LLM 步骤必须填写 Prompt 模板',
+      parameterKeyDuplicate: '同一步骤中的参数名不能重复',
+      outputSchemaInvalid: '输出 Schema 必须是有效的 JSON 对象',
+      foreachJsonInvalid: '批量循环配置不是有效 JSON',
+      transformJsonInvalid: '数据转换配置不是有效 JSON',
+      transformInputRequired: '数据转换必须配置 input 或 inputs',
+      transformOperationsRequired: '数据转换必须配置 operations 数组',
+      yamlApplied: 'YAML 已应用到表单',
+      yamlExpertHint: '专家模式中的修改不会直接保存；请先“应用到表单”。无法识别或校验失败的 YAML 不会覆盖当前表单。',
+      applyYaml: '应用到表单',
+      regenerateYaml: '根据表单重新生成',
+      firstUseGuide:
+        '首次配置建议按顺序完成：1. 配数据源/Schema 或工具，2. 用测试按钮验证，3. 用模板创建 Skill，4. 试运行执行链，5. 到对话页完整验证。',
+      emptyHint: '暂无 Skill，请先配置数据源、Schema 或 API 工具，再按业务场景新建并试运行 Skill',
+      quickDatasource: '数据源',
+      quickTool: '工具',
+      quickChat: '对话测试',
+      matchTest: '命中测试',
+      viewBadCase: '查看 Bad Case',
+      runTest: '试运行',
+      runCurrentConfig: '试运行当前配置',
+      configTemplate: '配置模板',
+      templateRagName: '知识库问答',
+      templateRagDescription: '先检索知识库，再综合生成带依据的回答',
+      templateRagKeywords: '制度, 规则, 政策, 怎么办',
+      templateDataName: '数据查询问答',
+      templateDataDescription: '把自然语言问题转成只读 SQL，再由 LLM 解释查询结果',
+      templateDataKeywords: '统计, 查询, 多少, 排名',
+      templateToolName: '工具查询/操作',
+      templateToolDescription: '调用已配置的外部工具，再汇总工具返回结果',
+      templateToolKeywords: '处理, 查询记录, 同步, 创建',
+      templateBatchName: '批量处理',
+      templateBatchDescription: '先查询候选数据，再对每条数据执行工具步骤',
+      templateBatchKeywords: '批量, 批处理, 多条',
+      applyTemplate: '套用模板',
+      applyTemplateTitle: '套用模板',
+      applyTemplateConfirm: '套用模板会替换当前步骤配置，基础名称和编码不会被覆盖。',
+      publishCheckTitle: '上线前检查',
+      publishCheckHint: '当前配置还有上线前检查提醒，保存时会再次确认',
+      continueSave: '继续保存',
+      returnEdit: '返回修改',
+      testQuestion: '测试问题',
+      testQuestionPlaceholder: '输入用户可能提出的问题',
+      runDialogTitle: 'Skill 执行链试运行',
+      testTarget: '测试对象',
+      currentEditingConfig: '当前编辑配置',
+      runQuestionPlaceholder: '输入用于执行链试运行的问题',
+      executeActions: '执行操作',
+      dryRunActionHint: '关闭时操作类 API 只做 dry-run 跳过',
+      runCompleted: '试运行完成',
+      runCompletedDry: '试运行完成：操作类步骤已跳过',
+      startRun: '开始试运行',
+      startTest: '测试',
+      close: '关闭',
+      stepColumn: '步骤',
+      output: '输出',
+      noMatch: '未命中任何已启用 Skill',
+      matchedResult: '命中 {name} ({code})，分数 {score}',
+      missingTriggerWarning: '未配置触发关键词，用户问题可能无法命中该 Skill。',
+      apiParamWarning: '存在 API 步骤未配置入参，请确认工具不需要参数，或在工具页先完成测试。',
+      nl2sqlDatasourceWarning: '存在 NL2SQL 步骤未选择数据源。',
+      llmDependencyWarning: '存在 LLM 步骤未依赖上游结果，请确认它不是孤立生成。',
+      foreachWarning: '存在批量执行步骤，请先使用试运行确认 max_items 和失败处理符合预期。',
+      testQuestionRequired: '请输入测试问题',
+      matchTestHint:
+        '只测试已保存且已启用 Skill 的触发词、正向/排除示例和最低置信度，不包含未保存内容或聊天中的 LLM 语义兜底。',
+      runTestHint:
+        '试运行会真实执行查询、检索和模型步骤。操作类 API 不会在此直接执行：关闭时 dry-run 跳过，开启后验证 HITL 拦截。',
+      actionGateCheck: '检查操作审批门槛',
+      actionGateCheckHint: '开启后验证 action 步骤会被 HITL 拦截；独立试运行没有聊天会话，不会调用外部接口',
+      typeColumn: '类型',
+      statusColumn: '状态',
+      outputTruncated: '...[输出已截断]',
+      types: {
+        rag: '知识库检索',
+        nl2sql: '数据查询（NL2SQL）',
+        api: 'API 工具',
+        builtin: '内置工具',
+        llm: 'LLM 综合生成',
+        transform: '确定性数据转换',
+        foreach: '批量循环（高级）'
+      },
+      builtins: {
+        currentDatetime: '当前日期时间',
+        dateCalculate: '日期计算',
+        calculator: '数学计算',
+        unitConvert: '单位换算'
+      },
+      templateTransformName: '查询、转换与调用',
+      templateTransformDescription:
+        '查询结构化数据，通过 Transform 组装请求，再显式绑定到 API；需要按实际字段和工具参数调整',
+      templateTransformKeywords: '查询后处理, 数据转换, 组合调用, 统计后操作',
+      insertTransformOperation: '插入操作示例',
+      transformOperations: {
+        select: '选择路径 select',
+        filter: '过滤 filter',
+        project: '字段投影 project',
+        rename: '字段重命名 rename',
+        distinct: '去重 distinct',
+        sort: '排序 sort',
+        slice: '截取 slice',
+        limit: '限制条数 limit',
+        aggregate: '聚合 aggregate',
+        object: '组装对象 object',
+        merge: '合并对象 merge',
+        default: '空值默认 default',
+        cast: '类型转换 cast'
+      },
+      templateContent: {
+        retrieveKnowledge: '检索相关知识',
+        generateAnswer: '综合生成回答',
+        ragPrompt:
+          '请仅基于知识库检索结果回答当前用户问题。\n知识库内容：{output}\n要求：回答清晰、准确；依据不足时明确说明。',
+        queryData: '查询业务数据',
+        queryDataHint: '只查询当前问题需要的字段，限制返回行数，避免查询敏感字段。',
+        summarizeData: '解释查询结果',
+        dataPrompt:
+          '请根据结构化查询结果回答当前用户问题。\n查询结果：{output}\n要求：说明关键数字、统计口径和可能限制。',
+        callTool: '调用外部工具',
+        summarizeTool: '汇总工具结果',
+        toolPrompt: '请把工具结构化返回结果整理成用户可读结论。\n工具结果：{output}',
+        queryRecords: '查询待转换记录',
+        queryRecordsHint: '查询操作所需记录，返回稳定 ID、金额等后续请求必须使用的字段。',
+        buildRequest: '确定性组装请求',
+        callAction: '调用已配置工具',
+        summarizeAction: '汇总调用结果',
+        actionPrompt: '请根据工具结构化结果说明执行状态、影响对象和失败原因。\n工具结果：{output}',
+        queryItems: '查询待处理数据',
+        queryItemsHint: '查询需要批量处理的记录，必须包含记录 id 和展示名称。',
+        processItems: '逐条执行工具',
+        summarizeBatch: '汇总批处理结果',
+        batchPrompt: '请汇总批量处理结果，列出成功、失败和需要人工确认的事项。\n处理结果：{output}'
+      },
+      help: {
+        transformTitle: '确定性数据转换',
+        transformDescription:
+          '使用受限声明式操作完成字段选择、过滤、投影、重命名、去重、排序、截取、聚合、对象组装与合并。最多处理 200 项，不允许脚本、网络或文件访问。',
+        fields: {
+          name: '填写面向业务用户的名称，用于列表、选择器和执行结果展示；应直观表达该 Skill 能完成的任务。',
+          code: '填写租户内唯一且稳定的英文编码，仅允许字母、数字和下划线；保存后不要随意修改，否则已有引用会失效。',
+          description:
+            '说明适用场景、所需输入、主要输出和能力边界；字段可以留空，但 Agent 会因缺少语义而难以稳定选择。',
+          intentType:
+            '知识问答用于基于证据回答；数据查询或工具操作、组合任务会被路由视为操作型能力。该值影响选择优先级，不会自动生成步骤。',
+          triggerKeywords:
+            '填写用户可能使用的意图短语，多个词用逗号分隔；至少命中一个触发词才会进入聊天语义兜底候选，避免“查询”“处理”等宽泛词。',
+          positiveExamples:
+            '每行一个应命中的完整用户表达。规则匹配采用包含判断，命中会把分数提升至 1.0；不要只写单个宽泛词。',
+          negativeExamples: '每行一个相似但不应执行的完整表达。包含命中时规则分数直接为 0，并优先于触发词和正向示例。',
+          minScore:
+            '设置规则匹配阈值，页面范围 0.50 至 1.00、步长 0.05；值越高误触发越少但更可能漏匹配，建议从 0.65 开始。',
+          status: '启用后才可被 Agent 选择执行；停用不会删除配置和历史执行记录。',
+          stepId: '填写当前 Skill 内唯一的步骤标识，格式为字母开头、最多 64 位的字母数字下划线；用于依赖和输出引用。',
+          type: '选择知识检索、数据查询、API、内置工具、LLM、确定性数据转换或批量循环执行器；类型决定后续必填配置。',
+          stepDescription: '明确写出本步骤要产生的结果和成功标准；NL2SQL 未填写查询意图时会使用该描述作为查询提示。',
+          dependsOn: '选择必须先成功完成的上游步骤；全部依赖完成后本步骤才执行，无依赖步骤可能并行执行。',
+          ragQuery:
+            '填写固定检索文本，留空则使用用户当前问题；也可引用已声明依赖的上游完整输出，例如双花括号包裹的 step_id。',
+          datasource: '选择当前租户已启用的数据源；运行时仍会按当前用户的 Schema ACL 过滤可见表和字段。',
+          queryHint: '用自然语言写明查询对象、条件、时间范围、统计口径和返回字段；当前执行器不会自动拼接用户原问题。',
+          apiTool: '选择当前租户已启用且有权使用的工具；工具自身的参数 Schema、ACL、认证及查询/操作类型仍会强制生效。',
+          parameters:
+            '固定值直接填写；上游值必须显式选择来源步骤、JSONPath、one/many 基数及空值、多值和超量策略，系统不会猜字段或默认取第一行。',
+          builtinTool:
+            '普通表单支持 current_datetime、date_calculate、calculator、unit_convert；专家 YAML 还支持依赖 Tavily 的 web_search，且不能放入 foreach。',
+          arguments:
+            '按内置工具契约填写参数名和值，可使用固定值或双花括号引用完整上游输出；日期、时区、单位和联网搜索参数必须符合工具格式。',
+          promptTemplate:
+            '写明任务、证据、输出格式和缺失信息处理；支持完整步骤、字段路径及只读 #each 数组循环，引用的步骤必须加入依赖。',
+          temperature: '控制 LLM 随机性，范围 0 至 1；事实抽取和操作参数建议 0 至 0.3，普通总结建议 0.3 至 0.7。',
+          outputSchema:
+            '可为 RAG、NL2SQL、API、内置工具或 LLM 步骤声明 JSON Schema。配置后，成功结果必须满足该合同，否则当前步骤失败且下游不执行；LLM 会按结构化 JSON 解析，不再接受普通文本。Transform 和批量循环请在各自高级 JSON 中配置 output_schema。',
+          foreachConfig:
+            '配置来源数组、可选数组路径、最大数量、重试、失败策略及循环体；最大 200 项，循环体仅支持 API 或普通内置工具，不能使用 web_search。',
+          transformInputs:
+            '使用 input 或 inputs 显式绑定上游结构化主数据；每个绑定配置 source、受限 JSONPath、one/many 基数和失败策略，并把来源步骤加入依赖。',
+          transformOperations:
+            '按顺序配置最多 20 个声明式操作：select、filter、project、rename、distinct、sort、slice、limit、aggregate、object、merge、default、cast。每个中间结果都会执行数量、大小和嵌套深度限制。',
+          transformOutputSchema:
+            '使用 JSON Schema 校验转换后的最终 JSON。涉及 API 操作、金额、数量或 ID 时应声明类型、required、数组 items 和必要约束，校验失败会终止下游执行。',
+          yamlConfig: '完整 Skill 的专家配置，适合审查、迁移和批量编辑；修改后必须“应用到表单”并通过校验才会保存。'
+        },
+        fieldExamples: {
+          name: '会员优惠券批量发放',
+          positiveExamples: '请给符合条件的会员发放本月优惠券',
+          positiveExamplesMultiline:
+            '帮我查一下这笔订单是否符合退款条件\n请核对订单并创建退款申请\n这笔订单有质量问题，帮我走退款流程',
+          negativeExamples: '只告诉我优惠券规则，不要执行发放',
+          negativeExamplesMultiline:
+            '只说明退款政策，不要查询我的订单\n帮我查询物流进度\n我想修改收货地址，不需要退款',
+          stepDescription: '查询当前可用且金额为 100 元的无门槛优惠券',
+          ragQuery: '优惠券发放资格、限制和审批规则',
+          queryHint: '查询仍有效的 100 元无门槛优惠券，返回优惠券 ID、名称和有效期'
+        },
+        title: 'Skill 配置帮助',
+        description:
+          'Skill 是 Agent 可匹配并执行的受控 DAG。意图类型影响会话路由，七类步骤决定实际执行内容；字段映射、过滤和聚合应由确定性数据转换完成。普通配置请使用表单，只有检查或迁移完整定义时才使用 YAML 专家模式。',
+        example: 'NL2SQL 查询 → Transform 过滤、聚合并组装请求 → API 显式绑定 → 聊天 HITL → LLM 汇总',
+        note1: '只能引用当前租户中已启用且当前用户有权使用的数据源、Schema 和 API 工具。',
+        note2:
+          '聊天中的操作 API 会强制 HITL；独立试运行只能验证拦截。自动化 Skill 节点当前禁止包含 API，工作流外部调用应使用 API 节点并显式配置审批。',
+        note3: '保存成功只代表配置合法。正式启用前应使用包含信息缺失、同义表达和多轮补充的真实问题验证匹配与执行结果。',
+        step1: '填写名称、唯一编码和能力描述，再按实际任务选择知识问答、数据查询或工具操作、组合任务意图。',
+        step2: '配置具体触发词、应命中的正向示例和必须排除的反向示例，再在 0.50 至 1.00 范围设置最低置信度。',
+        step3: '按任务产物拆分步骤，为每一步设置唯一 ID、类型和明确描述。相互独立的步骤可不设置依赖以并行执行。',
+        step4:
+          '为下游选择全部来源步骤；简单 API 参数使用显式绑定，复杂过滤、聚合、重命名和请求体组装先通过 Transform，再连接 API、foreach 或 LLM。',
+        step5:
+          '聊天 Skill 中将操作工具放在查询、转换和 Schema 校验之后；自动化中不要使用包含 API 的 Skill，改用工作流 API 节点。',
+        step6:
+          '先试运行查看每步输出；操作检查只验证 HITL 拦截。再检查 YAML，手工修改后应用到表单并校验，最后保存并用真实多轮对话验收。',
+        rule1: '步骤 ID 在当前 Skill 内唯一，只使用英文字母、数字和下划线；被依赖后不要随意改名。',
+        rule2: '依赖关系必须是有向无环图；无依赖步骤会并行，有依赖步骤会等待全部上游完成。',
+        rule3: '参数映射中的固定值和上游字段类型必须符合目标工具的参数 Schema。',
+        rule4: '批量循环必须设置来源数组、执行体和数量上限；执行体只允许 API 或普通内置工具，不能使用 web_search。',
+        rule5:
+          'Transform 最多 20 个操作、200 项、1 MB JSON 和 32 层嵌套；只允许受限 JSONPath 和声明式操作，不支持脚本、网络、文件或反射。',
+        effect1: '启用后，Agent 会综合意图类型、正反例、触发词、规则分数及必要的语义兜底决定是否选择该 Skill。',
+        effect2: '执行过程会继承租户、用户和会话权限；下游只能看到当前用户有权访问的数据与工具。',
+        ragGuideTitle: '知识库检索（RAG）',
+        ragGuidePurpose: '从当前用户有权访问的租户知识库和会话附件中检索证据，适合制度、手册、说明和附件内容查询。',
+        ragGuideField1: '步骤 ID：填写稳定且易理解的 ID，例如 retrieve_policy；后续 LLM 可通过该 ID 引用检索结果。',
+        ragGuideField2: '依赖步骤：通常无需依赖，可与数据查询并行；检索问题引用上游步骤时，必须把被引用步骤加入依赖。',
+        ragGuideField3:
+          '检索问题：留空时使用用户当前问题；填写固定文本时也可用双花括号包裹的 step_id 引用上游完整输出，未解析的引用会直接报错。',
+        ragGuideOutput: '输出带文件名、章节、Chunk 标记和正文的检索证据，同时保留引用信息供最终回答展示。',
+        nl2sqlGuideTitle: '数据查询（NL2SQL）',
+        nl2sqlGuidePurpose: '在选定数据源的授权 Schema 内生成并执行只读 SQL，适合统计、筛选、汇总和业务数据查询。',
+        nl2sqlGuideField1:
+          '数据源：只能选择当前租户已启用的数据源；真正可查询的表和字段还会按当前用户的 Schema ACL 过滤。',
+        nl2sqlGuideField2:
+          '查询意图：写清数据对象、筛选条件、统计口径、时间范围和希望返回的字段。当前执行器会直接使用这段查询意图，不会自动拼接用户原问题或替换上游变量。',
+        nl2sqlGuideField3:
+          '依赖步骤：固定查询通常无需依赖；需要动态条件时可引用已声明依赖的完整输出或字段路径。引用解析后仍会经过 Schema ACL 和只读 SQL 校验。',
+        nl2sqlGuideOutput:
+          '主输出是最多 50 行的结构化行对象数组，并附带 SQL、行数等元数据；Markdown 表格只在最终展示时生成。',
+        apiGuideTitle: 'API 工具',
+        apiGuidePurpose: '调用租户预先配置并授权的外部 HTTP 工具，既可查询数据，也可执行需要 HITL 的业务操作。',
+        apiGuideField1:
+          'API 工具：选择已启用工具。Skill 只提供工具参数；工具会按参数 Schema 的 x-in/in 和 x-http-name/httpName 自动放入 query、path、body 或 header，并继续兼容旧 URL 占位符。',
+        apiGuideField2: '依赖步骤：每个上游绑定的 source 必须同时加入依赖步骤；没有依赖时只能使用固定值。',
+        apiGuideField3:
+          '请求参数：选择固定值或上游绑定。绑定明确配置 source、JSONPath、one/many、空值和多值策略；不会按参数名自动提取字段。',
+        apiGuideField4: '集合绑定必须配置 many 和最大 200 项；复杂过滤、聚合、重命名或请求体组装应先使用 transform。',
+        apiGuideOutput:
+          '查询工具返回映射后的结构化结果；操作工具冻结最终参数、URL、请求体和哈希后显示 HITL，确认后执行冻结请求。',
+        builtinGuideTitle: '内置工具',
+        builtinGuidePurpose: '执行日期、数学、单位换算等确定性能力；专家 YAML 还可调用已配置 Tavily 的联网搜索。',
+        builtinGuideField1:
+          '普通表单可选 current_datetime、date_calculate、calculator、unit_convert；专家 YAML 还支持 web_search。',
+        builtinGuideField2:
+          '日期、计算和换算按工具契约填写参数。web_search 可填 query、topic、search_depth、max_results、time_range，未配置 Tavily 时执行失败。',
+        builtinGuideField3:
+          '参数可为固定值或上游引用。普通工具支持完整输出引用；联网搜索不能放在 foreach 中，结果应由后续 LLM 汇总并保留来源链接。',
+        builtinGuideOutput: '输出日期、计算、换算或联网搜索结构化结果；参数或服务配置错误会返回具体失败原因。',
+        llmGuideTitle: 'LLM 综合生成',
+        llmGuidePurpose: '把多个上游步骤的结果整理成最终用户可读内容；确定性字段映射、过滤和聚合应使用 transform。',
+        llmGuideField1: '依赖步骤：选择 Prompt 中需要引用的全部上游步骤。漏选依赖会导致步骤提前执行且变量无法解析。',
+        llmGuideField2:
+          "Prompt 支持完整输出引用、字段路径引用，以及 #each/this/{'@'}index 只读数组循环；不支持嵌套循环。系统还会追加当前用户问题。",
+        llmGuideField3:
+          '明确任务目标、允许证据、输出格式和缺失信息处理；不要让 LLM 猜测字段或承担金额计算、过滤和聚合。',
+        llmGuideField4: '随机性：事实抽取建议 0 至 0.3；综合表达可使用 0.3 至 0.7。',
+        llmGuideOutput: '输出模型生成的文本或符合 output_schema 的 JSON。若它是最后一个步骤，则成为主要回答。',
+        transformGuideTitle: '确定性数据转换（Transform）',
+        transformGuidePurpose:
+          '解决上下游 JSON 合同不一致问题，在不调用 LLM、不执行脚本的前提下完成可审计的字段映射、过滤、聚合和请求组装。',
+        transformGuideField1:
+          'inputs/input：为每个输入命名，并显式填写 source、受限 JSONPath、one/many、on_empty、on_multiple、max_items 和 overflow；source 必须同时加入依赖步骤。',
+        transformGuideField2:
+          'operations：按数组顺序执行。支持 select、filter、project、rename、distinct、sort、slice、limit、aggregate、object、merge、default、cast，最多 20 个操作。limit 使用 limit 或 count 指定数量。',
+        transformGuideField3:
+          'filter 支持 equals、not_equals、in、contains、exists、gt、gte、lt、lte；aggregate 支持 count、sum、avg、min、max；sort 仅支持 asc 或 desc。',
+        transformGuideField4:
+          '路径只允许 $、点字段、数字下标和数组通配符，例如 $.records、$[0].id、$[*].amount；不支持过滤表达式、函数、递归路径或脚本。',
+        transformGuideField5:
+          'output_schema：使用 JSON Schema 强校验最终输出。运行时限制为最多 200 项、1 MB JSON、32 层嵌套；任何一步超限或类型不符都会失败并阻止下游执行。',
+        transformGuideField6:
+          '使用“试运行当前配置”查看每步结构化输出；查询和模型步骤可能真实执行，操作 API 只会 dry-run 跳过或验证 HITL 拦截。',
+        transformGuideOutput:
+          '输出对象、数组或标量形式的结构化主数据，并记录操作数和行数元数据；数组按表格展示，对象按结构化结果展示，下游通过显式绑定消费。',
+        foreachGuideTitle: '批量循环（高级）',
+        foreachGuidePurpose:
+          '当上游返回数组且外部接口不支持批量请求时，对数组中的每一项重复执行同一个 API 或内置工具。该类型目前使用 JSON 配置。',
+        foreachGuideField1:
+          'items：使用双花括号包裹上游步骤 ID。该上游必须输出 JSON 数组或包含数组的 JSON 对象，并在依赖步骤中选择它。',
+        foreachGuideField2:
+          'item_path：可选。上游是对象时填写数组路径，例如 data.records；若对象只有一个数组字段或使用 records、rows、list 等常见字段，可省略。',
+        foreachGuideField3:
+          'max_items：本次允许处理的最大条数，不得超过系统上限 200；max_attempts 为 1 至 3，但操作类非幂等接口不会自动重试。',
+        foreachGuideField4:
+          'continue_on_error：true 表示单项失败后继续并最终返回部分失败统计；false 表示遇到首个失败立即停止。',
+        foreachGuideField5:
+          'body：只允许 api 或 builtin。通过双花括号中的 item 引用整项、item.id 引用字段、index 引用从 0 开始的序号；操作 API 整个批次只进行一次 HITL。',
+        foreachGuideOutput:
+          '输出结构化 JSON，包含总数、已处理数、成功数、失败数、是否可重试及每项结果，便于后续 LLM 汇总和部分失败恢复。',
+        descriptionTitle: '能力描述',
+        descriptionField:
+          '说明 Skill 解决的业务目标、适用输入、主要输出和能力边界。字段可留空保存，但会降低 Agent 选择稳定性；不要承诺未配置的能力。',
+        descriptionExample: '查询用户授权范围内的业务记录，结合知识库规则生成分析结论；不负责修改业务数据。',
+        triggerTitle: '触发词',
+        triggerDescription:
+          '填写用户可能使用的典型意图短语，多个词用逗号分隔。触发词也是聊天语义兜底候选的入口，应覆盖同义表达并避免宽泛词。',
+        triggerExample: '业务记录分析, 规则核验, 生成业务建议',
+        scoreTitle: '最低置信度',
+        scoreDescription:
+          '页面范围为 0.50 至 1.00、步长 0.05。值越高误触发越少，也越可能漏掉模糊表达；建议从 0.65 开始。命中测试仅验证本地规则。',
+        stepIdTitle: '步骤 ID',
+        stepIdDescription:
+          '当前 Skill 内的稳定唯一标识，用于依赖关系、参数引用和执行日志。推荐使用“动作_对象”格式，例如 query_records；只使用英文字母、数字和下划线。',
+        dependsTitle: '依赖步骤',
+        dependsDescription:
+          '当前步骤会等待所选上游步骤全部成功后执行，并可引用这些步骤的输出。不选择依赖时可能与其他无依赖步骤并行；如果顺序影响结果，必须显式设置依赖。',
+        dependsExample: '“生成结论”依赖“检索规则”和“查询记录”',
+        paramsTitle: '参数映射',
+        paramsDescription:
+          '固定值直接填写；上游绑定选择来源步骤、安全 JSONPath、one/many 基数和失败策略。这里的参数名必须对应 API 工具参数 Schema；参数最终进入 query、path、body 或 header 的位置由工具配置决定。',
+        paramsExample: 'recordId 绑定 query_record 的 $[0].id；recordIds 绑定 $[*].id 且为 many',
+        positiveExamplesTitle: '正向示例',
+        negativeExamplesTitle: '排除示例',
+        exampleRules: {
+          onePerLine: '每行填写一条完整表达，空行会被忽略；不要写 JSON 数组、逗号列表或编号。',
+          realUtterance: '覆盖用户真实说法、同义表达和信息完整程度，不要只写“查询”“处理”等宽泛词。',
+          negativePriority: '排除示例优先于触发词和正向示例；只放入确实不应执行当前 Skill 的相似请求。'
+        },
+        ragQueryTitle: '检索问题',
+        ragQueryRule1: '留空时检索用户当前问题；固定填写后每次都检索同一主题，适合稳定制度或规则资料。',
+        ragQueryRule2: '引用上游时只能引用已加入依赖的步骤输出；未解析的双花括号变量会使步骤失败。',
+        queryHintTitle: '查询意图',
+        queryHintRule1: '明确数据对象、筛选条件、时间范围、统计口径、排序、条数和返回字段，不要只写“查询相关数据”。',
+        queryHintRule2: '当前执行器直接使用这段文字，不会自动拼接用户原问题，也不会替换上游步骤变量。',
+        argumentsTitle: '内置工具参数',
+        argumentsExample:
+          '日期计算：operation=add，base_date=2026-08-05，amount=7，unit=days\n数学计算：expression=(125.5 + 86.3) * 0.9\n单位换算：value=1.5，from=kg，to=g',
+        argumentsRule1: '参数名必须符合所选内置工具的契约；不同工具的参数不能混用。',
+        argumentsRule2: '上游引用必须同时配置依赖；用于计算的金额和数量应传原始值，不要把展示文本当成数字。',
+        bindingFields: {
+          paramName: '目标 API 工具的逻辑参数名，必须与工具参数 Schema 的 properties 键完全一致，区分大小写。',
+          literal: '固定值适合渠道、版本或业务常量；输入看起来像 JSON 的对象、数组、数字或布尔值时会按 JSON 值保存。',
+          source: '提供数据的上游步骤 ID。该步骤必须同时出现在当前步骤的依赖列表中并成功完成。',
+          path: '从上游主数据读取值的受限 JSONPath；支持 $、点字段、数字下标和数组通配符，例如 $[0].orderNo。',
+          cardinality: 'one 要求单值；many 要求数组。选择错误会在运行时因结果数量或类型不符而失败。',
+          onEmpty: 'fail=缺值即失败；skip=不发送此参数；default=使用 default 中配置的值。',
+          defaultValue: '仅在 on_empty=default 时使用，可为字符串、数字、布尔值、对象或数组。',
+          onMultiple: 'one 绑定得到多个值时，fail=失败，first=明确取第一项；默认不会静默取第一项。',
+          maxItems: 'many 绑定最多保留的数组项数，范围 1 至 200。',
+          overflow: '数组超过 max_items 时，fail=失败，truncate=截断到上限。'
+        },
+        bindingRules: {
+          dependency: '每个 source 必须加入依赖步骤；来源未执行、失败或被跳过时，绑定无法解析。',
+          safePath: '路径不支持过滤表达式、函数、递归查找或脚本；需要过滤、聚合或重命名时先使用 Transform。',
+          toolSchema: '绑定后的最终参数必须通过目标 API 工具的 JSON Schema；参数 Schema 的 default 会由工具执行器补齐未提供的参数。',
+          transport:
+            'Skill 不配置 HTTP 位置。工具执行器按参数 Schema 的 x-in/in 与 x-http-name/httpName 构造请求；旧的双花括号 param URL 模板继续兼容且不会重复追加。'
+        },
+        outputSchemaFields: {
+          schema: '可选，声明使用 JSON Schema Draft 7；建议保留，便于配置审查和迁移。',
+          metadata: '可选的人类可读名称与整体说明，只用于解释合同，不改变输出。',
+          type: '声明当前步骤主输出的根类型：object、array、string、integer、number、boolean 或 null。',
+          properties: '当 type=object 时定义允许字段；每个字段都应写 type 和 description，并按业务需要增加约束。',
+          required: '当 type=object 时列出必须出现的字段名；列表中的名称也必须存在于 properties。',
+          additionalProperties: '设为 false 可拒绝 properties 之外的额外字段，适合下游 API 参数和稳定结构化输出。',
+          enumConst: 'enum 限制为一组允许值；const 限制为一个固定值，适合状态、类型和版本。',
+          formatPattern: 'format 描述 date、date-time、email、uri 等格式；pattern 用正则限制字符串形态。',
+          stringRange: '限制字符串最小和最大长度，避免空原因、超长说明等无效输出。',
+          numberRange: '限制数值上下界及步进精度，例如金额最小 0.01、最多两位小数。',
+          arrayRules: 'items 定义每一项的 Schema；minItems、maxItems 和 uniqueItems 控制数量与去重。'
+        },
+        outputSchemaRules: {
+          primaryData: 'Schema 校验步骤的主数据本身，不会自动为结果增加 data、result 或其他包装层，也不会重命名字段。',
+          requiredProperties: 'required 只表示字段必须出现；字段类型、枚举、长度和范围仍需在 properties 中单独定义。',
+          defaultValue: 'Skill 输出 Schema 中的 default 只是注解，不会自动补值；需要生成默认值应使用 Transform 的 default 操作或在 LLM Prompt 中明确要求。',
+          stableNames: '字段名区分大小写，并会被下游绑定直接引用；发布后应保持稳定。',
+          validJson: '只能填写合法 JSON 对象，不能包含注释、尾随逗号、单引号或 JavaScript 表达式。'
+        },
+        foreachFields: {
+          items: '使用双花括号引用一个上游步骤，例如双花括号内填写 query_orders；来源必须加入依赖并输出数组或包含数组的对象。',
+          itemPath: '当上游输出是对象时，指定其中数组字段路径，例如 records 或 data.records；直接输出数组时省略。',
+          maxItems: '本次最多处理的项目数，范围 1 至 200；实际数组超过此值会失败。',
+          maxAttempts: '每项最大尝试次数，范围 1 至 3；非幂等操作 API 不会自动重试。',
+          continueOnError: 'true 表示记录单项失败并继续，false 表示遇到首个失败立即停止。',
+          bodyType: '循环体只支持 api 或 builtin，不能嵌套 foreach、调用 LLM 或使用 web_search。',
+          toolCode: '循环内要调用的已配置 API 工具编码或内置工具编码。',
+          bodyParams: 'API 使用 params，内置工具使用 arguments；可在双花括号内引用 item、item.field 和从 0 开始的 index。',
+          outputSchema: '可选，用 Draft 7 校验整个批量结果对象，而不是单项工具返回值。'
+        },
+        foreachRules: {
+          dependency: 'items 引用的步骤必须加入依赖；item_path 必须指向数组。',
+          limit: 'max_items 不得超过 200；批量操作前应先限制查询结果并在试运行中核对数量。',
+          retry: '操作类非幂等 API 即使 max_attempts 大于 1 也只执行一次，避免重复副作用。',
+          body: '操作 API 整批只进行一次 HITL；循环体不能使用 web_search，也不能继续嵌套循环。'
+        },
+        transformFields: {
+          inputs: '为一个或多个上游输入命名。inputs 是“名称: 绑定对象”，input 可直接写单个绑定；每个来源都要加入依赖。',
+          sourcePath: 'source 指定上游步骤；path 从它的主数据读取结构，使用受限 JSONPath。',
+          bindingPolicies: '绑定同样支持 one/many、on_empty、on_multiple、default、max_items 和 overflow，含义与 API 参数绑定一致。',
+          operations: '按数组顺序执行 1 至 20 个确定性操作，每个元素必须是包含 op 的 JSON 对象。',
+          op: '支持 select、filter、project、rename、distinct、sort、slice、limit、aggregate、object、merge、default、cast。',
+          operationFields: '不同 op 使用不同字段：path 选路径，fields 做投影/重命名/组装，value 提供过滤值、默认值或合并对象。',
+          outputSchema: '可选但强烈建议，为转换后的最终对象或数组声明 Draft 7 合同，校验失败会阻止下游。'
+        },
+        transformRules: {
+          dependency: '所有 input/inputs 的 source 都必须加入当前步骤依赖。',
+          path: '路径只支持 $、点字段、数字下标和数组通配符；不支持脚本、函数、递归路径或过滤表达式。',
+          operations: 'filter 的 operator 仅支持 equals、not_equals、in、contains、exists、gt、gte、lt、lte；sort 仅支持 asc/desc。',
+          limits: '最多 20 个操作、200 项、1 MB JSON 和 32 层嵌套；每个中间结果都会检查限制。'
+        },
+        promptTitle: 'Prompt 模板',
+        promptDescription:
+          '说明本步骤的任务、可使用的上游资料、输出格式和禁止事项。使用双花括号包裹步骤 ID 引用完整输出；引用的步骤必须同时加入依赖列表。不要要求模型猜测不存在的字段或绕过权限。',
+        promptExample: '综合规则步骤和记录步骤，输出结论、依据与待确认事项。',
+        foreachTitle: '批量循环配置',
+        foreachDescription:
+          '遍历上游步骤返回的 JSON 数组，对每一项执行同一个 API 或内置工具。配置使用 items、max_items、max_attempts、continue_on_error 和 body；操作 API 整批只进行一次 HITL。',
+        foreachExample: 'items 引用 query_records，最多处理 100 项，body 中引用当前记录的 id 字段',
+        transformInputsParameter: 'Transform 输入绑定',
+        transformOperationsParameter: 'Transform 操作序列',
+        transformOutputSchemaParameter: 'Transform 输出 Schema'
+      }
+    },
+    datasource: {
+      pageGuide:
+        '先保存并测试只读连接，再进入“Schema 权限”配置可查询的表、字段和访问范围。测试连接只检查连通性；“测试 Schema”会真实执行受控只读 SQL，并写入 SQL 审计。',
+      emptyHint: '暂无数据源，请先新建只读连接并完成测试',
+      schemaTestWarning:
+        '该操作会调用 NL2SQL 并真实执行受控只读查询，同时写入 SQL 审计；请使用测试问题并确认当前账号有此 Schema 权限。',
+      name: '名称',
+      code: '编码',
+      dbType: '类型',
+      jdbcUrl: 'JDBC URL',
+      testConn: '测试连接',
+      connSuccess: '连接成功',
+      connFailed: '失败',
+      maxConnections: '最大连接数',
+      queryTimeout: '查询超时(s)',
+      password: '密码',
+      passwordKeep: '留空表示不修改',
+      username: '用户名',
+      schemas: 'Schema 权限',
+      createSchema: '新增 Schema',
+      domainCode: '领域编码',
+      domainName: '领域名称',
+      viewName: '视图名称',
+      columnsMeta: '字段元数据(JSON)',
+      fewShotExamples: '示例(JSON)',
+      allowedFunctions: '允许函数',
+      allowedFunctionsPlaceholder: '选择常用函数，或输入函数名后回车',
+      sensitiveColumns: '敏感字段(JSON)',
+      namePlaceholder: '请输入数据源名称',
+      codePlaceholder: '请输入唯一编码，例如 member_db',
+      dbTypePlaceholder: '请选择数据库类型',
+      jdbcPlaceholder: '请输入完整 JDBC 连接地址',
+      usernamePlaceholder: '请输入只读数据库账号',
+      domainCodePlaceholder: '请输入领域唯一编码',
+      domainNamePlaceholder: '请输入领域名称',
+      viewNamePlaceholder: '请输入允许访问的表或视图名称',
+      descriptionPlaceholder: '请说明该 Schema 的业务含义',
+      jsonArrayPlaceholder: '请输入 JSON 数组，例如 []',
+      requiredFields: '请填写名称、编码、数据库类型、连接地址和用户名',
+      schemaRequiredFields: '请填写领域编码、领域名称和表或视图名称',
+      deleteConfirm:
+        '删除会同时移除全部 Schema；若被已启用 Skill 引用，后端会拒绝。删除前仍应检查停用 Skill 和自动化流程中的引用。确认继续吗？',
+      schemaDeleteConfirm: '删除后该表或视图立即不再参与后续 NL2SQL，历史 SQL 审计仍保留。确认删除吗？',
+      schemaTestTitle: 'Schema 查询测试',
+      testSchema: '测试 Schema',
+      testQuestion: '测试问题',
+      testQuestionPlaceholder: '输入自然语言查询问题',
+      testQuestionRequired: '请输入测试问题',
+      defaultTestQuestion: '查询{name}的前 10 条记录',
+      defaultDomainName: '该业务域',
+      querySuccess: '查询成功，返回 {count} 行',
+      queryFailed: '查询失败',
+      generatedSql: '生成 SQL',
+      close: '关闭',
+      startTest: '开始测试'
+    },
+    tool: {
+      pageGuide:
+        '保存后先关闭“真实请求”验证参数和请求渲染。开启后会立即访问外部接口并绕过聊天 HITL；自动化流程也不会弹出聊天确认。',
+      emptyHint: '暂无 API 工具，请先按第三方接口契约新建并完成 dry-run',
+      realActionConfirmTitle: '确认执行操作型接口',
+      realActionConfirm:
+        '当前工具被标记为“操作”。继续测试将立即调用外部接口，可能创建、修改或删除业务数据，且不会弹出聊天 HITL。确认继续吗？',
+      confirmExecute: '确认执行',
+      name: '名称',
+      code: '编码',
+      description: '描述',
+      method: '方法',
+      operationType: '操作类型',
+      query: '查询',
+      actionType: '操作',
+      authType: '认证',
+      urlTemplate: 'URL模板',
+      timeout: '超时(s)',
+      retryCount: '重试次数',
+      basicInfo: '基本信息',
+      authConfig: '认证配置',
+      authPlaceholder: '填写 JSON；保存后不会再次回显密钥',
+      identityPropagation: '传递用户身份',
+      identityHeaderName: '身份请求头',
+      paramSchema: '参数Schema',
+      requestHeaders: '请求头',
+      requestTemplate: '请求模板',
+      responseMapping: '响应映射',
+      visibility: '访问范围',
+      department: '授权部门',
+      post: '授权岗位',
+      user: '授权用户',
+      namePlaceholder: '请输入工具名称',
+      codePlaceholder: '请输入唯一编码，例如 query_coupon',
+      descriptionPlaceholder: '请清楚说明工具用途、使用条件和返回内容',
+      urlPlaceholder: '请输入接口基础地址；路径参数可保留双花括号 param 占位符',
+      departmentPlaceholder: '请选择授权部门',
+      postPlaceholder: '请选择授权岗位',
+      userPlaceholder: '请选择授权用户',
+      identityHeaderPlaceholder: '请输入承载用户身份的请求头名称',
+      paramSchemaPlaceholder: '请输入 JSON Schema',
+      headersPlaceholder: '请输入 JSON 请求头键值对象',
+      requestPlaceholder: '请输入 JSON 请求模板',
+      responsePlaceholder: '请输入 JSON 响应字段映射',
+      requiredFields: '请填写名称、编码和 URL 模板',
+      deleteConfirm:
+        '若被已启用 Skill 引用，后端会拒绝删除。删除前仍应检查停用 Skill 和自动化流程中的引用；删除后 Agent 将无法再调用。确认继续吗？',
+      credentialKeepHint:
+        '已保存的认证密钥不会回显。保持以下密钥字段为空将继续使用原密钥；填写任一密钥字段则必须完整填写并整体替换。',
+      unsupportedAuthType: '不支持的认证类型',
+      authFieldRequired: '请填写认证字段：{field}',
+      testTitle: '工具测试',
+      testTool: '测试工具',
+      inputJson: '入参 JSON',
+      realRequest: '真实请求',
+      dryRunHint: '关闭时只校验参数并渲染请求，不访问外部接口',
+      requestMethod: '请求方法',
+      requestUrl: '请求地址',
+      requestHeader: '请求头',
+      requestBody: '请求体',
+      responseResult: '响应结果',
+      rawView: '原始',
+      errorMessage: '错误信息',
+      dryRunPassed: '配置校验通过，请求已渲染',
+      requestCompleted: '工具请求完成',
+      configInvalid: '工具配置或入参校验失败',
+      close: '关闭',
+      startTest: '开始测试',
+      authFields: {
+        token: 'Bearer Token',
+        username: '用户名',
+        password: '密码',
+        header: '请求头名称',
+        value: 'API Key',
+        accessKey: 'Access Key（AK）',
+        secretKey: 'Secret Key（SK）'
+      }
+    },
+    experience: {
+      pageGuide:
+        '经验由可靠知识问答自动沉淀，仅在相同问题且来源与当前用户 ACL 仍有效时复用；删除表示淘汰，当前页面不能恢复。',
+      emptyHint: '暂无经验；可靠知识问答满足质量条件后会自动沉淀',
+      queryText: '问题',
+      qualityScore: '质量分',
+      hitCount: '命中',
+      visibility: '可见性',
+      lastHitAt: '最后命中',
+      minScore: '最低质量分',
+      eliminated: '已淘汰',
+      unknownSource: '未知来源',
+      updateScore: '调整分数',
+      updateVisibility: '可见性',
+      deleteConfirm: '删除后该经验将无法再被复用，且当前页面不能恢复。确认继续吗？',
+      detailTitle: '经验详情',
+      answer: '答案',
+      sourceChunks: '参考资料'
+    },
+    badCase: {
+      pageGuide:
+        '记录只由用户对助手回答提交负面反馈后自动产生；标注正确回答只用于后续治理，不会自动修改知识库、Skill 或重新回答。',
+      emptyHint: '暂无 Bad Case；用户提交负面反馈后会自动产生待标注记录',
+      pending: '待标注',
+      labeled: '已标注',
+      exported: '已处理',
+      userQuery: '用户问题',
+      feedbackType: '反馈类型',
+      feedbackReason: '补充说明',
+      label: '标注',
+      correctAnswer: '正确回答',
+      labelTitle: '标注 Bad Case',
+      searchPlaceholder: '搜索用户问题',
+      labelPlaceholder: '请填写经核实的正确回答；保存不会自动修改知识库或重新回答',
+      detailTitle: 'Bad Case 详情',
+      question: '用户问题',
+      aiAnswer: 'AI 回答',
+      retrievalResults: '检索结果',
+      sessionId: '会话 ID',
+      messageId: '消息 ID'
+    },
+    sqlLog: {
+      pageGuide:
+        '此页记录 NL2SQL 的成功、拦截和失败，不保存查询结果行。测试连接不会产生记录，“测试 Schema”会产生记录。',
+      emptyHint: '暂无 SQL 审计；运行 NL2SQL 或“测试 Schema”后会产生记录',
+      naturalQuery: '自然语言查询',
+      generatedSql: '生成SQL',
+      execTime: '耗时(ms)',
+      rowCount: '行数',
+      detailTitle: 'SQL执行详情',
+      finalSql: '最终执行SQL',
+      blockReason: '拦截/失败原因',
+      searchPlaceholder: '搜索自然语言问题或 SQL'
+    },
+    audit: {
+      pageGuide:
+        '此页记录聊天中操作型 API 的 HITL 决策。“已确认”只表示允许继续执行，不代表外部接口成功；普通 NL2SQL 请到“SQL 审计”查看。',
+      emptyHint: '暂无操作审计；聊天中的操作型 API 进入 HITL 后会产生记录',
+      actionType: '操作类型',
+      toolCode: '工具/代码',
+      riskLevel: '风险',
+      confirmed: '已确认',
+      cancelled: '已取消',
+      timeout: '超时',
+      detailTitle: 'HITL 操作详情',
+      toolInput: '工具输入',
+      cancelReason: '取消原因',
+      contextSnapshot: '上下文快照',
+      userId: '用户ID',
+      user: '用户',
+      userPlaceholder: '请选择用户'
+    },
     configFields: {
       datasource: {
-        fields: { name: '填写便于管理员识别的数据源名称，仅用于平台展示，不影响数据库连接。', code: '填写租户内唯一且稳定的英文编码，供 Skill 和日志引用；建议使用小写字母、数字和下划线。', dbType: '选择真实数据库类型，系统据此校验 JDBC 地址并加载对应驱动；当前支持 MySQL 和 PostgreSQL。', jdbcUrl: '填写后端服务可访问的完整 JDBC URL，包括主机、端口和数据库名；容器内 localhost 指容器自身。', username: '填写数据库专用只读账号；数据库侧必须撤销写入、DDL 和管理权限。', password: '新建时填写只读账号密码；编辑时留空保留原密码，填写则替换已保存密码。', maxConnections: '设置该数据源连接池上限，范围 1 至 100；用于限制并发连接，建议从 5 至 10 开始。', queryTimeout: '设置单条查询超时秒数，范围 5 至 300；超时会中断查询并记录失败，建议从 30 秒开始。', status: '启用后才能被 NL2SQL 和 Skill 使用；停用不会删除 Schema 和历史审计记录。' },
-        dbTypeDescription: '选择真实数据库类型，系统据此校验 JDBC 地址并加载驱动；当前支持 MySQL、PostgreSQL、Oracle 和 SQL Server。',
+        fields: {
+          name: '填写便于管理员识别的数据源名称，仅用于平台展示，不影响数据库连接。',
+          code: '填写租户内唯一且稳定的英文编码，供 Skill 和日志引用；建议使用小写字母、数字和下划线。',
+          dbType:
+            '选择真实数据库类型，系统据此校验 JDBC 地址并加载对应驱动；当前支持 MySQL、PostgreSQL、Oracle 和 SQL Server。',
+          jdbcUrl: '填写后端服务可访问的完整 JDBC URL，包括主机、端口和数据库名；容器内 localhost 指容器自身。',
+          username: '填写数据库专用只读账号；数据库侧必须撤销写入、DDL 和管理权限。',
+          password: '新建时填写只读账号密码；编辑时留空保留原密码，填写则替换已保存密码。',
+          maxConnections: '设置该数据源连接池上限，范围 1 至 100；用于限制并发连接，建议从 5 至 10 开始。',
+          queryTimeout: '设置单条查询超时秒数，范围 5 至 300；超时会中断查询并记录失败，建议从 30 秒开始。',
+          status: '启用后才能被 NL2SQL 和 Skill 使用；停用不会删除 Schema 和历史审计记录。'
+        },
+        dbTypeDescription:
+          '选择真实数据库类型，系统据此校验 JDBC 地址并加载驱动；当前支持 MySQL、PostgreSQL、Oracle 和 SQL Server。',
         fieldExamples: { name: '会员业务只读库', password: '数据库管理员分配的强密码（保存后不再回显）' }
       },
       schema: {
-        fields: { domainCode: '填写数据源内唯一且稳定的领域编码，用于日志和执行器定位 Schema；建议采用小写字母、数字和下划线。', domainName: '填写业务人员可理解的查询领域名称，例如“会员消费统计”，会随 Schema 提供给模型理解业务。', viewName: '填写数据库中真实存在的只读表或脱敏视图名称；生成 SQL 只允许访问这里声明的对象。', description: '说明该领域的数据范围、统计口径、时间含义、枚举和限制，帮助模型正确选择 Schema 与生成 SQL。', columnsMeta: '填写 JSON 数组，推荐每项包含 name、type、description。配置后即为强制字段白名单，并禁止 SELECT *；只能查询列出的字段。', fewShotExamples: '填写 JSON 数组，每项提供典型自然语言问题和已人工验证的只读 SQL；示例也必须遵守本 Schema 的表、列与函数限制。', allowedFunctions: '填写允许的 SQL 函数名 JSON 数组，例如 ["COUNT","SUM"]；空数组表示不启用函数白名单限制，而不是禁止所有函数。', sensitiveColumns: '填写禁止查询的字段名 JSON 数组，作为字段白名单之外的额外防线；优先在数据库侧使用脱敏视图。', visibility: '选择公开、授权部门、授权岗位或授权用户；运行时按当前用户实际组织关系过滤，不支持角色作为 ACL 主体。', aclSubjects: '当访问范围不是公开时，选择一个或多个对应部门、岗位或用户；未选授权主体的受限 Schema 不应启用。', status: '启用后且用户通过 ACL 校验时才会提供给 LLM；停用后立即从后续查询上下文移除。' },
-        fieldExamples: { domainName: '会员消费统计', description: '按会员和月份统计实付金额；金额单位为元，退款订单不计入成交额。', aclSubjectName: '授权主体', aclSubjects: '市场部、研发部（可多选）' }
+        fields: {
+          domainCode: '填写数据源内唯一且稳定的领域编码，用于日志和执行器定位 Schema；建议采用小写字母、数字和下划线。',
+          domainName: '填写业务人员可理解的查询领域名称，例如“会员消费统计”，会随 Schema 提供给模型理解业务。',
+          viewName: '填写数据库中真实存在的只读表或脱敏视图名称；生成 SQL 只允许访问这里声明的对象。',
+          description: '说明该领域的数据范围、统计口径、时间含义、枚举和限制，帮助模型正确选择 Schema 与生成 SQL。',
+          columnsMeta:
+            '填写 JSON 数组，推荐每项包含 name、type、description。非空数组会启用强制字段白名单并禁止 SELECT *；空数组不限制可查询字段，生产配置不得留空。',
+          fewShotExamples:
+            '填写 JSON 数组，每项提供典型自然语言问题和已人工验证的只读 SQL；示例也必须遵守本 Schema 的表、列与函数限制。',
+          allowedFunctions:
+            '填写允许的 SQL 函数名 JSON 数组，例如 ["COUNT","SUM"]；空数组表示不启用函数白名单限制，而不是禁止所有函数。',
+          sensitiveColumns:
+            '填写禁止查询的字段名 JSON 数组，作为字段白名单之外的额外防线；优先在数据库侧使用脱敏视图。',
+          visibility:
+            '选择公开、授权部门、授权岗位或授权用户；运行时按当前用户实际组织关系过滤，不支持角色作为 ACL 主体。',
+          aclSubjects: '当访问范围不是公开时，必须选择一个或多个对应部门、岗位或用户，否则保存会失败。',
+          status: '启用后且用户通过 ACL 校验时才会提供给 LLM；停用后立即从后续查询上下文移除。'
+        },
+        fieldExamples: {
+          domainName: '会员消费统计',
+          description: '按会员和月份统计实付金额；金额单位为元，退款订单不计入成交额。',
+          aclSubjectName: '授权主体',
+          aclSubjects: '市场部、研发部（可多选）'
+        }
       },
       tool: {
-        fields: { name: '填写面向配置者和最终用户的工具名称，应直观表达业务能力，结果卡片会优先展示名称而非内部 ID。', code: '填写租户内唯一且稳定的英文编码，供 Skill、执行计划和审计引用；建议采用小写字母、数字和下划线。', description: '说明何时调用、必需信息、返回内容、限制和不适用情况；Agent 依据描述选择工具并判断是否需要追问。', urlTemplate: '填写完整 HTTPS 地址，可使用与参数 Schema 同名的 双花括号包裹的 parameter 占位符；域名仍受系统全局出站策略约束。', httpMethod: '选择外部接口真实方法；GET 通常只读，POST/PUT/PATCH/DELETE 是否为操作仍以实际副作用为准。', operationType: '查询仅用于无副作用接口且不触发 HITL；任何新增、修改、删除、发送、审批或不确定副作用都必须选操作并确认。', visibility: '选择公开、授权部门、授权岗位或授权用户；工具只会注入给当前租户内满足 ACL 的用户。', aclSubject: '受限访问时选择一个或多个对应部门、岗位或用户；角色不是 ACL 主体。', timeout: '单次 HTTP 调用超时秒数；应小于任务总超时并结合供应商 SLA 设置，避免长期占用执行线程。', retryCount: '失败后的最大重试次数；查询类可按幂等性设置，非幂等操作无幂等键时应为 0，避免重复执行。', status: '启用后才会进入授权工具目录供 Agent 规划；停用不会删除配置和历史审计。', authType: '选择外部服务要求的认证方式：无认证、Bearer、Basic、API Key 或平台固定 AK/SK 签名。', authConfig: '按认证类型填写结构化凭据。密钥只在后端使用且编辑时不回显；同类型全部留空保留原凭据，修改类型必须重新填写。', identityPropagation: '仅当 API 提供方需要识别并校验本平台用户时启用；它不能替代本平台自身的租户与 ACL 校验。', identityHeaderName: '填写传递用户上下文的 HTTP 请求头名称，默认 X-Platform-User-Context；外部服务需与平台约定解析与验签方式。', paramSchema: '填写 JSON Schema 对象，定义每个参数的类型、业务含义、枚举、格式、范围和 required；用于模型抽取、缺参追问和执行前校验。', requestHeaders: '填写静态请求头 JSON 对象，例如 Accept 或 Content-Type；禁止在这里明文保存认证密钥。', requestTemplate: '填写 JSON 请求模板，用 双花括号包裹的 parameter 把已校验参数映射到外部字段；变量必须在参数 Schema 中定义，禁止嵌入密钥。', responseMapping: '填写“平台字段名: 外部响应路径”的 JSON 对象；优先映射名称、状态和可读错误。任一路径不存在会按接口失败处理，不返回 null。' },
-        authDescription: '按所选类型填写结构化凭据：Bearer 填 token；Basic 填用户名和密码；API Key 填请求头名称和值；AK/SK 只填 accessKey 和 secretKey。AK/SK 的 HMAC-SHA256 签名规则及 X-Platform-Access-Key、X-Platform-Timestamp、X-Platform-Nonce、X-Platform-Signature 请求头由平台固定生成，不支持自定义算法。编辑同类型时全部留空会保留原密钥。',
-        step3: '选择认证类型并在结构化表单中填写凭据。只有外部服务需要识别平台用户时才启用用户身份传递。',
-        fieldExamples: { name: '查询可用优惠券', description: '按金额和门槛查询当前有效优惠券，返回优惠券 ID、名称、金额、门槛和有效期；不执行发放。', aclSubjectName: '授权主体', aclSubject: '市场部、售前经理（可多选）' }
+        fields: {
+          name: '填写面向配置者和最终用户的工具名称，应直观表达业务能力，结果卡片会优先展示名称而非内部 ID。',
+          code: '填写租户内唯一且稳定的英文编码，供 Skill、执行计划和审计引用；建议采用小写字母、数字和下划线。',
+          description:
+            '说明何时调用、必需信息、返回内容、限制和不适用情况；虽然可以留空保存，但 Agent 会因缺少能力语义而难以稳定选择工具。',
+          urlTemplate:
+            '填写接口基础 HTTPS 地址，例如 https://api.example.com/v1/orders。执行器会根据参数 Schema 自动追加 query、组装 body 和 header；仅 path 参数需要在地址中保留双花括号包裹的同名逻辑参数占位符。原有 URL 参数模板继续兼容且不会重复追加，域名仍受系统全局出站策略约束。',
+          httpMethod: '选择外部接口真实方法；当前支持 GET、POST、PUT、DELETE，是否为操作仍以实际副作用为准。',
+          operationType:
+            '查询仅用于无副作用接口；新增、修改、删除、发送、审批或不确定副作用都必须选操作。智能会话中的操作会强制 HITL，工具真实测试和自动化工作流不会弹聊天确认。',
+          visibility:
+            '选择公开、授权部门、授权岗位或授权用户；工具只会注入给当前租户内满足 ACL 的智能会话用户，管理员的工具测试不受此范围限制。',
+          aclSubject: '受限访问时选择一个对应部门、岗位或用户；工具 ACL 是单选且角色不是 ACL 主体。',
+          timeout: '单次 HTTP 调用超时秒数；应小于任务总超时并结合供应商 SLA 设置，避免长期占用执行线程。',
+          retryCount: '范围 0 至 2，仅 GET、PUT、DELETE 等幂等方法会执行重试；POST 不会自动重试。',
+          status: '启用后才会进入授权工具目录供 Agent 规划；停用不会删除配置和历史审计。',
+          authType: '选择外部服务要求的认证方式：无认证、Bearer、Basic、API Key 或平台固定 AK/SK 签名。',
+          authConfig:
+            '按认证类型填写结构化凭据。密钥只在后端使用且编辑时不回显；同类型全部留空保留原凭据，修改类型必须重新填写。',
+          identityPropagation:
+            '仅当 API 提供方需要识别并校验本平台用户时启用；平台发送约 60 秒有效的签名上下文，外部系统必须验签，且它不能替代本平台 ACL。',
+          identityHeaderName:
+            '填写传递签名用户上下文的 HTTP 请求头名称，默认 X-Platform-User-Context；外部服务需按平台协议解析并验签。',
+          paramSchema:
+            '填写 JSON Schema Draft 7 对象，定义逻辑参数的类型、业务含义、枚举、格式、范围和 required；每个属性可用 x-in/in 指定 query、path、body 或 header，用 x-http-name/httpName 映射实际 HTTP 名称，用 default 补齐未提供的参数。未指定位置时 GET/DELETE 默认 query，POST/PUT 默认 body；空的可选参数不会发送。',
+          requestHeaders:
+            '填写请求头 JSON 对象，值中可使用参数占位符；可从下拉模板快速填入 Accept 或 Content-Type，禁止在这里明文保存认证密钥。',
+          requestTemplate:
+            '可选。通常由参数 Schema 的 x-in/in 与 x-http-name/httpName 自动组装 JSON 请求体；仅在外部接口需要嵌套结构、固定字段或特殊组合时填写模板。模板变量必须在参数 Schema 中定义；显式标记为 body 的 Schema 参数会合并进对象模板，但不会覆盖模板中已有同名字段。',
+          responseRule:
+            '可选。为空时 HTTP 2xx 即成功并保留完整响应；配置后可限制成功状态码，用 equals、in、exists 或 not_empty 判断业务状态，并通过 dataPath 提取后续数据。',
+          responseMapping:
+            '可选。填写“平台字段名: 外部响应路径”的 JSON 对象，路径从成功规则提取后的数据开始；任一路径不存在会按接口失败处理。'
+        },
+        authDescription:
+          '按所选类型填写结构化凭据：Bearer 填 token；Basic 填用户名和密码；API Key 填请求头名称和值；AK/SK 只填 accessKey 和 secretKey。AK/SK 的 HMAC-SHA256 签名规则及 X-Platform-Access-Key、X-Platform-Timestamp、X-Platform-Nonce、X-Platform-Signature 请求头由平台固定生成，不支持自定义算法。编辑同类型时全部留空会保留原密钥。',
+        step3: '选择认证类型并在结构化表单中填写凭据。只有外部服务能够验证平台签名用户上下文时才启用用户身份传递。',
+        fieldExamples: {
+          name: '查询可用优惠券',
+          description: '按金额和门槛查询当前有效优惠券，返回优惠券 ID、名称、金额、门槛和有效期；不执行发放。',
+          aclSubjectName: '授权主体',
+          aclSubject: '市场部（单选）'
+        }
       }
     },
     configHelp: {
-      datasource: { title: '数据源配置帮助', description: '数据源保存租户业务数据库的只读连接，供 NL2SQL 执行受控查询。数据源只解决“如何连接”，不会自动开放任何表或字段；保存并测试连接后，还必须单独配置带访问权限的 Schema。', example: '名称：业务只读库\n编码：business_readonly\n类型：MySQL\nJDBC URL：jdbc:mysql://db.example.com:3306/business\n用户名：agent_readonly\n最大连接数：10\n查询超时：30 秒', note1: '必须使用专用只读账号并在数据库侧撤销 INSERT、UPDATE、DELETE、DDL 和管理权限。', note2: '连接成功不代表 NL2SQL 可用；至少启用一个当前用户有权访问的 Schema 后才会向模型提供结构。', note3: '生产环境不要连接公网暴露的数据库，也不要在名称、URL 或备注中写入密码。', step1: '由数据库管理员创建最小权限只读账号，并只授权需要查询的表或脱敏视图。', step2: '填写名称、租户内唯一编码、数据库类型、JDBC 地址和只读账号凭据。', step3: '根据数据库容量设置连接池上限和查询超时；建议从 5 至 10 个连接、30 秒超时开始。', step4: '保存后点击“测试连接”，确认后端所在网络可访问数据库且账号认证成功。', step5: '进入 Schema 权限，为允许查询的每个业务领域配置表/视图、字段、示例和四级访问范围。', rule1: '编码保存后应保持稳定，避免已引用该数据源的 Skill 失效。', rule2: 'JDBC URL 必须与所选数据库类型匹配，并包含明确的主机、端口和数据库名。', rule3: '最大连接数只限制本平台连接池，仍应在数据库端配置账号级并发和资源限制。', rule4: '数据源状态关闭后，关联的 NL2SQL 查询和 Skill 步骤将不可执行。', effect1: '凭据会由后端保存并用于建立租户隔离的连接池，前端编辑时不会回显已保存密码。', effect2: '真正提供给 LLM 的结构由用户权限过滤后的 Schema 决定，绝不会因为数据源连接成功而暴露全部库表。', jdbcTitle: 'JDBC 连接地址', jdbcDescription: '填写后端服务实际可访问的完整 JDBC URL，包括协议、主机、端口和数据库名。不要填写前端浏览器地址；容器部署时 localhost 指向容器自身。MySQL 建议同时明确字符集、时区和连接参数。', jdbcExample: 'jdbc:mysql://db.internal:3306/business?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai' },
-      schema: { title: 'Schema 权限配置帮助', description: 'Schema 是 NL2SQL 的安全与语义边界：定义模型能看到的表或视图、可用字段、业务含义、允许函数、敏感字段和访问主体。每次查询都会先按租户及当前用户的部门、岗位、用户授权过滤，再把可用 Schema 提供给模型。', example: '领域：订单统计\n领域编码：order_summary\n视图：v_order_summary_masked\n访问范围：授权部门（可多选）\n字段：订单日期、状态、脱敏金额', note1: '优先使用只包含允许字段的脱敏视图；敏感字段配置是额外防护，不能替代数据库视图和账号权限。', note2: 'Few-shot SQL 只能使用本 Schema 已开放的表、字段和函数，并保持只读。', note3: '用户调岗或权限变更后，后续查询会按最新 ACL 过滤，不能继续使用原先无权访问的 Schema。', step1: '为一个清晰的业务查询领域填写稳定编码、易懂名称和业务描述。', step2: '选择一个只读表或脱敏视图；一个 Schema 不要混入无关业务表。', step3: '以 JSON 数组配置允许字段的名称、数据库类型和业务含义，补充枚举值、单位、时间口径等必要语义。', step4: '配置少量经过验证的自然语言与只读 SQL 示例，并限制可用函数、标记敏感字段。', step5: '选择公开、授权部门、授权岗位或授权用户，并为后三种模式多选具体授权主体。', step6: '保存并启用后，使用有权限与无权限账号分别测试相同问题，确认结构过滤和查询结果均符合预期。', rule1: '领域编码在同一数据源内唯一，表/视图名称必须真实存在且只授予只读权限。', rule2: '字段元数据、Few-shot、允许函数和敏感字段都必须是有效 JSON 数组。', rule3: '密级与 ACL 是同一访问概念，不存在角色授权主体；仅支持公开、部门、岗位、用户四种模式。', rule4: '模型生成的 SQL 仍会经过语法解析、只读校验、Schema 范围、行数和超时限制。', effect1: '启用后，只有满足该 ACL 的当前用户才会在 NL2SQL Prompt 中看到此 Schema。', effect2: '关闭或删除后，依赖此 Schema 的自然语言查询将无法使用其结构，已有审计记录不会被删除。', columnsTitle: '字段元数据', columnsDescription: '填写 JSON 数组，每项至少包含真实字段名、数据库类型和清晰业务说明。说明应补充单位、枚举、时间含义、可否聚合及关联键，帮助模型正确选字段；未列出的字段不应提供给模型。', columnsExample: '每项包含 name、type、description，例如订单状态字段说明允许值和业务含义', fewShotTitle: '查询示例', fewShotDescription: '填写 JSON 数组，每项包含典型自然语言问题和经人工验证的只读 SQL。示例用于解释业务口径，不应固定某个用户或日期，也不能引用未开放字段。少量高质量示例优于大量重复示例。', fewShotExample: '“按月统计已完成订单数”对应使用完成时间和已完成状态的聚合 SQL', visibilityTitle: '访问范围', visibilityDescription: '公开表示租户内所有有 NL2SQL 权限的用户可用；授权部门、岗位、用户会进一步限制可见主体，并支持多选。系统按最严格权限过滤，不根据历史职位保留访问权。' },
-      tool: { title: 'API 工具配置帮助', description: 'API 工具把租户已有 HTTP 接口声明为 Agent 可选择的能力。配置需要同时说明“何时调用、需要哪些参数、如何认证、如何组装请求、如何解释结果”，并通过访问范围和操作类型控制谁能用、是否必须确认。', example: '名称：查询业务记录\n编码：query_records\n用途：按名称或编号查询记录并返回编号、名称和状态\n类型：查询\n方法：POST\nURL：https://api.example.com/v1/records/search', note1: '任何新增、修改、删除、发送、审批或产生外部业务影响的接口都必须配置为“操作”，并强制 HITL。', note2: '认证密钥仅用于平台调用外部服务，保存后加密且不回显；不要放入 URL、请求模板、Prompt 或 Skill 参数。', note3: '正式启用前使用正常参数、缺失参数、非法参数、超时和外部错误响应进行测试，并确认返回给用户的是易读名称而非孤立 ID。', step1: '填写稳定名称、唯一编码和能力描述，明确调用条件、必需信息、返回内容及不能完成的事项。', step2: '填写完整 URL、HTTP 方法、超时与重试次数，并根据实际业务影响选择“查询”或“操作”。', step3: '选择认证类型并填写对应 JSON；如外部服务需要识别平台用户，再启用用户身份传递并约定请求头。', step4: '使用 JSON Schema 定义所有输入参数的类型、含义、必填项、格式和枚举，供 Agent 提取与校验。', step5: '配置静态请求头及请求模板，将已解析参数映射到 URL、Query 或请求体所需字段。', step6: '配置响应映射，将外部嵌套字段转换为稳定、易读的名称、状态和错误信息。', step7: '设置公开、授权部门、授权岗位或授权用户范围，保存启用后通过真实会话验证选择、追问、HITL 和结果展示。', rule1: '工具编码在租户内唯一且保持稳定；描述不能声称接口不具备的查询或操作能力。', rule2: '参数 Schema、认证配置、请求头、请求模板和响应映射必须是合法 JSON。', rule3: '查询工具不得改变外部状态；无法确定是否有副作用时按“操作”处理。', rule4: '重试只适用于可安全重放的请求；非幂等操作建议关闭自动重试或由外部接口提供幂等键。', effect1: '启用后，Agent 仅向满足租户与 ACL 的用户注入该工具定义，并可根据描述和参数 Schema 规划调用。', effect2: '操作工具在参数组装完成后生成可读确认卡片，用户确认才执行；拒绝会终止整个任务。', operationTitle: '查询或操作', operationDescription: '“查询”仅用于无副作用的只读接口，不触发 HITL。“操作”用于新增、修改、删除、发送、审批、发放或任何可能改变外部状态的接口，提交前强制用户确认。无法判断时选择“操作”。', authTitle: '认证配置', authDescription: '根据认证类型填写 JSON。Bearer 通常填写 token，Basic 填写用户名与密码，API Key 填写请求头名称与密钥，AK/SK 填写访问密钥、签名密钥及签名参数。敏感值由后端加密保存，编辑时留空表示保留原值。', authExample: 'API Key：指定 X-API-Key 请求头及密钥；AK/SK：指定 accessKey、secretKey 和签名算法', schemaTitle: '参数 Schema', schemaDescription: '使用 JSON Schema 描述 Agent 可提交的参数。每个字段应包含类型和面向业务的 description；重要字段补充 enum、format、最小/最大值，并在 required 中列出必填项。Schema 越明确，信息不足时 Agent 越能正确追问。', schemaExample: '对象包含必填的 recordId（整数、业务记录编号）和可选 reason（字符串）', requestTitle: '请求模板', requestDescription: '把已校验参数映射为外部接口要求的请求结构。模板变量名必须与参数 Schema 一致；GET 参数通常进入 URL/Query，POST/PUT 参数通常进入 JSON 请求体。不要在模板中写密钥。', requestExample: '将 recordId 映射为 record_id，将 reason 映射为 operation_reason', responseTitle: '响应映射', responseDescription: '将外部响应路径映射为稳定的业务字段，优先输出名称、状态、数量和可读错误信息。保留后续步骤需要的 ID，但不要只把内部 ID 展示给普通用户。字段路径不存在时应按接口失败处理，而不是返回 null。', responseExample: '将 data.id 映射为 recordId，data.name 映射为 recordName，data.status_name 映射为 statusName' }
+      datasource: {
+        title: '数据源配置帮助',
+        description:
+          '数据源保存租户业务数据库的只读连接，供 NL2SQL 执行受控查询。数据源只解决“如何连接”，不会自动开放任何表或字段；保存并测试连接后，还必须单独配置带访问权限的 Schema。',
+        example:
+          '名称：业务只读库\n编码：business_readonly\n类型：MySQL\nJDBC URL：jdbc:mysql://db.example.com:3306/business\n用户名：agent_readonly\n最大连接数：10\n查询超时：30 秒',
+        note1: '必须使用专用只读账号并在数据库侧撤销 INSERT、UPDATE、DELETE、DDL 和管理权限。',
+        note2: '连接成功不代表 NL2SQL 可用；至少启用一个当前用户有权访问的 Schema 后才会向模型提供结构。',
+        note3: '生产环境不要连接公网暴露的数据库，也不要在名称、URL 或备注中写入密码。',
+        step1: '由数据库管理员创建最小权限只读账号，并只授权需要查询的表或脱敏视图。',
+        step2: '填写名称、租户内唯一编码、数据库类型、JDBC 地址和只读账号凭据。',
+        step3: '根据数据库容量设置连接池上限和查询超时；建议从 5 至 10 个连接、30 秒超时开始。',
+        step4: '保存后点击“测试连接”，确认后端所在网络可访问数据库且账号认证成功。',
+        step5: '进入 Schema 权限，为允许查询的每个业务领域配置表/视图、字段、示例和四级访问范围。',
+        rule1: '编码保存后应保持稳定，避免已引用该数据源的 Skill 失效。',
+        rule2: 'JDBC URL 必须与所选数据库类型匹配，并包含明确的主机、端口和数据库名。',
+        rule3: '最大连接数只限制本平台连接池，仍应在数据库端配置账号级并发和资源限制。',
+        rule4: '数据源状态关闭后，关联的 NL2SQL 查询和 Skill 步骤将不可执行。',
+        effect1: '凭据会由后端保存并用于建立租户隔离的连接池，前端编辑时不会回显已保存密码。',
+        effect2: '真正提供给 LLM 的结构由用户权限过滤后的 Schema 决定，绝不会因为数据源连接成功而暴露全部库表。',
+        jdbcTitle: 'JDBC 连接地址',
+        jdbcDescription:
+          '填写后端服务实际可访问的完整 JDBC URL，包括协议、主机、端口和数据库名。不要填写前端浏览器地址；容器部署时 localhost 指向容器自身。MySQL 建议同时明确字符集、时区和连接参数。',
+        jdbcExample:
+          'jdbc:mysql://db.internal:3306/business?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai'
+      },
+      schema: {
+        title: 'Schema 权限配置帮助',
+        description:
+          'Schema 是 NL2SQL 的安全与语义边界：定义模型能看到的表或视图、可用字段、业务含义、允许函数、敏感字段和访问主体。每次查询都会先按租户及当前用户的部门、岗位、用户授权过滤，再把可用 Schema 提供给模型。',
+        example:
+          '领域：订单统计\n领域编码：order_summary\n视图：v_order_summary_masked\n访问范围：授权部门（可多选）\n字段：订单日期、状态、脱敏金额',
+        note1:
+          '优先使用只包含允许字段的脱敏视图；字段元数据为空时不会启用字段白名单，敏感字段也不能替代数据库视图和账号权限。',
+        note2: 'Few-shot SQL 只能使用本 Schema 已开放的表、字段和函数，并保持只读。',
+        note3: '“测试 Schema”会执行真实只读查询并写入 SQL 审计；它按当前登录用户 ACL 校验，不是仅生成 SQL 的预览。',
+        step1: '为一个清晰的业务查询领域填写稳定编码、易懂名称和业务描述。',
+        step2: '选择一个只读表或脱敏视图；一个 Schema 不要混入无关业务表。',
+        step3: '以非空 JSON 数组配置允许字段的名称、数据库类型和业务含义，补充枚举值、单位、时间口径等必要语义。',
+        step4: '配置少量经过验证的自然语言与只读 SQL 示例，并限制可用函数、标记敏感字段。',
+        step5: '选择公开、授权部门、授权岗位或授权用户，并为后三种模式多选具体授权主体。',
+        step6:
+          '先保存 Schema，再从列表点击“测试 Schema”；使用当前账号有权访问的正常业务问题检查生成 SQL 和结果，ACL 隔离需再用无权限账号从会话或 Skill 验证。',
+        rule1: '领域编码在同一数据源内唯一，表/视图名称必须真实存在且只授予只读权限。',
+        rule2: '字段元数据、Few-shot、允许函数和敏感字段都必须是有效 JSON 数组；字段元数据为空时不形成字段白名单。',
+        rule3: '密级与 ACL 是同一访问概念，不存在角色授权主体；仅支持公开、部门、岗位、用户四种模式。',
+        rule4: '模型生成的 SQL 仍会经过语法解析、只读校验、Schema 范围、行数和超时限制。',
+        effect1: '启用后，只有满足该 ACL 的当前用户才会在 NL2SQL Prompt 中看到此 Schema。',
+        effect2: '关闭或删除后，依赖此 Schema 的自然语言查询将无法使用其结构，已有审计记录不会被删除。',
+        descriptionTitle: '业务描述',
+        descriptionRule1: '说明数据范围、统计口径、单位、状态枚举、时间字段含义和不适用场景；不要只重复领域名称。',
+        descriptionRule2: '模型会直接读取此内容选择 Schema 和生成 SQL，描述错误会造成口径错误，但不会绕过后端字段和函数校验。',
+        columnsTitle: '字段元数据',
+        columnsDescription:
+          '填写非空 JSON 数组，每项至少包含真实字段名、数据库类型和清晰业务说明。说明应补充单位、枚举、时间含义、可否聚合及关联键；非空时未列出的字段会被拦截并禁止 SELECT *，空数组则不会限制字段。',
+        columnsExample: '每项包含 name、type、description，例如订单状态字段说明允许值和业务含义',
+        columnsFields: {
+          root: '根节点必须是 JSON 数组。每个数组项描述一个允许查询的真实数据库列。',
+          name: '数据库中真实存在的列名，用于强制字段白名单；区分名称拼写，不能填写展示名或别名。',
+          type: '真实数据库类型及必要精度，帮助模型正确比较、聚合和格式化；后端目前不使用它做 JDBC 类型校验。',
+          description: '字段业务含义，应写明单位、枚举值、时间语义、是否可聚合及与其他字段的关系。',
+          descriptionExample: '实付金额，单位元，可求和；退款订单仍保留原实付金额'
+        },
+        columnsRule1: '非空数组会启用字段白名单并禁止 SELECT *；生产配置不要使用空数组。',
+        columnsRule2: 'name 才决定允许查询的列；type 和 description 供模型理解，不能用它们代替真实列名。',
+        fewShotTitle: '查询示例',
+        fewShotDescription:
+          '填写 JSON 数组，每项包含典型自然语言问题和经人工验证的只读 SQL。示例用于解释业务口径，不应固定某个用户或日期，也不能引用未开放字段。少量高质量示例优于大量重复示例。',
+        fewShotExample: '“按月统计已完成订单数”对应使用完成时间和已完成状态的聚合 SQL',
+        fewShotFields: {
+          root: '根节点必须是 JSON 数组，每项是一组“用户问题 + 正确 SQL”。',
+          question: '业务用户真实会提出的自然语言问题，应包含要表达的业务口径，不要只写 SQL 功能名称。',
+          questionExample: '统计各订单状态的订单数',
+          sql: '已经在目标数据库人工验证通过的单条只读 SELECT；只能使用当前 Schema 的视图、字段和允许函数。'
+        },
+        fewShotRule1: '不要写 INSERT、UPDATE、DELETE、DDL、多语句、命名参数或未授权字段；示例不会作为参数化 SQL 执行。',
+        fewShotRule2: '避免固定某个用户、订单号或即将过期的绝对日期；用少量示例解释最容易出错的枚举、时间和统计口径。',
+        functionsTitle: '允许函数',
+        functionsDescription:
+          '选择或输入允许模型在该 Schema 中使用的 SQL 函数名。系统保存为字符串数组并按函数名校验；常用安全只读函数仍受平台内置规则控制。',
+        functionsRule1: '使用数据库实际支持的函数名并保持大写便于审查；MySQL 的 DATE_FORMAT 与 PostgreSQL 的 DATE_TRUNC 不能混用。',
+        functionsRule2: '空数组表示不启用额外函数白名单，并非禁止所有函数；需要严格限制时只保留业务确实需要的函数。',
+        sensitiveTitle: '敏感字段',
+        sensitiveDescription:
+          '填写禁止 NL2SQL 引用的真实列名 JSON 数组。生成 SQL 只要出现这些标识符就会被拦截，用作字段白名单之外的额外保护。',
+        sensitiveRule1: '填写数据库列名，不要填中文展示名、JSON 路径或脱敏后的别名；列名匹配不区分大小写。',
+        sensitiveRule2: '该配置不能替代数据库脱敏视图和最小权限。最敏感字段应从视图中移除，而不是只依赖应用层拦截。',
+        jsonRule: '必须是合法 JSON：使用双引号，不能包含注释、尾随逗号或单引号。',
+        visibilityTitle: '访问范围',
+        visibilityDescription:
+          '公开表示租户内所有有 NL2SQL 权限的用户可用；授权部门、岗位、用户会进一步限制可见主体，并支持多选。受限模式至少选择一个主体，否则无法保存；Schema 测试也按当前登录用户的实际归属校验。'
+      },
+      tool: {
+        title: 'API 工具配置帮助',
+        description:
+          'API 工具把租户已有 HTTP 接口声明为 Agent 可选择的能力。配置需要同时说明“何时调用、需要哪些参数、如何认证、如何组装请求、如何判断成功和解释结果”，并通过访问范围和操作类型控制交互式调用。',
+        example:
+          '名称：查询业务记录\n编码：query_records\n用途：按名称或编号查询记录并返回编号、名称和状态\n类型：查询\n方法：POST\nURL：https://api.example.com/v1/records/search',
+        note1:
+          '任何新增、修改、删除、发送、审批或产生外部业务影响的接口都必须配置为“操作”；智能会话强制 HITL，但真实测试和自动化工作流会直接调用。',
+        note2:
+          '认证密钥仅用于平台调用外部服务，保存后加密且不回显；不要放入 URL、请求头、请求模板、Prompt 或 Skill 参数。',
+        note3:
+          '工具必须先保存再测试。先做 Dry-run；真实请求不经过 HITL，操作接口只能使用测试环境、幂等参数或可回滚数据。',
+        step1: '填写稳定名称、唯一编码和能力描述，明确调用条件、必需信息、返回内容及不能完成的事项。',
+        step2: '填写接口基础 URL、HTTP 方法、超时与重试次数；仅 path 参数在 URL 中保留双花括号包裹的同名参数占位符，并根据实际业务影响选择“查询”或“操作”。',
+        step3: '选择认证类型并在结构化表单填写凭据；仅在外部服务能够验证平台签名上下文时启用用户身份传递。',
+        step4: '使用 JSON Schema Draft 7 定义所有逻辑参数的类型、含义、必填项、格式和枚举，并用 x-in/in、x-http-name/httpName 和 default 声明 HTTP 位置、外部名称与默认值。',
+        step5: '按需配置固定请求头；只有外部接口需要嵌套对象、固定字段或特殊组合时才填写 JSON 请求体模板，普通 query、body 和 header 参数由执行器按 Schema 自动构造。',
+        step6: '先配置成功响应规则判断 HTTP 与业务成功、提取 dataPath，再配置响应映射输出稳定且易读的字段。',
+        step7:
+          '设置公开或单个授权部门、岗位、用户范围，保存后先 Dry-run，再通过真实会话验证选择、追问、HITL 和结果展示。',
+        rule1: '工具编码在租户内唯一且保持稳定；描述不能声称接口不具备的查询或操作能力。',
+        rule2: '参数 Schema、请求头、请求模板、成功规则和响应映射必须是合法 JSON；认证凭据通过结构化表单维护。',
+        rule3: '查询工具不得改变外部状态；无法确定是否有副作用时按“操作”处理。',
+        rule4: '仅幂等方法执行自动重试；POST 即使配置重试次数也不会重试。',
+        effect1: '启用后，Agent 仅向满足租户与 ACL 的用户注入该工具定义，并可根据描述和参数 Schema 规划调用。',
+        effect2: '智能会话中的操作工具在参数组装完成后生成可读确认卡片；工具真实测试和自动化工作流不使用该聊天 HITL。',
+        operationTitle: '查询或操作',
+        operationDescription:
+          '“查询”仅用于无副作用接口。“操作”用于新增、修改、删除、发送、审批、发放或任何可能改变外部状态的接口。智能会话提交前强制确认；工具真实测试会立即执行，自动化审批需由工作流节点显式配置。',
+        authTitle: '认证配置',
+        authDescription:
+          '使用结构化表单填写凭据：Bearer 填 token，Basic 填用户名与密码，API Key 填请求头名称与密钥，AK/SK 只填 accessKey 与 secretKey。平台固定生成 HMAC-SHA256 签名头，不支持自定义算法；同认证类型编辑时全部留空保留原凭据。',
+        authExample: 'API Key：X-API-Key 与密钥；AK/SK：accessKey 与 secretKey（签名请求头由平台生成）',
+        schemaTitle: '参数 Schema',
+        schemaDescription:
+          '使用 JSON Schema Draft 7 描述 Agent 可提交的逻辑参数。每个字段应包含 type 和面向业务的 description；按需补充 enum、format、范围并在 required 中列出必填项。x-in/in 可取 query、path、body、header；x-http-name/httpName 指定外部参数名；default 只补齐未提供的值。未指定位置时 GET/DELETE 默认 query，POST/PUT 默认 body；null 或空字符串的可选值不会发送。path 参数必须在 URL 中保留双花括号包裹的同名参数占位符。',
+        schemaExample: '完整示例同时展示 path、query、body、header、参数名映射、枚举、范围、默认值和 required',
+        requestTitle: '请求模板',
+        requestDescription:
+          '请求模板是可选的：参数 Schema 已能把参数自动放入 query、path、body 或 header，并可用 x-http-name/httpName 完成字段映射。只有外部接口要求嵌套 JSON、固定字段或特殊组合时才填写模板；变量名必须与 Schema 一致。显式 body 参数会合并到对象模板且不覆盖模板已有字段；占位符独占字符串值时保留原始类型，嵌在文本中时转为字符串。旧的双花括号 param URL 模板仍兼容，已消费参数不会重复追加。',
+        requestExample: '基础 URL 使用 /orders/ 后跟双花括号 orderNo；status 和 page 自动进入 query，requestId 进入 header，reason 以 operation_reason 进入 body',
+        responseTitle: '成功规则与响应映射',
+        responseDescription:
+          '成功规则先检查 HTTP 状态和业务状态，并可通过 dataPath 提取数据；响应映射随后把当前节点路径映射为稳定业务字段。保留下游需要的 ID，同时输出名称、状态等可读字段；任一路径不存在会判定失败。',
+        responseExample:
+          'dataPath 为 data 时，将 id 映射为 recordId、name 映射为 recordName、status_name 映射为 statusName'
+      }
     },
     quota: { total: '总计', success: '成功', blocked: '拦截' }
   },

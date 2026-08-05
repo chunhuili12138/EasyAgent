@@ -16,7 +16,7 @@
 ### 1. 新建工具
 
 1. 点击 **新建**，打开编辑对话框（三个页签）。
-2. **基本信息**：填写名称、编码、描述、URL 模板（支持 `{{参数}}` 占位符）、请求方法、操作类型、访问范围、超时与重试次数。
+2. **基本信息**：填写名称、编码、描述、接口基础 URL、请求方法、操作类型、访问范围、超时与重试次数。仅路径参数需要在 URL 中保留 `{{参数}}` 占位符。
 3. **认证配置**：选择认证方式并填写凭据（见下方配置项）。
 4. **参数 Schema**：定义参数结构、请求头、请求模板、成功响应规则与响应映射。
 5. 点击 **保存**。回到工具列表后，在该工具操作列点击 **测试**，先执行 Dry-run，再根据接口风险决定是否执行真实请求。
@@ -48,7 +48,7 @@
 | 名称 | 是 | - | 展示用名称 |
 | 编码 | 是 | - | 保存后不可改，供 Skill/审计引用 |
 | 描述 | 强烈建议 | - | 说明何时调用、需要什么、返回什么和不能做什么；留空虽可保存，但 Agent 难以稳定选择 |
-| URL 模板 | 是 | - | 支持 `{{param}}` 占位符 |
+| URL 模板 | 是 | - | 通常只填接口基础地址；`path` 参数需保留 `{{param}}` 占位符，旧 URL 参数模板仍兼容且不会重复追加 |
 | 请求方法 | 是 | GET | GET / POST / PUT / DELETE |
 | 操作类型 | 是 | 查询 | query 查询 / action 操作（**action 强制 HITL**） |
 | 访问范围 | 是 | 公开 | public / department / post / user |
@@ -88,9 +88,9 @@
 
 | 字段 | 说明 |
 |---|---|
-| 参数 Schema | JSON Schema，定义参数类型/含义/枚举/必填，供 Agent 抽取与校验 |
+| 参数 Schema | JSON Schema Draft 7，定义逻辑参数类型、含义、枚举、范围和必填项；可通过 `x-in`/`in`、`x-http-name`/`httpName`、`default` 声明 HTTP 位置、外部名称和默认值 |
 | 请求头 | JSON 对象；值中可使用 `{{param}}`。下拉模板会**覆盖**当前请求头内容，不会合并；密钥不得写在这里 |
-| 请求模板 | JSON 请求体模板；用 `{{param}}` 将已校验参数映射到外部字段。整个值只有一个占位符时保留原始类型；嵌入字符串时会转成文本。GET 查询参数应写在 URL 模板中并通常留空请求体 |
+| 请求模板 | 可选 JSON 请求体模板。普通参数由 Schema 自动组装；仅在需要嵌套 JSON、固定字段或特殊组合时使用。整个值只有一个 `{{param}}` 时保留原始类型，嵌入字符串时转成文本 |
 | 成功响应规则 | 可选。为空时 HTTP 2xx 即成功并保留完整响应；配置后可限制成功状态码、判断业务成功并通过 `dataPath` 提取数据 |
 | 响应映射 | 可选。在成功规则提取后的数据上，按“平台字段名: 外部响应点路径”生成稳定输出；任一路径不存在则调用失败 |
 
@@ -111,26 +111,70 @@
 
 `successOperator` 支持 `equals`、`in`、`exists`、`not_empty`。设置 `dataPath` 后，响应映射路径从该节点开始，例如 `dataPath` 为 `data` 时，映射应写 `"recordId":"id"`，而不是 `"data.id"`。
 
-参数 Schema 示例：
+参数 Schema 完整示例：
 
 ```json
 {
   "type": "object",
-  "required": ["orderId"],
+  "additionalProperties": false,
+  "required": ["orderNo"],
   "properties": {
-    "orderId": { "type": "string", "description": "订单编号" }
+    "orderNo": {
+      "type": "string",
+      "description": "订单编号",
+      "x-in": "path",
+      "x-http-name": "orderNo"
+    },
+    "status": {
+      "type": "string",
+      "description": "订单状态",
+      "enum": ["PAID", "SHIPPED", "COMPLETED"],
+      "x-in": "query",
+      "x-http-name": "order_status"
+    },
+    "page": {
+      "type": "integer",
+      "description": "页码，从 1 开始",
+      "minimum": 1,
+      "default": 1,
+      "x-in": "query"
+    },
+    "reason": {
+      "type": "string",
+      "description": "操作原因",
+      "minLength": 2,
+      "maxLength": 200,
+      "x-in": "body",
+      "x-http-name": "operation_reason"
+    },
+    "requestId": {
+      "type": "string",
+      "description": "调用方请求编号",
+      "x-in": "header",
+      "x-http-name": "X-Request-Id"
+    }
   }
 }
 ```
 
-请求模板与响应映射示例：
+- `properties` 的键是 Skill 与 Agent 使用的逻辑参数名。
+- `x-in`（也兼容 `in`）可取 `query`、`path`、`body`、`header`。省略时，GET/DELETE 默认进入 query，POST/PUT 默认进入 body。
+- `x-http-name`（也兼容 `httpName`）是外部接口实际接收的名称；省略时沿用逻辑参数名。
+- `default` 只在参数未提供时补齐。值为 `null` 或空字符串的可选参数不会发送。
+- `path` 参数必须在 URL 中保留同名占位符，例如 `https://api.example.com/orders/{{orderNo}}`。
+
+若接口要求嵌套对象或固定字段，可额外填写请求模板：
 
 ```json
 {
-  "order_no": "{{orderId}}",
-  "reason": "{{reason}}"
+  "source": "easyagent",
+  "operation_reason": "{{reason}}"
 }
 ```
+
+显式标记为 `body` 的参数会合并到对象模板，但不会覆盖模板内已有同名字段，因此上述 `operation_reason` 不会重复。若接口只需要扁平请求体，可不填请求模板，由 Schema 自动生成 `{"operation_reason":"..."}`。
+
+响应映射示例：
 
 ```json
 {
@@ -140,11 +184,13 @@
 }
 ```
 
-GET 查询参数示例：
+基础 URL 示例：
 
 ```text
-https://api.example.com/orders?orderNo={{orderNo}}&status={{status}}
+https://api.example.com/orders/{{orderNo}}
 ```
+
+执行时，`orderNo` 替换路径占位符，`status` 以 `order_status`、`page` 以 `page` 自动追加到 query，`requestId` 发送为 `X-Request-Id` 请求头。原有 `?orderNo={{orderNo}}` 形式仍兼容，已在 URL 中消费的参数不会再次追加。
 
 AK/SK 使用平台固定 HMAC-SHA256 规则并自动生成 `X-Platform-Access-Key`、`X-Platform-Timestamp`、`X-Platform-Nonce`、`X-Platform-Signature`，页面不能自定义签名算法；外部系统需按 EasyAgent 的签名协议验签。
 

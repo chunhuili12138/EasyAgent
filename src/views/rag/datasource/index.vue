@@ -14,8 +14,8 @@ import {
   fetchUpdateDatasource,
   fetchUpdateSchema
 } from '@/service/api/rag';
-import { $t } from '@/locales';
 import { useAppStore } from '@/store/modules/app';
+import { $t } from '@/locales';
 import ConfigHelp from '../shared/config-help.vue';
 import ConfigCodeEditor from '../shared/config-code-editor.vue';
 import { visibilityLabel } from '../shared/display';
@@ -72,12 +72,45 @@ const sqlFunctionOptions = computed(() =>
   }))
 );
 const schemaHelpExamples = {
-  columns: '[{"name":"record_status","type":"VARCHAR","description":"业务状态：pending=待处理，completed=已完成"}]',
-  fewShot:
-    '[{"question":"按月统计已完成记录数","sql":"SELECT DATE_FORMAT(completed_at, \'%Y-%m\') AS month, COUNT(*) FROM v_record_summary WHERE status = \'completed\' GROUP BY month"}]',
-  functions: '["COUNT","DATE_FORMAT"]',
-  sensitive: '["customer_phone","id_card_number"]'
+  columns: JSON.stringify(
+    [
+      { name: 'order_no', type: 'VARCHAR(32)', description: '业务订单号，唯一标识一笔订单' },
+      { name: 'status', type: 'VARCHAR(20)', description: '订单状态：paid=已付款，shipped=已发货，completed=已完成' },
+      { name: 'paid_amount', type: 'DECIMAL(12,2)', description: '实付金额，单位元，可求和或取平均值' },
+      { name: 'paid_at', type: 'DATETIME', description: '付款时间，Asia/Shanghai 时区，用于按日或按月统计' },
+      { name: 'customer_name_masked', type: 'VARCHAR(64)', description: '脱敏后的顾客姓名，仅用于结果展示' }
+    ],
+    null,
+    2
+  ),
+  fewShot: JSON.stringify(
+    [
+      {
+        question: '查询已付款且实付金额大于 1000 元的订单',
+        sql: "SELECT order_no, paid_amount FROM v_after_sales_order WHERE status = 'paid' AND paid_amount > 1000 ORDER BY paid_amount DESC LIMIT 20"
+      },
+      {
+        question: '统计各订单状态的订单数',
+        sql: 'SELECT status, COUNT(*) AS order_count FROM v_after_sales_order GROUP BY status ORDER BY order_count DESC'
+      }
+    ],
+    null,
+    2
+  ),
+  functions: '["COUNT", "SUM", "AVG", "ROUND"]',
+  sensitive: '["customer_phone", "id_card_number", "bank_card_no"]'
 };
+const columnsMetaParameters = computed(() => [
+  { name: '[]', description: t('rag.configHelp.schema.columnsFields.root'), example: '[{...}, {...}]', required: true },
+  { name: 'name', description: t('rag.configHelp.schema.columnsFields.name'), example: 'paid_amount', required: true },
+  { name: 'type', description: t('rag.configHelp.schema.columnsFields.type'), example: 'DECIMAL(12,2)' },
+  { name: 'description', description: t('rag.configHelp.schema.columnsFields.description'), example: t('rag.configHelp.schema.columnsFields.descriptionExample') }
+]);
+const fewShotParameters = computed(() => [
+  { name: '[]', description: t('rag.configHelp.schema.fewShotFields.root'), example: '[{...}, {...}]', required: true },
+  { name: 'question', description: t('rag.configHelp.schema.fewShotFields.question'), example: t('rag.configHelp.schema.fewShotFields.questionExample'), required: true },
+  { name: 'sql', description: t('rag.configHelp.schema.fewShotFields.sql'), example: 'SELECT status, COUNT(*) AS order_count ...', required: true }
+]);
 const datasourceParameters = computed(() => [
   {
     name: t('rag.datasource.name'),
@@ -161,8 +194,7 @@ const schemaParameters = computed(() => [
   {
     name: t('rag.datasource.columnsMeta'),
     description: t('rag.configFields.schema.fields.columnsMeta'),
-    example: schemaHelpExamples.columns,
-    required: true
+    example: schemaHelpExamples.columns
   },
   {
     name: t('rag.datasource.fewShotExamples'),
@@ -272,7 +304,9 @@ function parseIds(value?: string) {
 function parseStringArray(value?: string) {
   try {
     const parsed = value ? JSON.parse(value) : [];
-    return Array.isArray(parsed) ? parsed.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim()) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim())
+      : [];
   } catch {
     return [];
   }
@@ -320,9 +354,9 @@ async function saveSchema() {
     ElMessage.warning(t('rag.datasource.schemaRequiredFields'));
     return;
   }
-  schemaForm.value.allowedFunctions = JSON.stringify(
-    [...new Set(schemaAllowedFunctions.value.map(item => item.trim().toUpperCase()).filter(Boolean))]
-  );
+  schemaForm.value.allowedFunctions = JSON.stringify([
+    ...new Set(schemaAllowedFunctions.value.map(item => item.trim().toUpperCase()).filter(Boolean))
+  ]);
   for (const [field, value] of [
     [t('rag.datasource.columnsMeta'), schemaForm.value.columnsMeta],
     [t('rag.datasource.fewShotExamples'), schemaForm.value.fewShotExamples],
@@ -406,6 +440,7 @@ function previewRows(rows: any[]) {
 <template>
   <div class="page-container h-full">
     <ElCard class="w-full">
+      <ElAlert class="mb-4" type="info" :closable="false" show-icon :title="t('rag.datasource.pageGuide')" />
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElInput
           v-model="keyword"
@@ -420,7 +455,14 @@ function previewRows(rows: any[]) {
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElButton type="primary" @click="openCreate">+ {{ t('rag.common.create') }}</ElButton>
       </div>
-      <ElTable v-loading="loading" :data="list" stripe border class="w-full">
+      <ElTable
+        v-loading="loading"
+        :data="list"
+        stripe
+        border
+        class="w-full"
+        :empty-text="t('rag.datasource.emptyHint')"
+      >
         <ElTableColumn prop="name" :label="t('rag.datasource.name')" min-width="150" />
         <ElTableColumn prop="code" :label="t('rag.datasource.code')" min-width="150" />
         <ElTableColumn prop="dbType" :label="t('rag.datasource.dbType')" width="90" />
@@ -619,6 +661,16 @@ function previewRows(rows: any[]) {
           <ElInput v-model="schemaForm.viewName" :placeholder="t('rag.datasource.viewNamePlaceholder')" />
         </ElFormItem>
         <ElFormItem :label="t('rag.tool.description')">
+          <template #label>
+            <span>{{ t('rag.tool.description') }}</span>
+            <ConfigHelp
+              field
+              :title="t('rag.configHelp.schema.descriptionTitle')"
+              :description="t('rag.configFields.schema.fields.description')"
+              :examples="[t('rag.configFields.schema.fieldExamples.description')]"
+              :rules="[t('rag.configHelp.schema.descriptionRule1'), t('rag.configHelp.schema.descriptionRule2')]"
+            />
+          </template>
           <ElInput
             v-model="schemaForm.description"
             type="textarea"
@@ -633,7 +685,13 @@ function previewRows(rows: any[]) {
               field
               :title="t('rag.configHelp.schema.columnsTitle')"
               :description="t('rag.configHelp.schema.columnsDescription')"
+              :parameters="columnsMetaParameters"
               :examples="[schemaHelpExamples.columns]"
+              :rules="[
+                t('rag.configHelp.schema.columnsRule1'),
+                t('rag.configHelp.schema.columnsRule2'),
+                t('rag.configHelp.schema.jsonRule')
+              ]"
             />
           </template>
           <ConfigCodeEditor
@@ -650,7 +708,13 @@ function previewRows(rows: any[]) {
               field
               :title="t('rag.configHelp.schema.fewShotTitle')"
               :description="t('rag.configHelp.schema.fewShotDescription')"
+              :parameters="fewShotParameters"
               :examples="[schemaHelpExamples.fewShot]"
+              :rules="[
+                t('rag.configHelp.schema.fewShotRule1'),
+                t('rag.configHelp.schema.fewShotRule2'),
+                t('rag.configHelp.schema.jsonRule')
+              ]"
             />
           </template>
           <ConfigCodeEditor
@@ -661,6 +725,16 @@ function previewRows(rows: any[]) {
           />
         </ElFormItem>
         <ElFormItem :label="t('rag.datasource.allowedFunctions')">
+          <template #label>
+            <span>{{ t('rag.datasource.allowedFunctions') }}</span>
+            <ConfigHelp
+              field
+              :title="t('rag.configHelp.schema.functionsTitle')"
+              :description="t('rag.configHelp.schema.functionsDescription')"
+              :examples="[schemaHelpExamples.functions]"
+              :rules="[t('rag.configHelp.schema.functionsRule1'), t('rag.configHelp.schema.functionsRule2')]"
+            />
+          </template>
           <ElSelect
             v-model="schemaAllowedFunctions"
             multiple
@@ -674,6 +748,20 @@ function previewRows(rows: any[]) {
           </ElSelect>
         </ElFormItem>
         <ElFormItem :label="t('rag.datasource.sensitiveColumns')">
+          <template #label>
+            <span>{{ t('rag.datasource.sensitiveColumns') }}</span>
+            <ConfigHelp
+              field
+              :title="t('rag.configHelp.schema.sensitiveTitle')"
+              :description="t('rag.configHelp.schema.sensitiveDescription')"
+              :examples="[schemaHelpExamples.sensitive]"
+              :rules="[
+                t('rag.configHelp.schema.sensitiveRule1'),
+                t('rag.configHelp.schema.sensitiveRule2'),
+                t('rag.configHelp.schema.jsonRule')
+              ]"
+            />
+          </template>
           <ConfigCodeEditor
             v-model="schemaForm.sensitiveColumns"
             :rows="2"
@@ -724,26 +812,47 @@ function previewRows(rows: any[]) {
       </template>
     </ElDialog>
 
-    <ElDialog v-model="schemaTestDialogVisible" :title="t('rag.datasource.schemaTestTitle')" width="min(900px, 95vw)" align-center>
+    <ElDialog
+      v-model="schemaTestDialogVisible"
+      :title="t('rag.datasource.schemaTestTitle')"
+      width="min(900px, 95vw)"
+      align-center
+    >
+      <ElAlert class="mb-4" type="warning" :closable="false" show-icon :title="t('rag.datasource.schemaTestWarning')" />
       <ElForm label-width="100px">
         <ElFormItem :label="t('rag.datasource.testSchema')">
           <ElTag>{{ schemaTestTarget?.domainName }} ({{ schemaTestTarget?.viewName }})</ElTag>
         </ElFormItem>
         <ElFormItem :label="t('rag.datasource.testQuestion')">
-          <ElInput v-model="schemaTestQuery" type="textarea" :rows="3" :placeholder="t('rag.datasource.testQuestionPlaceholder')" />
+          <ElInput
+            v-model="schemaTestQuery"
+            type="textarea"
+            :rows="3"
+            :placeholder="t('rag.datasource.testQuestionPlaceholder')"
+          />
         </ElFormItem>
       </ElForm>
       <div v-if="schemaTestResult" class="space-y-3">
         <ElAlert
           :type="schemaTestResult.success ? 'success' : 'warning'"
           :closable="false"
-          :title="schemaTestResult.success ? t('rag.datasource.querySuccess', { count: schemaTestResult.rowCount || 0 }) : t('rag.datasource.queryFailed')"
+          :title="
+            schemaTestResult.success
+              ? t('rag.datasource.querySuccess', { count: schemaTestResult.rowCount || 0 })
+              : t('rag.datasource.queryFailed')
+          "
         />
         <div>
           <div class="mb-1 text-sm text-gray-500">{{ t('rag.datasource.generatedSql') }}</div>
           <pre class="overflow-auto rounded bg-gray-50 p-3 text-xs">{{ schemaTestResult.sql || '-' }}</pre>
         </div>
-        <ElTable v-if="previewRows(schemaTestResult.rows).length" :data="previewRows(schemaTestResult.rows)" border stripe max-height="320">
+        <ElTable
+          v-if="previewRows(schemaTestResult.rows).length"
+          :data="previewRows(schemaTestResult.rows)"
+          border
+          stripe
+          max-height="320"
+        >
           <ElTableColumn
             v-for="key in Object.keys(previewRows(schemaTestResult.rows)[0] || {})"
             :key="key"
@@ -759,7 +868,9 @@ function previewRows(rows: any[]) {
       </div>
       <template #footer>
         <ElButton @click="schemaTestDialogVisible = false">{{ t('rag.datasource.close') }}</ElButton>
-        <ElButton type="primary" :loading="schemaTestLoading" @click="runSchemaTest">{{ t('rag.datasource.startTest') }}</ElButton>
+        <ElButton type="primary" :loading="schemaTestLoading" @click="runSchemaTest">
+          {{ t('rag.datasource.startTest') }}
+        </ElButton>
       </template>
     </ElDialog>
   </div>

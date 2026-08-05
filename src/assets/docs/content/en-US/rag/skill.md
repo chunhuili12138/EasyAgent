@@ -68,17 +68,121 @@ Use complete phrases a real user would say, not broad words such as “query” 
 - `depends_on`: upstream step IDs that must complete first. Dependencies must exist and cannot form a cycle; independent steps may run in parallel.
 - `output_schema`: optional JSON Schema for RAG, NL2SQL, API, built-in, or LLM. A mismatch stops downstream execution; an LLM with a Schema must return conforming JSON.
 
+#### Complete `output_schema` Configuration
+
+`output_schema` uses **JSON Schema Draft 7** to validate the primary step output itself. It does not add a `data`/`result` wrapper or rename fields.
+
+| Field | Purpose |
+|---|---|
+| `$schema` | Optional Draft 7 declaration; prefer `http://json-schema.org/draft-07/schema#` |
+| `title` / `description` | Human-readable explanation of the business object; does not change output |
+| `type` | Root type: `object`, `array`, `string`, `integer`, `number`, `boolean`, or `null` |
+| `properties` | Object fields; give each field a `type` and business `description` |
+| `required` | Array of fields that must be present; each should also be defined under `properties` |
+| `additionalProperties` | Set `false` to reject undeclared fields, especially for stable downstream API input |
+| `enum` / `const` | Restrict statuses, kinds, and other discrete or fixed values |
+| `format` / `pattern` | Restrict date, time, email, URI, or custom string shape |
+| `minLength` / `maxLength` | Restrict string length |
+| `minimum` / `maximum` / `multipleOf` | Restrict numeric range and precision |
+| `items` / `minItems` / `maxItems` / `uniqueItems` | Define array elements, count, and uniqueness |
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RefundDecision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["orderNo", "refundReason", "refundAmount", "priority"],
+  "properties": {
+    "orderNo": {
+      "type": "string",
+      "description": "Business order number",
+      "pattern": "^SO[0-9]{12}$"
+    },
+    "refundReason": {
+      "type": "string",
+      "description": "Refund reason shown to the approver",
+      "minLength": 5,
+      "maxLength": 200
+    },
+    "refundAmount": {
+      "type": "number",
+      "description": "Refund amount in yuan",
+      "minimum": 0.01,
+      "maximum": 50000,
+      "multipleOf": 0.01
+    },
+    "priority": {
+      "type": "string",
+      "description": "Processing priority",
+      "enum": ["normal", "urgent"]
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Up to five evidence IDs",
+      "items": { "type": "string" },
+      "maxItems": 5
+    },
+    "requestedAt": {
+      "type": "string",
+      "description": "ISO 8601 request time",
+      "format": "date-time"
+    }
+  }
+}
+```
+
+Field names are case-sensitive and referenced directly downstream. JSON cannot contain comments, single quotes, or trailing commas. `required` only controls presence; define type and range under `properties`. `default` in a Skill output Schema is annotation only and does not fill values; use Transform `default` or explicit LLM instructions when a value must be generated.
+
 ### RAG
 
 Leave `query` blank to use the current request, or provide fixed text or an upstream reference. Retrieval always uses the current tenant index and runtime user ACL. No separate knowledge-base resource is selected in the Skill form.
 
 ### NL2SQL
 
-Select an enabled data source. `query_hint` should state entities, filters, time range, metric definitions, and returned fields; the executor does not append the current user request automatically. Runtime still enforces the current user's Schema ACL, read-only SQL, row limit, and timeout.
+Select an enabled data source. `query_hint` should state entities, filters, time range, metric definitions, and returned fields; the executor does not append the current user request automatically. It may reference a declared upstream dependency through `{{step_id}}` or a field path when dynamic conditions are needed. Runtime still enforces the current user's Schema ACL, read-only SQL, row limit, and timeout.
 
 ### API
 
-Select an enabled tool available to the current user. Enter literals directly; upstream bindings must define `source`, restricted JSONPath, `one`/`many` cardinality, and empty, multiple, and overflow policies. Runtime does not guess same-name fields or silently select the first row.
+Select an enabled tool available to the current user. Enter literals directly; an upstream binding uses these fields:
+
+| Field | Purpose and values |
+|---|---|
+| Parameter name | Must exactly match a property in the API Tool parameter Schema; case-sensitive |
+| `source` | Upstream step ID, also required in `depends_on` |
+| `path` | Restricted JSONPath supporting `$`, dotted fields, numeric indexes, and array wildcards |
+| `cardinality` | `one` for a scalar; `many` for an array |
+| `on_empty` | `fail`, omit with `skip`, or use `default` |
+| `default` | Any valid JSON value used with `on_empty=default` |
+| `on_multiple` | For `one`, either `fail` or explicitly select `first` |
+| `max_items` | Keep 1–200 values for `many` |
+| `overflow` | `fail` or `truncate` when the array exceeds the limit |
+
+```json
+{
+  "orderNo": {
+    "source": "query_orders",
+    "path": "$[0].orderNo",
+    "cardinality": "one",
+    "on_empty": "fail",
+    "on_multiple": "fail"
+  },
+  "evidenceIds": {
+    "source": "query_orders",
+    "path": "$[*].evidenceId",
+    "cardinality": "many",
+    "on_empty": "default",
+    "default": [],
+    "max_items": 20,
+    "overflow": "truncate"
+  },
+  "channel": "agent_chat"
+}
+```
+
+The Skill supplies logical parameters and does not choose their HTTP placement. The API Tool executor reads `x-in`/`in` (`query`, `path`, `body`, or `header`) and `x-http-name`/`httpName` from each Tool Schema property. Missing parameters may receive the Tool Schema `default`; optional null or blank-string values are omitted. Legacy `{{param}}` URL templates remain supported, and a value already used in the URL is not appended twice.
+
+Runtime does not guess same-name fields, silently select the first row, or perform complex transformations. Use Transform first for filtering, aggregation, or renaming.
 
 In Chat, an `action` tool freezes the request and enters HITL. A standalone Skill trial run cannot complete chat approval. Automation Skill nodes currently reject Skills containing API calls; use an Automation API node and an explicit wait-event or approval callback when the workflow needs approval.
 
@@ -100,13 +204,91 @@ The current user request is also appended to the LLM context. Use Transform, not
 
 ### Transform
 
-Bind structured upstream data through `input` or `inputs`, then configure at most 20 operations: `select`, `filter`, `project`, `rename`, `distinct`, `sort`, `slice`, `limit`, `aggregate`, `object`, `merge`, `default`, and `cast`. `limit` is a bounded list-slice alias and accepts `limit` or `count`.
+Bind structured upstream data through `input` or `inputs`. `inputs` maps a local name to a binding object with the same fields used by API bindings, and every `source` must be in `depends_on`. `operations` run in array order with at most 20 entries and support `select`, `filter`, `project`, `rename`, `distinct`, `sort`, `slice`, `limit`, `aggregate`, `object`, `merge`, `default`, and `cast`.
+
+```json
+{
+  "inputs": {
+    "orders": {
+      "source": "query_orders",
+      "path": "$",
+      "cardinality": "many",
+      "on_empty": "fail",
+      "max_items": 200,
+      "overflow": "fail"
+    }
+  },
+  "operations": [
+    { "op": "select", "path": "$.orders" },
+    { "op": "filter", "path": "$.status", "operator": "equals", "value": "paid" },
+    {
+      "op": "project",
+      "fields": {
+        "orderNo": "$.orderNo",
+        "refundAmount": "$.paidAmount",
+        "reason": "Customer requested a refund"
+      }
+    },
+    { "op": "slice", "offset": 0, "limit": 20 }
+  ],
+  "output_schema": {
+    "type": "array",
+    "maxItems": 20,
+    "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["orderNo", "refundAmount", "reason"],
+      "properties": {
+        "orderNo": { "type": "string" },
+        "refundAmount": { "type": "number", "minimum": 0.01 },
+        "reason": { "type": "string", "minLength": 2, "maxLength": 200 }
+      }
+    }
+  }
+}
+```
+
+`filter.operator` supports only `equals`, `not_equals`, `in`, `contains`, `exists`, `gt`, `gte`, `lt`, and `lte`; `aggregate` supports `count`, `sum`, `avg`, `min`, and `max`; `sort.direction` is `asc` or `desc`. `limit` is a bounded slice alias and accepts `limit` or `count`.
 
 Paths are limited to `$`, fields, numeric indexes, and array wildcards. Runtime limits are 200 items, 1 MB JSON, and 32 levels of nesting. Scripts, network access, and file access are not supported.
 
 ### Foreach
 
-`items` references an upstream array, with optional `item_path`; `body` supports only `api` or ordinary `builtin`. The body may use `{{item}}`, `{{item.id}}`, and `{{index}}`. `max_items` cannot exceed 200, and `continue_on_error` controls whether execution continues after an item fails. Web search is not allowed in a loop.
+`items` references an upstream array, with optional `item_path`; `body` supports only `api` or ordinary `builtin`.
+
+```json
+{
+  "items": "{{query_orders}}",
+  "item_path": "records",
+  "max_items": 50,
+  "max_attempts": 1,
+  "continue_on_error": true,
+  "body": {
+    "type": "api",
+    "config": {
+      "tool_code": "create_follow_up_task",
+      "params": {
+        "orderNo": "{{item.orderNo}}",
+        "reason": "{{item.reason}}",
+        "sequence": "{{index}}"
+      }
+    }
+  }
+}
+```
+
+| Field | Purpose |
+|---|---|
+| `items` | Required reference to a declared upstream dependency |
+| `item_path` | Array path such as `records` or `data.records` when upstream returns an object; omit for a direct array |
+| `max_items` | 1–200; a larger input fails |
+| `max_attempts` | 1–3; non-idempotent Action APIs are not retried automatically |
+| `continue_on_error` | `true` records an item failure and continues; `false` stops at the first failure |
+| `body.type` | `api` or `builtin` only |
+| `body.config` | API uses `params`; built-ins use `arguments`; supports `{{item}}`, `{{item.field}}`, and `{{index}}` |
+| `output_schema` | Optional validation for the complete batch result, not an individual Tool response |
+
+Web search and nested loops are not supported in the body. An Action API receives one HITL approval for the whole batch.
 
 ## What the Test Actions Actually Do
 
