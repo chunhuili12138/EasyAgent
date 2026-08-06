@@ -123,8 +123,16 @@ onMounted(() => {
 
 <template>
   <div class="page-container h-full">
-    <div class="mb-4 grid grid-cols-2 gap-4">
-      <ElCard v-for="card in [{ label: t('rag.badCase.pending'), key: 'pending' }, { label: t('rag.badCase.labeled'), key: 'labeled' }]" :key="card.key" shadow="never">
+    <ElAlert class="mb-4" type="info" :closable="false" show-icon :title="t('rag.badCase.pageGuide')" />
+    <div class="grid grid-cols-2 mb-4 gap-4">
+      <ElCard
+        v-for="card in [
+          { label: t('rag.badCase.pending'), key: 'pending' },
+          { label: t('rag.badCase.labeled'), key: 'labeled' }
+        ]"
+        :key="card.key"
+        shadow="never"
+      >
         <div class="text-center">
           <div class="text-2xl font-bold">{{ stats[card.key] || 0 }}</div>
           <div class="text-sm text-gray-500">{{ card.label }}</div>
@@ -134,9 +142,26 @@ onMounted(() => {
 
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-3">
-        <ElInput v-model="keyword" :placeholder="t('rag.badCase.searchPlaceholder')" clearable class="w-56" @keyup.enter="loadData" />
-        <ElSelect v-model="statusFilter" :placeholder="t('rag.common.status')" clearable class="w-32" @change="loadData">
-          <ElOption v-for="status in ['pending', 'labeled']" :key="status" :label="badCaseStatusLabel(status)" :value="status" />
+        <ElInput
+          v-model="keyword"
+          :placeholder="t('rag.badCase.searchPlaceholder')"
+          clearable
+          class="w-56"
+          @keyup.enter="loadData"
+        />
+        <ElSelect
+          v-model="statusFilter"
+          :placeholder="t('rag.common.status')"
+          clearable
+          class="w-32"
+          @change="loadData"
+        >
+          <ElOption
+            v-for="status in ['pending', 'labeled']"
+            :key="status"
+            :label="badCaseStatusLabel(status)"
+            :value="status"
+          />
         </ElSelect>
         <ElDatePicker
           v-model="dateRange"
@@ -151,12 +176,17 @@ onMounted(() => {
         <ElButton @click="resetSearch">{{ t('common.reset') }}</ElButton>
       </div>
 
-      <ElTable v-loading="loading" :data="list" stripe border class="w-full">
+      <ElTable v-loading="loading" :data="list" stripe border class="w-full" :empty-text="t('rag.badCase.emptyHint')">
         <ElTableColumn prop="userQuery" :label="t('rag.badCase.userQuery')" min-width="220" show-overflow-tooltip />
         <ElTableColumn :label="t('rag.badCase.feedbackType')" min-width="150">
           <template #default="{ row }">{{ feedbackTypeLabel(row.feedbackType) }}</template>
         </ElTableColumn>
-        <ElTableColumn prop="feedbackReason" :label="t('rag.badCase.feedbackReason')" min-width="180" show-overflow-tooltip>
+        <ElTableColumn
+          prop="feedbackReason"
+          :label="t('rag.badCase.feedbackReason')"
+          min-width="180"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">{{ row.feedbackReason || '-' }}</template>
         </ElTableColumn>
         <ElTableColumn :label="t('rag.common.status')" width="100">
@@ -185,20 +215,32 @@ onMounted(() => {
           :total="total"
           layout="total, sizes, prev, pager, next, jumper"
           @current-change="loadData"
-          @size-change="() => { page = 1; loadData(); }"
+          @size-change="
+            () => {
+              page = 1;
+              loadData();
+            }
+          "
         />
       </div>
     </ElCard>
 
-    <ElDialog v-model="labelDialogVisible" :title="t('rag.badCase.labelTitle')" width="640px" @close="labelForm = defaultLabelForm()">
-      <div class="space-y-3 text-sm">
+    <ElDialog
+      v-model="labelDialogVisible"
+      :title="t('rag.badCase.labelTitle')"
+      width="640px"
+      @close="labelForm = defaultLabelForm()"
+    >
+      <div class="text-sm space-y-3">
         <div>
           <span class="text-gray-500">{{ t('rag.badCase.question') }}:</span>
           <div class="mt-1 whitespace-pre-wrap rounded bg-gray-50 p-2">{{ currentItem?.userQuery }}</div>
         </div>
         <div>
           <span class="text-gray-500">{{ t('rag.badCase.aiAnswer') }}:</span>
-          <div class="mt-1 max-h-36 overflow-y-auto whitespace-pre-wrap rounded bg-gray-50 p-2">{{ currentItem?.llmResponse || '-' }}</div>
+          <div class="mt-1 max-h-36 overflow-y-auto whitespace-pre-wrap rounded bg-gray-50 p-2">
+            {{ currentItem?.llmResponse || '-' }}
+          </div>
         </div>
         <div>
           <span class="text-gray-500">{{ t('rag.badCase.feedbackType') }}:</span>
@@ -210,7 +252,13 @@ onMounted(() => {
         </div>
         <div>
           <span class="text-gray-500">{{ t('rag.badCase.correctAnswer') }}:</span>
-          <ElInput v-model="labelForm.correctAnswer" type="textarea" :rows="4" :placeholder="t('rag.badCase.labelPlaceholder')" class="mt-1" />
+          <ElInput
+            v-model="labelForm.correctAnswer"
+            type="textarea"
+            :rows="4"
+            :placeholder="t('rag.badCase.labelPlaceholder')"
+            class="mt-1"
+          />
         </div>
       </div>
       <template #footer>
@@ -220,10 +268,14 @@ onMounted(() => {
     </ElDialog>
 
     <ElDialog v-model="detailDialogVisible" :title="t('rag.badCase.detailTitle')" width="640px">
-      <div class="max-h-500px space-y-3 overflow-y-auto text-sm">
+      <div class="max-h-500px overflow-y-auto text-sm space-y-3">
         <ElDescriptions :column="1" border size="small">
-          <ElDescriptionsItem :label="t('rag.badCase.sessionId')">{{ detailData?.sessionId || '-' }}</ElDescriptionsItem>
-          <ElDescriptionsItem :label="t('rag.badCase.messageId')">{{ detailData?.messageId || '-' }}</ElDescriptionsItem>
+          <ElDescriptionsItem :label="t('rag.badCase.sessionId')">
+            {{ detailData?.sessionId || '-' }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem :label="t('rag.badCase.messageId')">
+            {{ detailData?.messageId || '-' }}
+          </ElDescriptionsItem>
           <ElDescriptionsItem :label="t('rag.common.status')">
             {{ badCaseStatusLabel(detailData?.status) }}
           </ElDescriptionsItem>
@@ -234,7 +286,9 @@ onMounted(() => {
         </div>
         <div>
           <span class="text-gray-500">{{ t('rag.badCase.aiAnswer') }}:</span>
-          <div class="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap rounded bg-gray-50 p-2">{{ detailData?.llmResponse || '-' }}</div>
+          <div class="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap rounded bg-gray-50 p-2">
+            {{ detailData?.llmResponse || '-' }}
+          </div>
         </div>
         <div>
           <span class="text-gray-500">{{ t('rag.badCase.feedbackType') }}:</span>
@@ -246,7 +300,9 @@ onMounted(() => {
         </div>
         <div v-if="detailData?.retrievalResults">
           <span class="text-gray-500">{{ t('rag.badCase.retrievalResults') }}:</span>
-          <pre class="mt-1 max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs">{{ detailData.retrievalResults }}</pre>
+          <pre class="mt-1 max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs">{{
+            detailData.retrievalResults
+          }}</pre>
         </div>
         <div v-if="detailData?.correctAnswer">
           <span class="text-gray-500">{{ t('rag.badCase.correctAnswer') }}:</span>

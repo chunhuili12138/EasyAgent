@@ -72,8 +72,8 @@ const createRules: FormRules = {
 const workflow = computed(() => detail.value?.workflow);
 const publishedVersion = computed(() => detail.value?.publishedVersion);
 const canRunPublishedVersion = computed(() => Boolean(workflow.value?.publishedVersionId && publishedVersion.value));
-const hasUnpublishedDraft = computed(
-  () => Boolean(publishedVersion.value && detail.value?.currentVersion.id !== publishedVersion.value.id)
+const hasUnpublishedDraft = computed(() =>
+  Boolean(publishedVersion.value && detail.value?.currentVersion.id !== publishedVersion.value.id)
 );
 const publishedRunLabel = computed(() =>
   publishedVersion.value
@@ -102,10 +102,26 @@ const saveType = computed(
     })[saveState.value] as 'success' | 'warning' | 'info' | 'danger'
 );
 const templateOptions = computed(() => [
-  { key: 'blank' as const, label: t('automation.workflow.templates.blank'), hint: t('automation.workflow.templateHints.blank') },
-  { key: 'sequential' as const, label: t('automation.workflow.templates.sequential'), hint: t('automation.workflow.templateHints.sequential') },
-  { key: 'approval' as const, label: t('automation.workflow.templates.approval'), hint: t('automation.workflow.templateHints.approval') },
-  { key: 'batch' as const, label: t('automation.workflow.templates.batch'), hint: t('automation.workflow.templateHints.batch') }
+  {
+    key: 'blank' as const,
+    label: t('automation.workflow.templates.blank'),
+    hint: t('automation.workflow.templateHints.blank')
+  },
+  {
+    key: 'sequential' as const,
+    label: t('automation.workflow.templates.sequential'),
+    hint: t('automation.workflow.templateHints.sequential')
+  },
+  {
+    key: 'approval' as const,
+    label: t('automation.workflow.templates.approval'),
+    hint: t('automation.workflow.templateHints.approval')
+  },
+  {
+    key: 'batch' as const,
+    label: t('automation.workflow.templates.batch'),
+    hint: t('automation.workflow.templateHints.batch')
+  }
 ]);
 
 function emptyDefinition(): WorkflowDefinition {
@@ -124,40 +140,38 @@ function emptyDefinition(): WorkflowDefinition {
 
 function starterDefinition(template: typeof templateKey.value = 'blank'): WorkflowDefinition {
   const base = emptyDefinition();
-  const start: WorkflowNodeDefinition =
-    {
-      id: 'start',
-      type: 'start',
-      name: t('automation.designer.nodes.start'),
-      config: {},
-      inputSchema: {},
-      inputMapping: [],
-      outputSchema: {},
-      outputMapping: [],
-      executionPolicy: {
-        maxRetries: 0,
-        retryDelay: 'PT10S',
-        timeoutMs: 60000,
-        failurePolicy: 'FAIL_WORKFLOW'
-      }
-    };
-  const end: WorkflowNodeDefinition =
-    {
-      id: 'end',
-      type: 'end',
-      name: t('automation.designer.nodes.end'),
-      config: {},
-      inputSchema: {},
-      inputMapping: [],
-      outputSchema: {},
-      outputMapping: [],
-      executionPolicy: {
-        maxRetries: 0,
-        retryDelay: 'PT10S',
-        timeoutMs: 60000,
-        failurePolicy: 'FAIL_WORKFLOW'
-      }
-    };
+  const start: WorkflowNodeDefinition = {
+    id: 'start',
+    type: 'start',
+    name: t('automation.designer.nodes.start'),
+    config: {},
+    inputSchema: {},
+    inputMapping: [],
+    outputSchema: {},
+    outputMapping: [],
+    executionPolicy: {
+      maxRetries: 0,
+      retryDelay: 'PT10S',
+      timeoutMs: 60000,
+      failurePolicy: 'FAIL_WORKFLOW'
+    }
+  };
+  const end: WorkflowNodeDefinition = {
+    id: 'end',
+    type: 'end',
+    name: t('automation.designer.nodes.end'),
+    config: {},
+    inputSchema: {},
+    inputMapping: [],
+    outputSchema: {},
+    outputMapping: [],
+    executionPolicy: {
+      maxRetries: 0,
+      retryDelay: 'PT10S',
+      timeoutMs: 60000,
+      failurePolicy: 'FAIL_WORKFLOW'
+    }
+  };
   base.nodes = [start, end];
   base.edges = [{ id: 'edge_start_end', source: 'start', target: 'end', defaultBranch: false }];
   const positions: Record<string, { x: number; y: number }> = { start: { x: 100, y: 180 }, end: { x: 430, y: 180 } };
@@ -177,7 +191,12 @@ function starterDefinition(template: typeof templateKey.value = 'blank'): Workfl
     Object.assign(positions, { task: { x: 330, y: 180 }, end: { x: 560, y: 180 } });
   }
   if (template === 'approval') {
-    const wait: WorkflowNodeDefinition = { ...start, id: 'waitApproval', type: 'wait_event', name: t('automation.designer.nodes.wait_event') };
+    const wait: WorkflowNodeDefinition = {
+      ...start,
+      id: 'waitApproval',
+      type: 'wait_event',
+      name: t('automation.designer.nodes.wait_event')
+    };
     base.nodes = [start, wait, end];
     base.edges = [
       { id: 'edge_start_wait', source: 'start', target: 'waitApproval', defaultBranch: false },
@@ -188,11 +207,22 @@ function starterDefinition(template: typeof templateKey.value = 'blank'): Workfl
   if (template === 'batch') {
     const batch: WorkflowNodeDefinition = {
       ...start,
-      id: 'batch', type: 'batch_loop', name: t('automation.designer.nodes.batch_loop'),
+      id: 'batch',
+      type: 'batch_loop',
+      name: t('automation.designer.nodes.batch_loop'),
       config: {
-        itemsPath: 'workflow.input.items', batchSize: 50, maxConcurrency: 4,
-        rateLimitPerSecond: 10, maxAttempts: 2, failureThreshold: 1,
-        body: { id: 'loop_item', type: 'builtin', name: t('automation.designer.nodes.builtin'), config: { toolCode: 'current_datetime' } }
+        itemsPath: 'workflow.input.items',
+        batchSize: 50,
+        maxConcurrency: 4,
+        rateLimitPerSecond: 10,
+        maxAttempts: 2,
+        failureThreshold: 1,
+        body: {
+          id: 'loop_item',
+          type: 'builtin',
+          name: t('automation.designer.nodes.builtin'),
+          config: { toolCode: 'current_datetime' }
+        }
       }
     };
     base.inputSchema = { type: 'object', required: ['items'], properties: { items: { type: 'array', items: {} } } };
@@ -422,7 +452,11 @@ async function publishWorkflow() {
     await ElMessageBox.confirm(
       t('automation.workflow.publishConfirm', { version: workflow.value.currentVersion }),
       t('automation.workflow.publishTitle'),
-      { type: 'warning', confirmButtonText: t('automation.workflow.publish'), cancelButtonText: t('automation.common.cancel') }
+      {
+        type: 'warning',
+        confirmButtonText: t('automation.workflow.publish'),
+        cancelButtonText: t('automation.common.cancel')
+      }
     );
   } catch {
     return;
@@ -491,11 +525,7 @@ onBeforeUnmount(() => clearTimeout(saveTimer));
         </div>
         <div class="page-heading-actions">
           <ElTooltip :content="t('automation.common.configurationHelp')">
-            <ElButton
-              circle
-              :aria-label="t('automation.common.configurationHelp')"
-              @click="helpVisible = true"
-            >
+            <ElButton circle :aria-label="t('automation.common.configurationHelp')" @click="helpVisible = true">
               <SvgIcon icon="mdi:help-circle-outline" />
             </ElButton>
           </ElTooltip>
@@ -506,7 +536,12 @@ onBeforeUnmount(() => clearTimeout(saveTimer));
         </div>
       </div>
       <div class="filter-band">
-        <ElInput v-model="query.keyword" clearable :placeholder="t('automation.workflow.searchPlaceholder')" @keyup.enter="search">
+        <ElInput
+          v-model="query.keyword"
+          clearable
+          :placeholder="t('automation.workflow.searchPlaceholder')"
+          @keyup.enter="search"
+        >
           <template #prefix><SvgIcon icon="mdi:magnify" /></template>
         </ElInput>
         <ElSelect v-model="query.status" clearable :placeholder="t('automation.common.allStatus')">
@@ -520,7 +555,7 @@ onBeforeUnmount(() => clearTimeout(saveTimer));
       </div>
       <div class="table-band">
         <AutomationLoadError v-if="loadError" :message="loadError" @retry="loadList" />
-        <ElTable v-loading="loading" :data="records" height="100%" @row-dblclick="openWorkflow">
+        <ElTable v-loading="loading" :data="records" height="100%" class="records-table" @row-dblclick="openWorkflow">
           <ElTableColumn :label="t('automation.common.workflow')" min-width="240">
             <template #default="{ row }">
               <div class="workflow-cell">
@@ -532,7 +567,12 @@ onBeforeUnmount(() => clearTimeout(saveTimer));
               </div>
             </template>
           </ElTableColumn>
-          <ElTableColumn prop="description" :label="t('automation.workflow.descriptionLabel')" min-width="260" show-overflow-tooltip />
+          <ElTableColumn
+            prop="description"
+            :label="t('automation.workflow.descriptionLabel')"
+            min-width="260"
+            show-overflow-tooltip
+          />
           <ElTableColumn :label="t('automation.common.version')" width="100" align="center">
             <template #default="{ row }">v{{ row.currentVersion }}</template>
           </ElTableColumn>
@@ -609,7 +649,9 @@ onBeforeUnmount(() => clearTimeout(saveTimer));
             />
             <span>{{ saveLabel }}</span>
           </ElTag>
-          <ElButton v-if="saveState === 'conflict'" type="danger" plain @click="reloadDraft">{{ t('automation.workflow.reload') }}</ElButton>
+          <ElButton v-if="saveState === 'conflict'" type="danger" plain @click="reloadDraft">
+            {{ t('automation.workflow.reload') }}
+          </ElButton>
           <ElTooltip :content="t('automation.workflow.readonlyDsl')">
             <ElButton circle :aria-label="t('automation.workflow.readonlyDsl')" @click="dslVisible = true">
               <SvgIcon icon="mdi:code-json" />
@@ -675,7 +717,8 @@ onBeforeUnmount(() => clearTimeout(saveTimer));
           v-for="option in templateOptions"
           :key="option.key"
           type="button"
-          :class="['template-option', { active: templateKey === option.key }]"
+          class="template-option"
+          :class="[{ active: templateKey === option.key }]"
           @click="templateKey = option.key"
         >
           <strong>{{ option.label }}</strong>
@@ -703,8 +746,12 @@ onBeforeUnmount(() => clearTimeout(saveTimer));
       <template #footer>
         <ElButton @click="createVisible = false">{{ t('automation.common.cancel') }}</ElButton>
         <ElButton v-if="createStep > 0" @click="createStep = 0">{{ t('automation.common.previous') }}</ElButton>
-        <ElButton v-if="createStep === 0" type="primary" @click="createStep = 1">{{ t('automation.common.next') }}</ElButton>
-        <ElButton v-else type="primary" @click="createWorkflow">{{ t('automation.workflow.createAndDesign') }}</ElButton>
+        <ElButton v-if="createStep === 0" type="primary" @click="createStep = 1">
+          {{ t('automation.common.next') }}
+        </ElButton>
+        <ElButton v-else type="primary" @click="createWorkflow">
+          {{ t('automation.workflow.createAndDesign') }}
+        </ElButton>
       </template>
     </ElDialog>
 
@@ -814,15 +861,25 @@ onBeforeUnmount(() => clearTimeout(saveTimer));
   margin-bottom: 12px;
 }
 .table-band {
+  display: grid;
   min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
   padding: 0 14px;
   background: #fff;
   overflow: hidden;
 }
+.records-table {
+  min-width: 0;
+  min-height: 0;
+  grid-row: 2;
+}
 .pagination-band {
   display: flex;
+  min-height: 54px;
+  align-items: center;
   justify-content: flex-end;
   padding: 10px 14px;
+  overflow: hidden;
   background: #fff;
 }
 .workflow-cell {

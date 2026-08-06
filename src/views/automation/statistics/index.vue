@@ -43,6 +43,9 @@ const statusRows = computed(() =>
     .map(([status, count]) => ({ status, count }))
     .sort((a, b) => b.count - a.count)
 );
+const generatedAt = computed(() =>
+  metrics.value.generatedAtEpochMs > 0 ? new Date(metrics.value.generatedAtEpochMs).toLocaleString() : '-'
+);
 
 async function loadData() {
   loading.value = true;
@@ -60,14 +63,18 @@ async function loadData() {
 }
 
 async function reconcile() {
-  await ElMessageBox.confirm(
-    t('automation.statistics.reconcileConfirm'),
-    t('automation.statistics.reconcile'),
-    {
-      type: 'warning',
-      confirmButtonText: t('automation.statistics.startReconcile')
-    }
-  );
+  try {
+    await ElMessageBox.confirm(
+      t('automation.statistics.reconcileConfirm'),
+      t('automation.statistics.reconcile'),
+      {
+        type: 'warning',
+        confirmButtonText: t('automation.statistics.startReconcile')
+      }
+    );
+  } catch {
+    return;
+  }
   reconciling.value = true;
   reconcileError.value = '';
   try {
@@ -178,7 +185,7 @@ onMounted(loadData);
       <div class="status-panel">
         <header>
           <h2>{{ t('automation.statistics.statusDistribution') }}</h2>
-          <span>{{ t('automation.statistics.generatedAt', { time: new Date(metrics.generatedAtEpochMs).toLocaleString() }) }}</span>
+          <span>{{ t('automation.statistics.generatedAt', { time: generatedAt }) }}</span>
         </header>
         <ElTable :data="statusRows" height="100%">
           <ElTableColumn :label="t('automation.common.status')" min-width="180">
@@ -238,7 +245,7 @@ onMounted(loadData);
         <ElEmpty v-else :image-size="58" :description="t('automation.statistics.neverReconciled')" />
       </div>
     </section>
-    <AutomationConfigHelp v-model="helpVisible" topic="runtime" />
+    <AutomationConfigHelp v-model="helpVisible" topic="statistics" />
   </div>
 </template>
 

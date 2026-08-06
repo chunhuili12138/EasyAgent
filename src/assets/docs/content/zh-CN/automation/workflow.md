@@ -1,75 +1,151 @@
 ## 功能概述
 
-**自动化中心**提供可视化工作流设计器：通过节点、连线和资源绑定，把 AI 能力、业务接口与人工审批编排为可持久执行的流程。工作流可以由 Cron、Webhook、内部事件或审批回调触发。
+**工作流设计**用于把数据查询、知识检索、模型生成、确定性数据处理、外部 API 和人工审批编排成可持续运行的后台流程。工作流遵循**草稿 -> 校验 -> 发布 -> 运行**的版本生命周期：
 
-工作流按**草稿 → 校验 → 发布**管理。发布版本被冻结，运行实例始终使用已发布版本；修改画布不会改变已经发布或正在运行的版本。
+- 设计器修改约 1.2 秒后自动保存为草稿，也可以手工保存。
+- 校验会先保存当前草稿，再检查流程图、数据契约、资源和执行策略。
+- 发布会冻结可执行版本及其资源信息。
+- 手工运行和触发器始终执行已发布版本，未发布草稿不会生效。
 
-## 适用角色与前置条件
+## 使用前准备
 
-- **适用角色**：拥有自动化工作流查看/管理权限的 Agent 管理员。
-- **前置条件**：平台管理员已启用自动化引擎。调用 Skill、数据源、Schema、API 或子流程前，应先创建对应资源。
+- 当前租户已具备工作流管理权限，服务端已启用自动化引擎。
+- 需要使用的 API 工具、Skill、数据源、Schema 或子流程已经创建并启用。
+- 涉及外部写操作时，先确认测试数据、回滚方式和接口幂等能力。
+- 进入路径：**自动化中心 -> 工作流设计**。
 
-## 进入路径
+## 推荐配置顺序
 
-主菜单：**自动化中心 → 工作流设计**。
+### 1. 新建工作流
 
-## 操作步骤
+1. 点击**新建**。
+2. 名称使用实际业务动作，例如“生成退款申请”；编码使用稳定的小写字母、数字或下划线，保存后不要随意更改。
+3. 描述中写清触发条件、主要处理步骤、最终输出和不适用场景。
+4. 选择空白、顺序处理、外部审批或批量处理模板。模板只提供起始结构，仍需补齐真实资源和数据契约。
 
-### 1. 创建与设计
+### 2. 定义工作流输入与输出
 
-1. 点击**新建**，填写名称、编码和描述，并选择空白或模板流程。
-2. 在设计器中从节点面板拖入节点，连接开始节点、业务节点和结束节点。
-3. 为需要外部资源的节点选择 `resourceAlias`，并在工作流级别配置对应的资源绑定。
-4. 使用高级 JSON 编辑器补充输入、输出、变量 Schema 和字段映射；字段路径使用设计器提供的变量树。
+点击画布空白处，在右侧**流程设置**中配置：
 
-### 2. 校验与发布
-
-1. 点击**校验**，检查节点类型、Schema、资源绑定、连线、无环图和数据契约。
-2. 修复校验错误后点击**发布**。发布会生成冻结的运行版本。
-3. 前往**触发器管理**，为已发布工作流配置 Cron、Webhook、内部事件或审批回调。
-
-### 3. 运行与监控
-
-1. 在工作流详情中点击**运行**，填写工作流输入和运行变量；手动运行会真实调用节点。
-2. 在**运行实例**查看流程状态和最终输出，在**执行日志**查看每次节点尝试。
-3. 节点失败且达到重试条件后会创建**失败任务**；打开的死信任务可重试或放弃。
-
-## 节点类型
-
-| 类型 | 作用 |
+| 配置 | 作用 |
 |---|---|
-| 开始 / 结束 | 定义流程入口和出口 |
-| 条件 / 并行 | 分支判断或并行执行 |
-| 延时 / 等待事件 | 等待时间、内部事件、Webhook 或审批结果 |
-| 批量循环 | 读取数组并按批次执行一个子节点 |
-| 聚合 / 转换 | 合并分支、筛选、重命名、转换和模板化数据 |
-| 内置工具 | 调用 `current_datetime`、`date_calculate`、`calculator`、`unit_convert` |
-| 数据源 / RAG / LLM / NL2SQL | 使用已绑定的数据源、知识检索或模型能力 |
-| Skill / Agent | 调用已配置的 Skill 或 Agent 任务 |
-| API | 调用已绑定的 API 工具 |
-| 子流程 | 调用已绑定的工作流 |
+| 输入 | 手工运行或触发器提交的业务输入 JSON Schema |
+| 变量 | 与业务输入分开的运行变量 JSON Schema |
+| 输出 | 工作流最终结果 JSON Schema |
+| 最终输出 | 从输入、变量或节点输出组装最终结果的映射数组 |
+| 资源绑定 | 节点选择资源后自动维护的冻结清单，通常不需要手工编辑 |
 
-## 定义结构（schemaVersion 2）
+输入、变量和输出必须是 JSON Schema 对象。最终输出必须与工作流输出 Schema 的字段保持一致。
 
-设计器保存的是 JSON 定义，不是旧版的 `name/trigger/config` YAML。主要字段如下：
+### 3. 添加节点并连线
+
+从左侧节点库拖入节点，按真实数据依赖从开始节点连到结束节点。没有依赖关系的分支可以并行执行；需要使用上游结果的节点必须位于其下游。
+
+选中连线可以配置条件。支持：
+
+- 简单比较：`workflow.input.amount > 0`
+- 路径判断：`exists(nodes.query.output.rows)`、`is_null(workflow.input.reason)`
+- 结构化 JSON：`and`、`or`、`eq`、`ne`、`gt`、`gte`、`lt`、`lte`、`exists`、`is_null`
+
+条件节点至少需要两个出口，并且必须有且仅有一个**默认分支**。非默认分支必须填写条件。
+
+### 4. 选择受管资源
+
+选中 API、Skill、数据源、NL2SQL 或子流程节点，在**关联资源**中按名称选择已启用资源。设计器会自动：
+
+1. 生成节点 `resourceAlias`；
+2. 在工作流 `resourceBindings` 中增加对应绑定；
+3. 在发布时解析并冻结资源 ID、编码和可用版本信息。
+
+正常配置不需要手工填写别名或资源绑定。只有处理特殊高级配置时才编辑原始 JSON，并且必须保证别名完全一致。
+
+### 5. 配置节点数据契约
+
+选中节点，展开**高级数据配置**：
+
+1. **节点配置 JSON**：节点类型特有参数，例如转换操作、RAG 检索参数或批量循环体。
+2. **输入 Schema**：节点实际接收的数据结构。
+3. **输入映射**：从工作流、触发器、上游节点或循环上下文取值。
+4. **输出 Schema**：节点主输出必须满足的结构。
+5. **输出映射**：从 `raw` 原始执行结果提取、转换和重命名字段；原始结果已符合输出 Schema 时可留空。
+
+可以点击**填入示例**快速生成基础结构，再按真实字段修改并点击**应用 JSON**。编辑器中的内容只有点击应用后才写入画布配置。
+
+## 字段映射说明
+
+每条输入映射、输出映射或最终输出映射支持以下字段：
 
 | 字段 | 说明 |
 |---|---|
-| `schemaVersion` | 当前应为 `2` |
-| `nodes` | 节点数组。每项包含 `id`、`type`、`name`、`config`、输入/输出 Schema、字段映射和 `executionPolicy` |
-| `edges` | 连线数组。每项包含 `id`、`source`、`target`、可选 `condition` 和 `defaultBranch` |
-| `inputSchema` | 工作流输入 JSON Schema；触发器输入和手动运行输入按此校验 |
-| `variablesSchema` | 运行变量 JSON Schema |
-| `outputSchema` | 工作流最终输出 JSON Schema |
-| `finalOutput` | 从 `workflow.input`、`workflow.variables` 或 `nodes.<id>.output` 映射最终输出 |
-| `resourceBindings` | 冻结资源清单。每项至少包含合法 `alias`、`resourceType` 和正数 `resourceId`，可带 `resourceCode`、`resourceVersion`、`constraints` |
-| `policies` | 设计器或流程级策略元数据；节点重试和失败行为配置在节点的 `executionPolicy` |
+| `target` | 写入目标对象的字段路径 |
+| `sourceKind` | `PATH` 从数据路径读取；`CONSTANT` 使用固定 `value` |
+| `source` | `PATH` 的来源路径 |
+| `value` | `CONSTANT` 的固定值 |
+| `required` | 来源缺失时是否视为必需 |
+| `nullable` | 是否允许显式 `null` |
+| `defaultValue` | `missingPolicy=DEFAULT` 时使用的值 |
+| `conversion` | `STRICT`、`STRING`、`INTEGER`、`LONG`、`DECIMAL`、`BOOLEAN`、`OBJECT` 或 `ARRAY` |
+| `missingPolicy` | `FAIL`、`OMIT`、`NULL` 或 `DEFAULT` |
+| `sensitive` | 记录映射字段的敏感属性；运行载荷脱敏仍由 JSON Schema 中的 `sensitive` 或 `x-sensitive` 标记控制 |
 
-### 资源别名
+常用来源路径：
 
-`resourceAlias` 写在节点 `config` 中，并且必须与 `resourceBindings[].alias` 完全对应。资源类型必须匹配节点：API→`api`、Skill→`skill`、数据源→`datasource`、NL2SQL→`schema`、子流程→`workflow`。发布时会冻结资源 ID/版本，运行时不会按客户端输入重新选择资源。
+- `workflow.input.<field>`：工作流输入
+- `workflow.variables.<field>`：运行变量
+- `trigger.payload.<field>`：触发载荷
+- `nodes.<nodeId>.output.<field>`：上游节点输出
+- `loop.item`、`loop.index`、`loop.key`：批量循环上下文
+- `raw.<field>`：仅用于节点输出映射的原始执行结果
 
-### 节点执行策略
+映射不会自动猜测字段。必需业务值建议使用 `required: true` 和 `missingPolicy: "FAIL"`，避免缺失参数被静默提交。
+
+## 节点类型与真实行为
+
+| 节点 | 配置与边界 |
+|---|---|
+| 开始 / 结束 | 定义唯一入口和至少一个出口；开始节点不能有入线，结束节点不能有出线 |
+| 条件 / 并行 | 条件选择一个分支；并行启动多个无依赖分支 |
+| 延时 | `duration` 使用正数 ISO-8601 时长，例如 `PT5M` |
+| 等待事件 | 可等待外部事件；配置审批提供方后还必须填写关联键、审批超时和超时出口 |
+| 批量循环 | `itemsPath` 必须解析为数组，可设置批大小 1-500、并发 1-32、限流、最大尝试和失败阈值 |
+| 聚合 | 合并多个上游输入；必须配置非空输入映射和输出 Schema |
+| 转换 | 最多 64 个操作：`select`、`remove`、`rename`、`default`、`coerce`、`filter`、`map`、`flatten`、`distinct`、`sort`、`limit`、`compute`、`template` |
+| 内置工具 | 仅支持 `current_datetime`、`date_calculate`、`calculator`、`unit_convert`；自动化不支持 `web_search` |
+| 数据源 | 只返回数据源信息和当前运行身份可见的 Schema 目录，不执行 SQL 查询 |
+| NL2SQL | 绑定一个具体 Schema，接收 `query` 后执行受 Schema 和 ACL 限制的只读查询 |
+| RAG | 使用当前租户知识索引和运行身份 ACL，不需要绑定知识库资源 |
+| LLM | 必须填写非空结构化输出 Schema；支持 `maxCompletionTokens`、`minConfidence` 和 `confidenceField` |
+| Skill | 执行冻结版本的 Skill；包含 API 或 foreach-API 的 Skill 会被拒绝 |
+| Agent | 后台自主规划非操作能力；需要向用户追问或规划中出现 API 时会失败 |
+| API | 直接执行已绑定工具，不弹出智能问答 HITL；系统生成工作流幂等键，但外部接口仍需真正支持幂等 |
+| 子流程 | 调用已发布并绑定的另一个工作流 |
+
+需要外部写操作时请使用显式 API 节点。不要把写操作藏在 Skill 或 Agent 节点中。需要审批时，必须在流程图中显式增加等待事件或由外部业务平台完成审批。
+
+## LLM 置信度配置
+
+LLM 节点必须返回符合输出 Schema 的 JSON。若填写最低置信度：
+
+1. `minConfidence` 取值为 0-1；
+2. `confidenceField` 是简单字段名，留空时默认为 `confidence`；
+3. 输出 Schema 的 `properties` 中必须把该字段声明为 `number` 或 `integer`。
+
+未达到阈值时节点失败，并按执行策略进入终止或失败分支。
+
+## 外部审批首次配置
+
+审批提供方必须关联一个**已发布工作流**，而等待节点又需要审批提供方 ID。首次配置请按以下顺序完成：
+
+1. 先设计并发布基础版本。等待事件可以暂时作为普通等待节点，不填写审批提供方 ID。
+2. 进入**触发器管理**，为该已发布工作流新建**审批提供方**，先保持停用。
+3. 从审批提供方列表复制其 ID。
+4. 返回工作流草稿，填写审批提供方 ID、关联键路径、`PT1M` 至 `P30D` 的审批超时和**超时出口**。
+5. 关联键应唯一标识业务对象，例如 `workflow.input.refundNo`。
+6. 重新校验并发布工作流，再回到触发器管理启用审批提供方。
+
+审批通过或驳回后的业务分支应根据回调数据显式判断。超时出口是独立跳转目标，不需要再从等待节点绘制一条普通超时连线。
+
+## 执行策略
 
 ```json
 {
@@ -80,57 +156,58 @@
 }
 ```
 
-`maxRetries` 范围为 0–10，`retryDelay` 使用正的 ISO-8601 时长，`timeoutMs` 范围为 100–3600000。`failurePolicy` 为 `FAIL_WORKFLOW` 或 `ERROR_BRANCH`；使用 `ERROR_BRANCH` 时必须填写指向其他节点的 `failureTarget`。
+- `maxRetries`：0-10。
+- `retryDelay`：正数 ISO-8601 时长。
+- `timeoutMs`：100-3600000 毫秒。
+- `failurePolicy`：`FAIL_WORKFLOW` 终止工作流；`ERROR_BRANCH` 跳转到 `failureTarget`。
+- `failureTarget` 必须是其他已存在节点，不能指向当前节点。
 
-### 常用节点配置
+有副作用的 API 只有在外部接口支持幂等时才应重试。否则可能重复创建、扣款或发送通知。
 
-- **延时**：`config.duration`，例如 `PT5M`。
-- **等待事件**：可配置 `eventSchema`；外部审批还需 `approvalProviderId`、`correlationKeyPath` 和 `approvalTimeout`。
-- **批量循环**：`itemsPath`、`batchSize`（1–500）、`maxConcurrency`（1–32）、`rateLimitPerSecond`、`maxAttempts`、`failureThreshold` 和 `body`。
-- **LLM**：必须提供节点 `outputSchema`；可配置 `maxCompletionTokens`、`minConfidence` 和 `confidenceField`。
-- **转换**：`operations` 为数组，支持 select、remove、rename、default、coerce、filter、map、flatten、distinct、sort、limit、compute、template。
+## 线性配置示例：生成退款申请
 
-## 最小定义示例
+目标流程：读取一条可退款订单，生成退款理由，组装参数并调用退款申请接口。
 
-以下示例展示真实字段结构；实际流程请使用设计器生成，并通过校验后再发布：
+1. 在流程设置的输入 Schema 中声明 `query` 字符串。
+2. 添加 NL2SQL 节点并选择订单 Schema；把 `workflow.input.query` 映射到节点输入 `query`。
+3. 添加 LLM 节点并依赖 NL2SQL；将订单查询结果映射到 LLM 输入，输出 Schema 声明 `refundReason` 字符串。
+4. 添加转换节点；把订单结果和 `nodes.<llmId>.output.refundReason` 映射为输入，使用 `template` 或 `select/rename` 组装 `orderNo`、`amount`、`reason`，同时填写非空输出 Schema。
+5. 添加 API 节点并选择“创建退款申请”工具；将转换结果映射到 API 输入。
+6. 连接结束节点，配置重试和失败出口，校验并发布。
+7. 使用**运行已发布版**提交真实测试输入，在运行实例和执行日志中核对每一步输出及外部业务记录。
 
-```json
-{
-  "schemaVersion": 2,
-  "nodes": [
-    {"id": "start", "type": "start", "name": "开始", "config": {}},
-    {"id": "now", "type": "builtin", "name": "获取时间", "config": {"toolCode": "current_datetime", "resourceAlias": null}},
-    {"id": "end", "type": "end", "name": "结束", "config": {}}
-  ],
-  "edges": [
-    {"id": "edge_start_now", "source": "start", "target": "now", "defaultBranch": false},
-    {"id": "edge_now_end", "source": "now", "target": "end", "defaultBranch": false}
-  ],
-  "inputSchema": {"type": "object", "properties": {}},
-  "variablesSchema": {"type": "object", "properties": {}},
-  "outputSchema": {"type": "object", "properties": {}},
-  "finalOutput": [],
-  "policies": {},
-  "resourceBindings": []
-}
-```
+API 节点会真实提交。如果业务要求审批，在 API 前插入等待事件，并按“外部审批首次配置”完成两次发布初始化。
+
+## 校验、发布与运行
+
+发布前至少确认：
+
+- 恰好一个开始节点、至少一个结束节点，所有节点可达且存在到结束节点的路径；
+- 节点和连线 ID 唯一，图中无不受支持的环；
+- 条件分支、失败出口和审批超时出口指向有效节点；
+- 受管资源已选择，资源类型与节点匹配；
+- Schema、映射及节点特有配置完整；
+- 外部 API 已在测试环境验证，重试不会造成重复副作用。
+
+点击**校验**会先保存草稿。发布后，**运行已发布版**会创建真实运行记录并真实调用节点。若设计器中还有更新的草稿，运行弹窗会明确提示本次仍执行旧的已发布版本。
 
 ## 常见问题
 
-**为什么不能发布？**
-先执行校验，重点检查是否只有一个开始节点、至少一个结束节点、节点和连线 ID 唯一、所有节点可达且无环，并确认资源别名和 Schema 合法。
+**为什么修改后运行结果没有变化？** 运行只使用已发布版本。重新校验并发布后再测试。
 
-**修改草稿后为什么运行结果没变化？**
-运行使用已发布版本。修改后必须重新校验并发布，触发器下一次运行才会使用新版本。
+**为什么转换或聚合节点提示缺少 outputSchema？** 两类数据节点都要求非空输入映射和非空输出 Schema，仅在节点配置中填写操作还不够。
 
-**失败任务如何处理？**
-在失败任务中查看 `reasonCode` 和状态。状态为“待处理”的死信任务可重试生成新的运行，或放弃该任务；重试前应确认外部操作是否幂等。
+**为什么选择资源后不需要填写别名？** 设计器会同时生成节点别名和工作流资源绑定。手工改其中一处会造成发布校验失败。
 
-**运行数据加密如何配置？**
-密钥不是工作流表单字段。平台通过服务端配置 `rag.api.crypto-key` 对输入、变量、触发载荷和节点输出进行 AES-GCM 加密；启用引擎的生产环境必须配置有效的 Base64 密钥。
+**为什么数据源节点没有返回查询结果？** 它只提供数据源和授权 Schema 目录。业务查询应使用绑定具体 Schema 的 NL2SQL 节点。
 
-## 使用边界
+**为什么自动化 Skill 或 Agent 不能调用 API？** 自动化后台没有聊天 HITL。为保证外部操作可见、可审计和可配置审批，API 必须作为显式节点出现。
 
-- 工作流和资源均按当前租户隔离；节点执行时会再次检查 Skill、RAG、NL2SQL 和 API 的权限。
-- API、审批和子流程等资源在发布版本中冻结；资源停用或权限变化可能导致运行时失败，应在发布前完成联调。
-- 自动化引擎默认关闭；启用后仍需发布工作流并启用触发器。
+**为什么手工运行会产生真实数据？** 手工运行不是预览模式，会执行已发布版本的全部节点。请使用测试接口和可回滚数据。
+
+## 安全边界
+
+- 所有工作流与资源按租户隔离，节点运行时还会按发起身份重新检查 ACL 和资源状态。
+- 发布冻结资源版本不代表资源永久可用；资源停用、权限变化或凭据失效仍会使运行失败。
+- 运行输入、变量、触发载荷和节点输出由服务端 `rag.api.crypto-key` 进行 AES-GCM 加密；这不是页面表单字段。
+- 自动化引擎启用、工作流发布和触发器启用是三个独立条件。

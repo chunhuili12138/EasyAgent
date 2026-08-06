@@ -6,33 +6,78 @@ defineOptions({ name: 'AutomationConfigHelp' });
 
 const props = defineProps<{
   modelValue: boolean;
-  topic: 'workflow' | 'trigger' | 'runtime';
+  topic: 'workflow' | 'trigger' | 'runtime' | 'log' | 'failure' | 'event' | 'statistics';
 }>();
 const emit = defineEmits<{ (event: 'update:modelValue', value: boolean): void }>();
 const t = $t;
 const topicKeys = {
   workflow: {
-    title: 'automation.help.workflowTitle', intro: 'automation.help.workflowIntro',
-    steps: 'automation.help.workflowSteps', fields: 'automation.help.workflowFields',
-    example: 'automation.help.workflowExample', note: 'automation.help.workflowNote'
+    title: 'automation.help.workflowTitle',
+    intro: 'automation.help.workflowIntro',
+    steps: 'automation.help.workflowSteps',
+    fields: 'automation.help.workflowFields',
+    example: 'automation.help.workflowExample',
+    note: 'automation.help.workflowNote'
   },
   trigger: {
-    title: 'automation.help.triggerTitle', intro: 'automation.help.triggerIntro',
-    steps: 'automation.help.triggerSteps', fields: 'automation.help.triggerFields',
-    example: 'automation.help.triggerExample', note: 'automation.help.triggerNote'
+    title: 'automation.help.triggerTitle',
+    intro: 'automation.help.triggerIntro',
+    steps: 'automation.help.triggerSteps',
+    fields: 'automation.help.triggerFields',
+    example: 'automation.help.triggerExample',
+    note: 'automation.help.triggerNote'
   },
   runtime: {
-    title: 'automation.help.runtimeTitle', intro: 'automation.help.runtimeIntro',
-    steps: 'automation.help.runtimeSteps', fields: 'automation.help.runtimeFields',
-    example: 'automation.help.runtimeExample', note: 'automation.help.runtimeNote'
+    title: 'automation.help.runtimeTitle',
+    intro: 'automation.help.runtimeIntro',
+    steps: 'automation.help.runtimeSteps',
+    fields: 'automation.help.runtimeFields',
+    example: 'automation.help.runtimeExample',
+    note: 'automation.help.runtimeNote'
+  },
+  log: {
+    title: 'automation.help.logTitle',
+    intro: 'automation.help.logIntro',
+    steps: 'automation.help.logSteps',
+    fields: 'automation.help.logFields',
+    example: 'automation.help.logExample',
+    note: 'automation.help.logNote'
+  },
+  failure: {
+    title: 'automation.help.failureTitle',
+    intro: 'automation.help.failureIntro',
+    steps: 'automation.help.failureSteps',
+    fields: 'automation.help.failureFields',
+    example: 'automation.help.failureExample',
+    note: 'automation.help.failureNote'
+  },
+  event: {
+    title: 'automation.help.eventTitle',
+    intro: 'automation.help.eventIntro',
+    steps: 'automation.help.eventSteps',
+    fields: 'automation.help.eventFields',
+    example: 'automation.help.eventExample',
+    note: 'automation.help.eventNote'
+  },
+  statistics: {
+    title: 'automation.help.statisticsTitle',
+    intro: 'automation.help.statisticsIntro',
+    steps: 'automation.help.statisticsSteps',
+    fields: 'automation.help.statisticsFields',
+    example: 'automation.help.statisticsExample',
+    note: 'automation.help.statisticsNote'
   }
 } as const;
 
 const content = computed(() => {
   const keys = topicKeys[props.topic];
   return {
-    title: t(keys.title), intro: t(keys.intro), steps: t(keys.steps), fields: t(keys.fields),
-    example: t(keys.example), note: t(keys.note)
+    title: t(keys.title),
+    intro: t(keys.intro),
+    steps: t(keys.steps),
+    fields: t(keys.fields),
+    example: t(keys.example),
+    note: t(keys.note)
   };
 });
 </script>

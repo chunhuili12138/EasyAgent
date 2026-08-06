@@ -69,6 +69,7 @@ async function copySql(value?: string) {
 
 <template>
   <div class="page-container h-full">
+    <ElAlert class="mb-4" type="info" :closable="false" show-icon :title="t('rag.sqlLog.pageGuide')" />
     <div class="mb-4 flex gap-4">
       <ElCard
         v-for="card in [
@@ -108,7 +109,7 @@ async function copySql(value?: string) {
         <ElButton type="primary" @click="loadData">{{ t('rag.common.search') }}</ElButton>
         <ElButton @click="resetSearch">{{ t('common.reset') }}</ElButton>
       </div>
-      <ElTable v-loading="loading" :data="list" stripe border class="w-full">
+      <ElTable v-loading="loading" :data="list" stripe border class="w-full" :empty-text="t('rag.sqlLog.emptyHint')">
         <ElTableColumn
           prop="naturalQuery"
           :label="t('rag.sqlLog.naturalQuery')"

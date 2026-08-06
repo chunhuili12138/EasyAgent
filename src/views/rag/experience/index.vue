@@ -81,6 +81,7 @@ function sourceReferences() {
 
 <template>
   <div class="page-container h-full">
+    <ElAlert class="mb-4" type="info" :closable="false" show-icon :title="t('rag.experience.pageGuide')" />
     <div class="mb-4 flex gap-4">
       <ElCard
         v-for="card in [
@@ -119,11 +120,26 @@ function sourceReferences() {
             :value="v"
           />
         </ElSelect>
-        <ElInputNumber v-model="minScore" :min="0" :max="1" :step="0.05" :precision="2" :placeholder="t('rag.experience.minScore')" class="w-36" />
+        <ElInputNumber
+          v-model="minScore"
+          :min="0"
+          :max="1"
+          :step="0.05"
+          :precision="2"
+          :placeholder="t('rag.experience.minScore')"
+          class="w-36"
+        />
         <ElButton type="primary" @click="loadData">{{ t('rag.common.search') }}</ElButton>
         <ElButton @click="resetSearch">{{ t('common.reset') }}</ElButton>
       </div>
-      <ElTable v-loading="loading" :data="list" stripe border class="w-full">
+      <ElTable
+        v-loading="loading"
+        :data="list"
+        stripe
+        border
+        class="w-full"
+        :empty-text="t('rag.experience.emptyHint')"
+      >
         <ElTableColumn prop="queryText" :label="t('rag.experience.queryText')" min-width="200" show-overflow-tooltip />
         <ElTableColumn prop="qualityScore" :label="t('rag.experience.qualityScore')" width="90" />
         <ElTableColumn prop="hitCount" :label="t('rag.experience.hitCount')" width="80" />
@@ -172,7 +188,11 @@ function sourceReferences() {
         </ElDescriptionsItem>
         <ElDescriptionsItem :label="t('rag.experience.sourceChunks')">
           <div v-if="sourceReferences().length" class="space-y-2">
-            <div v-for="refItem in sourceReferences()" :key="refItem.chunkId" class="rounded border border-gray-200 p-2">
+            <div
+              v-for="refItem in sourceReferences()"
+              :key="refItem.chunkId"
+              class="border border-gray-200 rounded p-2"
+            >
               <div class="font-medium">{{ refItem.fileName || t('rag.experience.unknownSource') }}</div>
               <div v-if="refItem.anchor" class="text-xs text-gray-500">{{ refItem.anchor }}</div>
               <div v-if="refItem.snippet" class="mt-1 whitespace-pre-wrap text-sm">{{ refItem.snippet }}</div>

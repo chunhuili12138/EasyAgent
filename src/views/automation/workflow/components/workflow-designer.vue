@@ -18,14 +18,14 @@ import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
 import '@vue-flow/controls/dist/style.css';
 import '@vue-flow/minimap/dist/style.css';
-import { $t } from '@/locales';
 import {
-  fetchWorkflows,
   type WorkflowDefinition,
   type WorkflowEdgeDefinition,
-  type WorkflowNodeDefinition
+  type WorkflowNodeDefinition,
+  fetchWorkflows
 } from '@/service/api/automation';
 import { fetchDatasources, fetchSchemas, fetchSkills, fetchTools } from '@/service/api/rag';
+import { $t } from '@/locales';
 import ConfigCodeEditor from '@/views/rag/shared/config-code-editor.vue';
 
 defineOptions({ name: 'AutomationWorkflowDesigner' });
@@ -197,12 +197,15 @@ const templates = computed<NodeTemplate[]>(() => [
   }
 ]);
 
-const categories = computed(() => [
-  { key: 'control', label: t('automation.designer.categories.control') },
-  { key: 'data', label: t('automation.designer.categories.data') },
-  { key: 'ai', label: t('automation.designer.categories.ai') },
-  { key: 'integration', label: t('automation.designer.categories.integration') }
-] as const);
+const categories = computed(
+  () =>
+    [
+      { key: 'control', label: t('automation.designer.categories.control') },
+      { key: 'data', label: t('automation.designer.categories.data') },
+      { key: 'ai', label: t('automation.designer.categories.ai') },
+      { key: 'integration', label: t('automation.designer.categories.integration') }
+    ] as const
+);
 
 const nodes = shallowRef<FlowNode[]>([]);
 const edges = shallowRef<FlowEdge[]>([]);
@@ -212,22 +215,84 @@ const leftTab = ref<'nodes' | 'variables'>('nodes');
 const history = shallowRef<Snapshot[]>([]);
 const historyIndex = ref(-1);
 const hydrating = ref(false);
-const advancedJson = ref({ config: '{}', inputSchema: '{}', inputMapping: '[]', outputSchema: '{}' });
-const advancedTab = ref<'config' | 'inputSchema' | 'inputMapping' | 'outputSchema'>('config');
-const workflowJson = ref({ inputSchema: '{}', variablesSchema: '{}', outputSchema: '{}', finalOutput: '[]', resourceBindings: '[]' });
-const workflowTab = ref<'inputSchema' | 'variablesSchema' | 'outputSchema' | 'finalOutput' | 'resourceBindings'>('inputSchema');
+const advancedJson = ref({
+  config: '{}',
+  inputSchema: '{}',
+  inputMapping: '[]',
+  outputSchema: '{}',
+  outputMapping: '[]'
+});
+const advancedTab = ref<'config' | 'inputSchema' | 'inputMapping' | 'outputSchema' | 'outputMapping'>('config');
+const workflowJson = ref({
+  inputSchema: '{}',
+  variablesSchema: '{}',
+  outputSchema: '{}',
+  finalOutput: '[]',
+  resourceBindings: '[]'
+});
+const workflowTab = ref<'inputSchema' | 'variablesSchema' | 'outputSchema' | 'finalOutput' | 'resourceBindings'>(
+  'inputSchema'
+);
 const { screenToFlowCoordinate, fitView } = useVueFlow();
 const resourceOptions = ref<ResourceOption[]>([]);
 const resourcesLoading = ref(false);
 
 const transformConfigExample = JSON.stringify({
-  operations: [{
-    op: 'template',
-    target: 'prompt',
-    template: 'Input: {{input}}\nKnowledge: {{knowledge}}',
-    values: { input: 'input', knowledge: 'knowledge' }
-  }]
+  operations: [
+    {
+      op: 'template',
+      target: 'prompt',
+      template: 'Input: {{input}}\nKnowledge: {{knowledge}}',
+      values: { input: 'input', knowledge: 'knowledge' }
+    }
+  ]
 });
+const inputSchemaExample = JSON.stringify({
+  type: 'object',
+  required: ['question'],
+  properties: { question: { type: 'string', description: '当前任务需要处理的业务问题' } }
+});
+const inputMappingExample = JSON.stringify([
+  {
+    target: 'query',
+    sourceKind: 'PATH',
+    source: 'workflow.input.question',
+    required: true,
+    nullable: false,
+    conversion: 'STRING',
+    missingPolicy: 'FAIL',
+    sensitive: false
+  }
+]);
+const outputSchemaExample = JSON.stringify({
+  type: 'object',
+  required: ['result'],
+  properties: { result: { type: 'string', description: '节点处理结果' } }
+});
+const outputMappingExample = JSON.stringify([
+  {
+    target: 'result',
+    sourceKind: 'PATH',
+    source: 'raw.result',
+    required: true,
+    nullable: false,
+    conversion: 'STRING',
+    missingPolicy: 'FAIL',
+    sensitive: false
+  }
+]);
+const finalOutputExample = JSON.stringify([
+  {
+    target: 'result',
+    sourceKind: 'PATH',
+    source: 'workflow.input.question',
+    required: true,
+    nullable: false,
+    conversion: 'STRING',
+    missingPolicy: 'FAIL',
+    sensitive: false
+  }
+]);
 
 const selectedNode = computed(() => nodes.value.find(node => node.id === selectedNodeId.value));
 const selectedDefinition = computed(() => selectedNode.value?.data.definition as WorkflowNodeDefinition | undefined);
@@ -559,7 +624,8 @@ function touch() {
   if (selectedEdge.value && selectedEdgeDefinition.value) {
     selectedEdge.value.data.definition = selectedEdgeDefinition.value;
     selectedEdge.value.label =
-      selectedEdgeDefinition.value.condition || (selectedEdgeDefinition.value.defaultBranch ? t('automation.common.default') : '');
+      selectedEdgeDefinition.value.condition ||
+      (selectedEdgeDefinition.value.defaultBranch ? t('automation.common.default') : '');
   }
   notifyChange();
 }
@@ -583,13 +649,33 @@ async function loadResourceOptions() {
     const schemaResponses = await Promise.all(datasourceRecords.map((item: any) => fetchSchemas(item.id)));
     resourceOptions.value = [
       ...tools.map((item: any) => ({ id: item.id, code: item.code, name: item.name, type: 'api' as const })),
-      ...skills.map((item: any) => ({ id: item.id, code: item.code, name: item.name, version: item.version, type: 'skill' as const })),
-      ...datasourceRecords.map((item: any) => ({ id: item.id, code: item.code, name: item.name, type: 'datasource' as const })),
-      ...schemaResponses.flatMap(response => (response.data || []).map((item: any) => ({
-        id: item.id, code: item.domainCode, name: item.domainName || item.viewName, type: 'schema' as const
-      }))),
+      ...skills.map((item: any) => ({
+        id: item.id,
+        code: item.code,
+        name: item.name,
+        version: item.version,
+        type: 'skill' as const
+      })),
+      ...datasourceRecords.map((item: any) => ({
+        id: item.id,
+        code: item.code,
+        name: item.name,
+        type: 'datasource' as const
+      })),
+      ...schemaResponses.flatMap(response =>
+        (response.data || []).map((item: any) => ({
+          id: item.id,
+          code: item.domainCode,
+          name: item.domainName || item.viewName,
+          type: 'schema' as const
+        }))
+      ),
       ...workflows.map(item => ({
-        id: item.id, code: item.code, name: item.name, version: item.currentVersion, type: 'workflow' as const
+        id: item.id,
+        code: item.code,
+        name: item.name,
+        version: item.currentVersion,
+        type: 'workflow' as const
       }))
     ];
   } finally {
@@ -617,7 +703,8 @@ function bindResource(resourceId: number) {
   if (!option) return;
   const previousAlias = String(selectedDefinition.value.config.resourceAlias || '');
   const alias = `${selectedDefinition.value.id}_${option.type}_${option.code || option.id}`
-    .replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 64);
+    .replace(/[^A-Za-z0-9_-]/g, '_')
+    .slice(0, 64);
   selectedDefinition.value.config.resourceAlias = alias;
   const definition = serialize();
   const oldAliasIsStillUsed = definition.nodes.some(node => {
@@ -625,8 +712,8 @@ function bindResource(resourceId: number) {
     const body = node.config?.body;
     return body && typeof body === 'object' && String(body.config?.resourceAlias || '') === previousAlias;
   });
-  const bindings = (definition.resourceBindings || []).filter(binding =>
-    binding.alias !== alias && (binding.alias !== previousAlias || oldAliasIsStillUsed)
+  const bindings = (definition.resourceBindings || []).filter(
+    binding => binding.alias !== alias && (binding.alias !== previousAlias || oldAliasIsStillUsed)
   );
   bindings.push({
     alias,
@@ -640,6 +727,7 @@ function bindResource(resourceId: number) {
   emit('update:modelValue', definition);
   emit('change');
   selectedNode.value!.data.definition = selectedDefinition.value;
+  syncAdvancedJson();
   pushHistory();
 }
 
@@ -650,7 +738,8 @@ function syncAdvancedJson() {
     config: JSON.stringify(node.config || {}, null, 2),
     inputSchema: JSON.stringify(node.inputSchema || {}, null, 2),
     inputMapping: JSON.stringify(node.inputMapping || [], null, 2),
-    outputSchema: JSON.stringify(node.outputSchema || {}, null, 2)
+    outputSchema: JSON.stringify(node.outputSchema || {}, null, 2),
+    outputMapping: JSON.stringify(node.outputMapping || [], null, 2)
   };
 }
 
@@ -667,8 +756,11 @@ function syncWorkflowJson(definition: WorkflowDefinition) {
 function applyAdvancedJson(field: keyof typeof advancedJson.value) {
   if (!selectedDefinition.value) return;
   const labels = {
-    config: t('automation.designer.nodeConfig'), inputSchema: t('automation.designer.inputSchema'),
-    inputMapping: t('automation.designer.inputMapping'), outputSchema: t('automation.designer.outputSchema')
+    config: t('automation.designer.nodeConfig'),
+    inputSchema: t('automation.designer.inputSchema'),
+    inputMapping: t('automation.designer.inputMapping'),
+    outputSchema: t('automation.designer.outputSchema'),
+    outputMapping: t('automation.designer.outputMapping')
   };
   try {
     const parsed = JSON.parse(advancedJson.value[field]);
@@ -676,6 +768,7 @@ function applyAdvancedJson(field: keyof typeof advancedJson.value) {
     if (field === 'inputSchema') selectedDefinition.value.inputSchema = parsed;
     if (field === 'inputMapping') selectedDefinition.value.inputMapping = parsed;
     if (field === 'outputSchema') selectedDefinition.value.outputSchema = parsed;
+    if (field === 'outputMapping') selectedDefinition.value.outputMapping = parsed;
     touch();
     ElMessage.success(t('automation.designer.jsonApplied'));
   } catch {
@@ -685,8 +778,10 @@ function applyAdvancedJson(field: keyof typeof advancedJson.value) {
 
 function applyWorkflowJson(field: keyof typeof workflowJson.value) {
   const labels = {
-    inputSchema: t('automation.designer.workflowInputSchema'), variablesSchema: t('automation.designer.workflowVariablesSchema'),
-    outputSchema: t('automation.designer.workflowOutputSchema'), finalOutput: t('automation.designer.finalOutput'),
+    inputSchema: t('automation.designer.workflowInputSchema'),
+    variablesSchema: t('automation.designer.workflowVariablesSchema'),
+    outputSchema: t('automation.designer.workflowOutputSchema'),
+    finalOutput: t('automation.designer.finalOutput'),
     resourceBindings: t('automation.designer.resourceBindings')
   };
   try {
@@ -763,8 +858,12 @@ defineExpose({
   <div class="workflow-designer">
     <aside class="designer-left">
       <div class="panel-tabs">
-        <button :class="{ active: leftTab === 'nodes' }" @click="leftTab = 'nodes'">{{ t('automation.designer.nodeLibrary') }}</button>
-        <button :class="{ active: leftTab === 'variables' }" @click="leftTab = 'variables'">{{ t('automation.designer.variables') }}</button>
+        <button :class="{ active: leftTab === 'nodes' }" @click="leftTab = 'nodes'">
+          {{ t('automation.designer.nodeLibrary') }}
+        </button>
+        <button :class="{ active: leftTab === 'variables' }" @click="leftTab = 'variables'">
+          {{ t('automation.designer.variables') }}
+        </button>
       </div>
       <div v-if="leftTab === 'nodes'" class="palette-scroll">
         <section v-for="category in categories" :key="category.key" class="palette-section">
@@ -833,7 +932,9 @@ defineExpose({
             <SvgIcon icon="mdi:trash-can-outline" />
           </ElButton>
         </ElTooltip>
-        <span class="canvas-count">{{ t('automation.designer.canvasCount', { nodes: nodes.length, edges: edges.length }) }}</span>
+        <span class="canvas-count">
+          {{ t('automation.designer.canvasCount', { nodes: nodes.length, edges: edges.length }) }}
+        </span>
       </div>
       <VueFlow
         v-model:nodes="nodes"
@@ -883,7 +984,15 @@ defineExpose({
 
     <aside class="designer-right">
       <div class="property-header">
-        <span>{{ selectedDefinition ? t('automation.designer.nodeProperties') : selectedEdgeDefinition ? t('automation.designer.edgeProperties') : t('automation.designer.workflowSettings') }}</span>
+        <span>
+          {{
+            selectedDefinition
+              ? t('automation.designer.nodeProperties')
+              : selectedEdgeDefinition
+                ? t('automation.designer.edgeProperties')
+                : t('automation.designer.workflowSettings')
+          }}
+        </span>
         <ElTag v-if="readonly" size="small" type="info">{{ t('automation.designer.readonly') }}</ElTag>
       </div>
       <div v-if="selectedDefinition" class="property-scroll">
@@ -896,7 +1005,9 @@ defineExpose({
               @change="touch"
             />
           </ElFormItem>
-          <ElFormItem :label="t('automation.designer.nodeId')"><ElInput :model-value="selectedDefinition.id" disabled /></ElFormItem>
+          <ElFormItem :label="t('automation.designer.nodeId')">
+            <ElInput :model-value="selectedDefinition.id" disabled />
+          </ElFormItem>
           <template v-if="selectedDefinition.type === 'delay'">
             <ElFormItem :label="t('automation.designer.duration')">
               <ElInput v-model="selectedDefinition.config.duration" placeholder="PT5M" @change="touch" />
@@ -904,7 +1015,11 @@ defineExpose({
           </template>
           <template v-else-if="selectedDefinition.type === 'aggregate'">
             <ElFormItem :label="t('automation.designer.aggregateStrategy')">
-              <ElSelect v-model="selectedDefinition.config.strategy" :placeholder="t('automation.designer.aggregateStrategyPlaceholder')" @change="touch">
+              <ElSelect
+                v-model="selectedDefinition.config.strategy"
+                :placeholder="t('automation.designer.aggregateStrategyPlaceholder')"
+                @change="touch"
+              >
                 <ElOption :label="t('automation.designer.aggregateOptions.object')" value="object" />
                 <ElOption :label="t('automation.designer.aggregateOptions.concat')" value="concat" />
                 <ElOption :label="t('automation.designer.aggregateOptions.coalesce')" value="coalesce" />
@@ -912,7 +1027,11 @@ defineExpose({
               </ElSelect>
             </ElFormItem>
             <ElFormItem :label="t('automation.designer.waitPolicy')">
-              <ElSelect v-model="selectedDefinition.config.waitPolicy" :placeholder="t('automation.designer.waitPolicyPlaceholder')" @change="touch">
+              <ElSelect
+                v-model="selectedDefinition.config.waitPolicy"
+                :placeholder="t('automation.designer.waitPolicyPlaceholder')"
+                @change="touch"
+              >
                 <ElOption :label="t('automation.designer.waitOptions.all_required')" value="all_required" />
                 <ElOption :label="t('automation.designer.waitOptions.any')" value="any" />
               </ElSelect>
@@ -920,7 +1039,11 @@ defineExpose({
           </template>
           <template v-else-if="selectedDefinition.type === 'builtin'">
             <ElFormItem :label="t('automation.designer.tool')">
-              <ElSelect v-model="selectedDefinition.config.toolCode" :placeholder="t('automation.designer.toolPlaceholder')" @change="touch">
+              <ElSelect
+                v-model="selectedDefinition.config.toolCode"
+                :placeholder="t('automation.designer.toolPlaceholder')"
+                @change="touch"
+              >
                 <ElOption :label="t('automation.designer.builtins.current_datetime')" value="current_datetime" />
                 <ElOption :label="t('automation.designer.builtins.date_calculate')" value="date_calculate" />
                 <ElOption :label="t('automation.designer.builtins.calculator')" value="calculator" />
@@ -930,14 +1053,30 @@ defineExpose({
           </template>
           <template v-else-if="selectedDefinition.type === 'batch_loop'">
             <ElFormItem :label="t('automation.designer.itemsPath')">
-              <ElInput v-model="selectedDefinition.config.itemsPath" :placeholder="t('automation.designer.itemsPathPlaceholder')" @change="touch" />
+              <ElInput
+                v-model="selectedDefinition.config.itemsPath"
+                :placeholder="t('automation.designer.itemsPathPlaceholder')"
+                @change="touch"
+              />
             </ElFormItem>
             <div class="form-grid">
               <ElFormItem :label="t('automation.designer.batchSize')">
-                <ElInputNumber v-model="selectedDefinition.config.batchSize" :min="1" :max="500" :placeholder="t('automation.designer.batchSizePlaceholder')" @change="touch" />
+                <ElInputNumber
+                  v-model="selectedDefinition.config.batchSize"
+                  :min="1"
+                  :max="500"
+                  :placeholder="t('automation.designer.batchSizePlaceholder')"
+                  @change="touch"
+                />
               </ElFormItem>
               <ElFormItem :label="t('automation.designer.concurrency')">
-                <ElInputNumber v-model="selectedDefinition.config.maxConcurrency" :min="1" :max="32" :placeholder="t('automation.designer.concurrencyPlaceholder')" @change="touch" />
+                <ElInputNumber
+                  v-model="selectedDefinition.config.maxConcurrency"
+                  :min="1"
+                  :max="32"
+                  :placeholder="t('automation.designer.concurrencyPlaceholder')"
+                  @change="touch"
+                />
               </ElFormItem>
               <ElFormItem :label="t('automation.designer.rateLimit')">
                 <ElInputNumber
@@ -975,6 +1114,7 @@ defineExpose({
                   :value="option.id"
                 />
               </ElSelect>
+              <div class="field-help">{{ t('automation.designer.resourceHelp') }}</div>
             </ElFormItem>
             <ElFormItem :label="t('automation.designer.resourceAlias')">
               <ElInput
@@ -982,6 +1122,7 @@ defineExpose({
                 :placeholder="t('automation.designer.resourceAliasHint')"
                 disabled
               />
+              <div class="field-help">{{ t('automation.designer.resourceAliasHelp') }}</div>
             </ElFormItem>
           </template>
           <template v-else-if="selectedDefinition.type === 'llm'">
@@ -997,11 +1138,40 @@ defineExpose({
               />
             </ElFormItem>
             <ElFormItem :label="t('automation.designer.model')">
-              <ElInput v-model="selectedDefinition.config.model" :placeholder="t('automation.designer.modelPlaceholder')" @change="touch" />
+              <ElInput
+                v-model="selectedDefinition.config.model"
+                :placeholder="t('automation.designer.modelPlaceholder')"
+                @change="touch"
+              />
             </ElFormItem>
             <ElFormItem :label="t('automation.designer.maxCompletionTokens')">
-              <ElInputNumber v-model="selectedDefinition.config.maxCompletionTokens" :min="1" :max="32768" @change="touch" />
+              <ElInputNumber
+                v-model="selectedDefinition.config.maxCompletionTokens"
+                :min="1"
+                :max="32768"
+                @change="touch"
+              />
             </ElFormItem>
+            <div class="form-grid">
+              <ElFormItem :label="t('automation.designer.minConfidence')">
+                <ElInputNumber
+                  v-model="selectedDefinition.config.minConfidence"
+                  :min="0"
+                  :max="1"
+                  :step="0.05"
+                  :precision="2"
+                  @change="touch"
+                />
+              </ElFormItem>
+              <ElFormItem :label="t('automation.designer.confidenceField')">
+                <ElInput
+                  v-model="selectedDefinition.config.confidenceField"
+                  :placeholder="t('automation.designer.confidenceFieldPlaceholder')"
+                  @change="touch"
+                />
+              </ElFormItem>
+            </div>
+            <div class="field-help">{{ t('automation.designer.llmOutputHelp') }}</div>
           </template>
           <template v-else-if="selectedDefinition.type === 'wait_event'">
             <ElFormItem :label="t('automation.designer.approvalProviderId')">
@@ -1012,6 +1182,7 @@ defineExpose({
                 controls-position="right"
                 @change="touch"
               />
+              <div class="field-help">{{ t('automation.designer.approvalProviderHelp') }}</div>
             </ElFormItem>
             <ElFormItem :label="t('automation.designer.correlationPath')">
               <ElInput
@@ -1019,9 +1190,28 @@ defineExpose({
                 placeholder="workflow.input.businessId"
                 @change="touch"
               />
+              <div class="field-help">{{ t('automation.designer.correlationPathHelp') }}</div>
             </ElFormItem>
             <ElFormItem :label="t('automation.designer.approvalTimeout')">
               <ElInput v-model="selectedDefinition.config.approvalTimeout" placeholder="PT24H" @change="touch" />
+            </ElFormItem>
+            <ElFormItem :label="t('automation.designer.timeoutTarget')">
+              <ElSelect
+                v-model="selectedDefinition.config.timeoutTarget"
+                filterable
+                :placeholder="t('automation.designer.timeoutTargetPlaceholder')"
+                @change="touch"
+              >
+                <ElOption
+                  v-for="node in nodes.filter(
+                    item => item.id !== selectedDefinition?.id && item.data.definition.type !== 'start'
+                  )"
+                  :key="node.id"
+                  :label="`${node.data.definition.name} (${node.id})`"
+                  :value="node.id"
+                />
+              </ElSelect>
+              <div class="field-help">{{ t('automation.designer.timeoutTargetHelp') }}</div>
             </ElFormItem>
           </template>
           <ElCollapse class="advanced-config">
@@ -1036,25 +1226,69 @@ defineExpose({
                     :disabled="readonly"
                   />
                   <div class="json-actions">
-                    <ElButton type="primary" :disabled="readonly" @click="applyAdvancedJson('config')">{{ t('automation.designer.applyJson') }}</ElButton>
+                    <ElButton type="primary" :disabled="readonly" @click="applyAdvancedJson('config')">
+                      {{ t('automation.designer.applyJson') }}
+                    </ElButton>
                   </div>
                 </ElTabPane>
                 <ElTabPane :label="t('automation.designer.inputSchema')" name="inputSchema">
-                  <ConfigCodeEditor v-model="advancedJson.inputSchema" :rows="12" expected-root="object" :disabled="readonly" />
+                  <ConfigCodeEditor
+                    v-model="advancedJson.inputSchema"
+                    :rows="12"
+                    expected-root="object"
+                    :example="inputSchemaExample"
+                    :disabled="readonly"
+                  />
+                  <div class="json-hint">{{ t('automation.designer.inputSchemaHelp') }}</div>
                   <div class="json-actions">
-                    <ElButton type="primary" :disabled="readonly" @click="applyAdvancedJson('inputSchema')">{{ t('automation.designer.applyJson') }}</ElButton>
+                    <ElButton type="primary" :disabled="readonly" @click="applyAdvancedJson('inputSchema')">
+                      {{ t('automation.designer.applyJson') }}
+                    </ElButton>
                   </div>
                 </ElTabPane>
                 <ElTabPane :label="t('automation.designer.inputMapping')" name="inputMapping">
-                  <ConfigCodeEditor v-model="advancedJson.inputMapping" :rows="12" expected-root="array" :disabled="readonly" />
+                  <ConfigCodeEditor
+                    v-model="advancedJson.inputMapping"
+                    :rows="12"
+                    expected-root="array"
+                    :example="inputMappingExample"
+                    :disabled="readonly"
+                  />
+                  <div class="json-hint">{{ t('automation.designer.inputMappingHelp') }}</div>
                   <div class="json-actions">
-                    <ElButton type="primary" :disabled="readonly" @click="applyAdvancedJson('inputMapping')">{{ t('automation.designer.applyJson') }}</ElButton>
+                    <ElButton type="primary" :disabled="readonly" @click="applyAdvancedJson('inputMapping')">
+                      {{ t('automation.designer.applyJson') }}
+                    </ElButton>
                   </div>
                 </ElTabPane>
                 <ElTabPane :label="t('automation.designer.outputSchema')" name="outputSchema">
-                  <ConfigCodeEditor v-model="advancedJson.outputSchema" :rows="12" expected-root="object" :disabled="readonly" />
+                  <ConfigCodeEditor
+                    v-model="advancedJson.outputSchema"
+                    :rows="12"
+                    expected-root="object"
+                    :example="outputSchemaExample"
+                    :disabled="readonly"
+                  />
+                  <div class="json-hint">{{ t('automation.designer.outputSchemaHelp') }}</div>
                   <div class="json-actions">
-                    <ElButton type="primary" :disabled="readonly" @click="applyAdvancedJson('outputSchema')">{{ t('automation.designer.applyJson') }}</ElButton>
+                    <ElButton type="primary" :disabled="readonly" @click="applyAdvancedJson('outputSchema')">
+                      {{ t('automation.designer.applyJson') }}
+                    </ElButton>
+                  </div>
+                </ElTabPane>
+                <ElTabPane :label="t('automation.designer.outputMapping')" name="outputMapping">
+                  <ConfigCodeEditor
+                    v-model="advancedJson.outputMapping"
+                    :rows="12"
+                    expected-root="array"
+                    :example="outputMappingExample"
+                    :disabled="readonly"
+                  />
+                  <div class="json-hint">{{ t('automation.designer.outputMappingHelp') }}</div>
+                  <div class="json-actions">
+                    <ElButton type="primary" :disabled="readonly" @click="applyAdvancedJson('outputMapping')">
+                      {{ t('automation.designer.applyJson') }}
+                    </ElButton>
                   </div>
                 </ElTabPane>
               </ElTabs>
@@ -1084,15 +1318,28 @@ defineExpose({
           </div>
           <ElFormItem :label="t('automation.designer.retryDelay')">
             <ElInput v-model="selectedDefinition.executionPolicy.retryDelay" placeholder="PT10S" @change="touch" />
+            <div class="field-help">{{ t('automation.designer.executionPolicyHelp') }}</div>
           </ElFormItem>
           <ElFormItem :label="t('automation.designer.failurePolicy')">
-            <ElSelect v-model="selectedDefinition.executionPolicy.failurePolicy" :placeholder="t('automation.designer.failurePolicyPlaceholder')" @change="touch">
+            <ElSelect
+              v-model="selectedDefinition.executionPolicy.failurePolicy"
+              :placeholder="t('automation.designer.failurePolicyPlaceholder')"
+              @change="touch"
+            >
               <ElOption :label="t('automation.designer.failureOptions.fail')" value="FAIL_WORKFLOW" />
               <ElOption :label="t('automation.designer.failureOptions.branch')" value="ERROR_BRANCH" />
             </ElSelect>
           </ElFormItem>
-          <ElFormItem v-if="selectedDefinition.executionPolicy.failurePolicy === 'ERROR_BRANCH'" :label="t('automation.designer.failureTarget')">
-            <ElSelect v-model="selectedDefinition.executionPolicy.failureTarget" filterable :placeholder="t('automation.designer.failureTargetPlaceholder')" @change="touch">
+          <ElFormItem
+            v-if="selectedDefinition.executionPolicy.failurePolicy === 'ERROR_BRANCH'"
+            :label="t('automation.designer.failureTarget')"
+          >
+            <ElSelect
+              v-model="selectedDefinition.executionPolicy.failureTarget"
+              filterable
+              :placeholder="t('automation.designer.failureTargetPlaceholder')"
+              @change="touch"
+            >
               <ElOption
                 v-for="node in nodes.filter(item => item.id !== selectedDefinition?.id)"
                 :key="node.id"
@@ -1105,17 +1352,24 @@ defineExpose({
       </div>
       <div v-else-if="selectedEdgeDefinition" class="property-scroll">
         <ElForm label-position="top" size="small" :disabled="readonly">
-          <ElFormItem :label="t('automation.designer.source')"><ElInput :model-value="selectedEdgeDefinition.source" disabled /></ElFormItem>
-          <ElFormItem :label="t('automation.designer.target')"><ElInput :model-value="selectedEdgeDefinition.target" disabled /></ElFormItem>
+          <ElFormItem :label="t('automation.designer.source')">
+            <ElInput :model-value="selectedEdgeDefinition.source" disabled />
+          </ElFormItem>
+          <ElFormItem :label="t('automation.designer.target')">
+            <ElInput :model-value="selectedEdgeDefinition.target" disabled />
+          </ElFormItem>
           <ElFormItem :label="t('automation.designer.condition')">
             <ElInput
               v-model="selectedEdgeDefinition.condition"
               placeholder="workflow.input.amount > 0"
               @change="touch"
             />
+            <div class="field-help">{{ t('automation.designer.conditionHelp') }}</div>
           </ElFormItem>
           <ElFormItem>
-            <ElCheckbox v-model="selectedEdgeDefinition.defaultBranch" @change="touch">{{ t('automation.designer.defaultBranch') }}</ElCheckbox>
+            <ElCheckbox v-model="selectedEdgeDefinition.defaultBranch" @change="touch">
+              {{ t('automation.designer.defaultBranch') }}
+            </ElCheckbox>
           </ElFormItem>
         </ElForm>
       </div>
@@ -1123,24 +1377,67 @@ defineExpose({
         <ElAlert type="info" :closable="false" :title="t('automation.designer.workflowSettingsHint')" show-icon />
         <ElTabs v-model="workflowTab" stretch class="workflow-json-tabs">
           <ElTabPane :label="t('automation.designer.workflowInputSchema')" name="inputSchema">
-            <ConfigCodeEditor v-model="workflowJson.inputSchema" :rows="14" expected-root="object" :disabled="readonly" />
-            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('inputSchema')">{{ t('automation.designer.applyJson') }}</ElButton>
+            <ConfigCodeEditor
+              v-model="workflowJson.inputSchema"
+              :rows="14"
+              expected-root="object"
+              :example="inputSchemaExample"
+              :disabled="readonly"
+            />
+            <div class="json-hint">{{ t('automation.designer.workflowInputHelp') }}</div>
+            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('inputSchema')">
+              {{ t('automation.designer.applyJson') }}
+            </ElButton>
           </ElTabPane>
           <ElTabPane :label="t('automation.designer.workflowVariablesSchema')" name="variablesSchema">
-            <ConfigCodeEditor v-model="workflowJson.variablesSchema" :rows="14" expected-root="object" :disabled="readonly" />
-            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('variablesSchema')">{{ t('automation.designer.applyJson') }}</ElButton>
+            <ConfigCodeEditor
+              v-model="workflowJson.variablesSchema"
+              :rows="14"
+              expected-root="object"
+              :disabled="readonly"
+            />
+            <div class="json-hint">{{ t('automation.designer.workflowVariablesHelp') }}</div>
+            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('variablesSchema')">
+              {{ t('automation.designer.applyJson') }}
+            </ElButton>
           </ElTabPane>
           <ElTabPane :label="t('automation.designer.workflowOutputSchema')" name="outputSchema">
-            <ConfigCodeEditor v-model="workflowJson.outputSchema" :rows="14" expected-root="object" :disabled="readonly" />
-            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('outputSchema')">{{ t('automation.designer.applyJson') }}</ElButton>
+            <ConfigCodeEditor
+              v-model="workflowJson.outputSchema"
+              :rows="14"
+              expected-root="object"
+              :example="outputSchemaExample"
+              :disabled="readonly"
+            />
+            <div class="json-hint">{{ t('automation.designer.workflowOutputHelp') }}</div>
+            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('outputSchema')">
+              {{ t('automation.designer.applyJson') }}
+            </ElButton>
           </ElTabPane>
           <ElTabPane :label="t('automation.designer.finalOutput')" name="finalOutput">
-            <ConfigCodeEditor v-model="workflowJson.finalOutput" :rows="14" expected-root="array" :disabled="readonly" />
-            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('finalOutput')">{{ t('automation.designer.applyJson') }}</ElButton>
+            <ConfigCodeEditor
+              v-model="workflowJson.finalOutput"
+              :rows="14"
+              expected-root="array"
+              :example="finalOutputExample"
+              :disabled="readonly"
+            />
+            <div class="json-hint">{{ t('automation.designer.finalOutputHelp') }}</div>
+            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('finalOutput')">
+              {{ t('automation.designer.applyJson') }}
+            </ElButton>
           </ElTabPane>
           <ElTabPane :label="t('automation.designer.resourceBindings')" name="resourceBindings">
-            <ConfigCodeEditor v-model="workflowJson.resourceBindings" :rows="14" expected-root="array" :disabled="readonly" />
-            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('resourceBindings')">{{ t('automation.designer.applyJson') }}</ElButton>
+            <ConfigCodeEditor
+              v-model="workflowJson.resourceBindings"
+              :rows="14"
+              expected-root="array"
+              :disabled="readonly"
+            />
+            <div class="json-hint">{{ t('automation.designer.resourceBindingsHelp') }}</div>
+            <ElButton type="primary" :disabled="readonly" @click="applyWorkflowJson('resourceBindings')">
+              {{ t('automation.designer.applyJson') }}
+            </ElButton>
           </ElTabPane>
         </ElTabs>
       </div>
@@ -1373,6 +1670,19 @@ defineExpose({
   justify-content: flex-end;
   gap: 8px;
   margin-top: 10px;
+}
+.field-help,
+.json-hint {
+  width: 100%;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.field-help {
+  margin-top: 5px;
+}
+.json-hint {
+  margin-top: 7px;
 }
 .advanced-json-tabs :deep(.el-tabs__item) {
   padding: 0 8px;

@@ -10,8 +10,8 @@ import {
   fetchTools,
   fetchUpdateTool
 } from '@/service/api/rag';
-import { $t } from '@/locales';
 import { useAppStore } from '@/store/modules/app';
+import { $t } from '@/locales';
 import ConfigHelp from '../shared/config-help.vue';
 import ConfigCodeEditor from '../shared/config-code-editor.vue';
 import { authTypeLabel, operationTypeLabel, visibilityLabel } from '../shared/display';
@@ -40,6 +40,12 @@ const testParams = ref('{}');
 const testExecute = ref(false);
 const testResult = ref<any>(null);
 const testLoading = ref(false);
+type ResponseView = 'formatted' | 'raw';
+const responseView = ref<ResponseView>('formatted');
+const responseViewOptions = computed(() => [
+  { label: t('rag.editor.format'), value: 'formatted' as ResponseView },
+  { label: t('rag.tool.rawView'), value: 'raw' as ResponseView }
+]);
 const originalAuthType = ref('none');
 const authFields = ref({
   token: '',
@@ -189,13 +195,12 @@ const toolParameters = computed(() => [
   {
     name: t('rag.tool.description'),
     description: t('rag.configFields.tool.fields.description'),
-    example: t('rag.configFields.tool.fieldExamples.description'),
-    required: true
+    example: t('rag.configFields.tool.fieldExamples.description')
   },
   {
     name: t('rag.tool.urlTemplate'),
     description: t('rag.configFields.tool.fields.urlTemplate'),
-    example: 'https://api.example.com/v1/records/{{recordId}}',
+    example: 'https://api.example.com/v1/orders/{{orderNo}}',
     required: true
   },
   {
@@ -278,7 +283,7 @@ const toolParameters = computed(() => [
   },
   {
     name: t('rag.responseRule'),
-    description: t('rag.configFields.tool.fields.responseMapping'),
+    description: t('rag.configFields.tool.fields.responseRule'),
     example: toolHelpExamples.responseRule
   },
   {
@@ -467,6 +472,7 @@ async function openToolTest(row: any) {
   testParams.value = defaultParamsFromSchema(testTool.value.paramSchema);
   testExecute.value = false;
   testResult.value = null;
+  responseView.value = 'formatted';
   testDialogVisible.value = true;
 }
 
@@ -501,6 +507,17 @@ async function runToolTest() {
     ElMessage.warning(t('rag.common.invalidJson', { field: t('rag.skill.parameters') }));
     return;
   }
+  if (testExecute.value && testTool.value.operationType === 'action') {
+    try {
+      await ElMessageBox.confirm(t('rag.tool.realActionConfirm'), t('rag.tool.realActionConfirmTitle'), {
+        type: 'warning',
+        confirmButtonText: t('rag.tool.confirmExecute'),
+        cancelButtonText: t('rag.common.cancel')
+      });
+    } catch {
+      return;
+    }
+  }
   testLoading.value = true;
   try {
     const res = await fetchTestTool(testTool.value.id, {
@@ -508,6 +525,7 @@ async function runToolTest() {
       execute: testExecute.value
     });
     testResult.value = res.data;
+    responseView.value = 'formatted';
   } finally {
     testLoading.value = false;
   }
@@ -518,11 +536,32 @@ function formatPreview(value: any) {
   if (typeof value === 'string') return value;
   return JSON.stringify(value, null, 2);
 }
+
+const responsePayload = computed<{ valid: boolean; value: any }>(() => {
+  const output = testResult.value?.output;
+  if (output === undefined || output === null || output === '') return { valid: false, value: output };
+  if (typeof output !== 'string') return { valid: true, value: output };
+  try {
+    return { valid: true, value: JSON.parse(output) };
+  } catch {
+    return { valid: false, value: output };
+  }
+});
+
+const responseDisplay = computed(() => {
+  const output = testResult.value?.output;
+  if (output === undefined || output === null || output === '') return '-';
+  if (responseView.value === 'formatted' && responsePayload.value.valid) {
+    return JSON.stringify(responsePayload.value.value, null, 2);
+  }
+  return formatPreview(output);
+});
 </script>
 
 <template>
   <div class="page-container h-full">
     <ElCard class="w-full">
+      <ElAlert class="mb-4" type="info" :closable="false" show-icon :title="t('rag.tool.pageGuide')" />
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElInput
           v-model="keyword"
@@ -537,7 +576,7 @@ function formatPreview(value: any) {
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElButton type="primary" @click="openCreate">+ {{ t('rag.common.create') }}</ElButton>
       </div>
-      <ElTable v-loading="loading" :data="list" stripe border class="w-full">
+      <ElTable v-loading="loading" :data="list" stripe border class="w-full" :empty-text="t('rag.tool.emptyHint')">
         <ElTableColumn prop="name" :label="t('rag.tool.name')" min-width="150" />
         <ElTableColumn prop="code" :label="t('rag.tool.code')" min-width="120" />
         <ElTableColumn prop="httpMethod" :label="t('rag.tool.method')" width="70" />
@@ -561,7 +600,9 @@ function formatPreview(value: any) {
         </ElTableColumn>
         <ElTableColumn :label="t('rag.common.action')" width="170" fixed="right" align="center">
           <template #default="{ row }">
-            <ElButton size="small" link type="primary" @click="openToolTest(row)">{{ t('rag.tool.startTest') }}</ElButton>
+            <ElButton size="small" link type="primary" @click="openToolTest(row)">
+              {{ t('rag.tool.startTest') }}
+            </ElButton>
             <ElButton size="small" link @click="openEdit(row)">{{ t('rag.common.edit') }}</ElButton>
             <ElButton size="small" link type="danger" @click="deleteItem(row)">{{ t('rag.common.delete') }}</ElButton>
           </template>
@@ -877,7 +918,13 @@ function formatPreview(value: any) {
         <ElAlert
           :type="testResult.valid && testResult.success !== false ? 'success' : 'warning'"
           :closable="false"
-          :title="testResult.valid ? (testResult.dryRun ? t('rag.tool.dryRunPassed') : t('rag.tool.requestCompleted')) : t('rag.tool.configInvalid')"
+          :title="
+            testResult.valid
+              ? testResult.dryRun
+                ? t('rag.tool.dryRunPassed')
+                : t('rag.tool.requestCompleted')
+              : t('rag.tool.configInvalid')
+          "
         />
         <ElDescriptions :column="1" border>
           <ElDescriptionsItem :label="t('rag.tool.requestMethod')">{{ testResult.method || '-' }}</ElDescriptionsItem>
@@ -891,7 +938,12 @@ function formatPreview(value: any) {
             <pre class="whitespace-pre-wrap text-xs">{{ formatPreview(testResult.body) }}</pre>
           </ElDescriptionsItem>
           <ElDescriptionsItem v-if="testResult.output" :label="t('rag.tool.responseResult')">
-            <pre class="max-h-56 overflow-auto whitespace-pre-wrap text-xs">{{ formatPreview(testResult.output) }}</pre>
+            <div class="tool-test-result">
+              <div v-if="responsePayload.valid" class="tool-test-result__toolbar">
+                <ElSegmented v-model="responseView" size="small" :options="responseViewOptions" />
+              </div>
+              <pre class="tool-test-output">{{ responseDisplay }}</pre>
+            </div>
           </ElDescriptionsItem>
           <ElDescriptionsItem v-if="testResult.error" :label="t('rag.tool.errorMessage')">
             <span class="text-red-500">{{ testResult.error }}</span>
@@ -905,3 +957,39 @@ function formatPreview(value: any) {
     </ElDialog>
   </div>
 </template>
+
+<style scoped>
+.tool-test-result {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tool-test-result__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.tool-test-output {
+  box-sizing: border-box;
+  max-width: 100%;
+  max-height: 360px;
+  margin: 0;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-primary);
+  font-family: var(--el-font-family-monospace, Consolas, monospace);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+:deep(.el-descriptions__content) {
+  min-width: 0;
+}
+</style>

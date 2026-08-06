@@ -12,16 +12,17 @@ import '@vue-flow/minimap/dist/style.css';
 import {
   type AutomationLoopBatch,
   type AutomationLoopItem,
+  type AutomationWorkflow,
   type AutomationWorkflowRun,
   type WorkflowDefinition,
   type WorkflowRunDetail,
   fetchAutomationLoopBatches,
   fetchAutomationLoopItems,
   fetchCancelWorkflowRun,
-  fetchRetryAutomationLoopItems,
   fetchRetryWorkflowRun,
   fetchWorkflowRunDetail,
-  fetchWorkflowRuns
+  fetchWorkflowRuns,
+  fetchWorkflows
 } from '@/service/api/automation';
 import { formatAutomationTime as formatTime, parseAutomationTime } from '@/utils/automation-time';
 import { $t } from '@/locales';
@@ -41,6 +42,7 @@ const loading = ref(false);
 const loadError = ref('');
 const records = ref<AutomationWorkflowRun[]>([]);
 const total = ref(0);
+const workflowOptions = ref<AutomationWorkflow[]>([]);
 const detailVisible = ref(false);
 const detail = ref<WorkflowRunDetail>();
 const helpVisible = ref(false);
@@ -48,7 +50,6 @@ const activeTab = ref('graph');
 const nodes = shallowRef<Node[]>([]);
 const edges = shallowRef<Edge[]>([]);
 const loopBatches = ref<AutomationLoopBatch[]>([]);
-const loopLoading = ref(false);
 const loopDrawerVisible = ref(false);
 const selectedBatch = ref<AutomationLoopBatch>();
 const loopItems = ref<AutomationLoopItem[]>([]);
@@ -79,6 +80,21 @@ async function loadData() {
   } finally {
     loading.value = false;
   }
+}
+
+async function loadWorkflowOptions() {
+  const workflows = new Map<number, AutomationWorkflow>();
+  for (const status of [undefined, 'ARCHIVED']) {
+    let page = 1;
+    while (true) {
+      const { data, error } = await fetchWorkflows({ page, size: 100, status });
+      if (error || !data) break;
+      for (const workflow of data.records || []) workflows.set(workflow.id, workflow);
+      if (!data.records?.length || page * 100 >= Number(data.total || 0)) break;
+      page += 1;
+    }
+  }
+  workflowOptions.value = [...workflows.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
 function search() {
@@ -132,29 +148,8 @@ async function loadLoopItems() {
   }
 }
 
-async function retryLoopItems(batch: AutomationLoopBatch) {
-  await ElMessageBox.confirm(t('automation.run.retryBatchConfirm', { id: batch.id }), t('automation.run.retryBatchTitle'), { type: 'warning' });
-  const { data } = await fetchRetryAutomationLoopItems(batch.id);
-  if (!data) return;
-  ElMessage.success(t('automation.run.retryBatchSuccess'));
-  selectedBatch.value = data;
-  await refreshLoopBatches();
-  if (loopDrawerVisible.value) loadLoopItems();
-}
-
-async function refreshLoopBatches() {
-  if (!detail.value) return;
-  loopLoading.value = true;
-  try {
-    const { data } = await fetchAutomationLoopBatches({ page: 1, size: 100, runId: detail.value.run.id });
-    loopBatches.value = data?.records || [];
-  } finally {
-    loopLoading.value = false;
-  }
-}
-
 function loopProgress(batch: AutomationLoopBatch) {
-  return batch.totalItems ? Math.round(((batch.completedItems + batch.failedItems) / batch.totalItems) * 100) : 100;
+  return batch.totalItems ? Math.round((batch.completedItems / batch.totalItems) * 100) : 100;
 }
 
 function buildGraph(json: string) {
@@ -185,7 +180,9 @@ function buildGraph(json: string) {
 }
 
 async function cancelRun(row: AutomationWorkflowRun) {
-  await ElMessageBox.confirm(t('automation.run.cancelConfirm', { id: row.id }), t('automation.run.cancelTitle'), { type: 'warning' });
+  await ElMessageBox.confirm(t('automation.run.cancelConfirm', { id: row.id }), t('automation.run.cancelTitle'), {
+    type: 'warning'
+  });
   const { error } = await fetchCancelWorkflowRun(row.id);
   if (!error) {
     ElMessage.success(t('automation.run.cancelled'));
@@ -194,6 +191,9 @@ async function cancelRun(row: AutomationWorkflowRun) {
 }
 
 async function retryRun(row: AutomationWorkflowRun) {
+  await ElMessageBox.confirm(t('automation.run.retryConfirm', { id: row.id }), t('automation.run.retryTitle'), {
+    type: 'warning'
+  });
   const { data } = await fetchRetryWorkflowRun(row.id);
   if (data) {
     ElMessage.success(t('automation.run.retryCreated', { id: data.id }));
@@ -217,7 +217,10 @@ function duration(row: AutomationWorkflowRun) {
   return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`;
 }
 
-onMounted(loadData);
+onMounted(() => {
+  loadData();
+  loadWorkflowOptions();
+});
 </script>
 
 <template>
@@ -229,15 +232,34 @@ onMounted(loadData);
           <p>{{ t('automation.run.description') }}</p>
         </div>
         <div class="heading-actions">
-          <ElButton circle :title="t('automation.common.configurationHelp')" @click="helpVisible = true"><SvgIcon icon="mdi:help-circle-outline" /></ElButton>
-          <ElButton circle :title="t('automation.common.refresh')" @click="loadData"><SvgIcon icon="mdi:refresh" /></ElButton>
+          <ElButton circle :title="t('automation.common.configurationHelp')" @click="helpVisible = true">
+            <SvgIcon icon="mdi:help-circle-outline" />
+          </ElButton>
+          <ElButton circle :title="t('automation.common.refresh')" @click="loadData">
+            <SvgIcon icon="mdi:refresh" />
+          </ElButton>
         </div>
       </header>
       <div class="filter-band">
-        <ElInputNumber v-model="query.workflowId" :min="1" :controls="false" :placeholder="t('automation.common.workflow')" />
+        <ElSelect
+          v-model="query.workflowId"
+          class="workflow-filter"
+          clearable
+          filterable
+          :placeholder="t('automation.run.selectWorkflow')"
+        >
+          <ElOption
+            v-for="workflow in workflowOptions"
+            :key="workflow.id"
+            :label="`${workflow.name} (${workflow.code})`"
+            :value="workflow.id"
+          />
+        </ElSelect>
         <ElSelect v-model="query.status" clearable :placeholder="t('automation.common.allStatus')">
           <ElOption
             v-for="value in [
+              'CREATED',
+              'QUEUED',
               'RUNNING',
               'WAITING_EVENT',
               'WAITING_TIMER',
@@ -258,7 +280,7 @@ onMounted(loadData);
       </div>
       <div class="table-band">
         <AutomationLoadError v-if="loadError" :message="loadError" @retry="loadData" />
-        <ElTable v-loading="loading" :data="records" height="100%" @row-dblclick="openDetail">
+        <ElTable v-loading="loading" :data="records" height="100%" class="records-table" @row-dblclick="openDetail">
           <ElTableColumn prop="id" :label="t('automation.common.runId')" width="105" />
           <ElTableColumn :label="t('automation.common.workflow')" min-width="190">
             <template #default="{ row }">
@@ -269,7 +291,9 @@ onMounted(loadData);
             </template>
           </ElTableColumn>
           <ElTableColumn :label="t('automation.common.version')" width="90">
-            <template #default="{ row }">{{ row.workflowVersion ? `v${row.workflowVersion}` : `#${row.workflowVersionId}` }}</template>
+            <template #default="{ row }">
+              {{ row.workflowVersion ? `v${row.workflowVersion}` : `#${row.workflowVersionId}` }}
+            </template>
           </ElTableColumn>
           <ElTableColumn :label="t('automation.run.triggerType')" width="120">
             <template #default="{ row }">{{ automationTriggerTypeLabel(row.triggerType) }}</template>
@@ -282,8 +306,18 @@ onMounted(loadData);
           <ElTableColumn :label="t('automation.run.duration')" width="110">
             <template #default="{ row }">{{ duration(row) }}</template>
           </ElTableColumn>
-          <ElTableColumn prop="errorCode" :label="t('automation.common.errorCode')" min-width="150" show-overflow-tooltip />
-          <ElTableColumn prop="errorMessage" :label="t('automation.common.errorSummary')" min-width="220" show-overflow-tooltip />
+          <ElTableColumn
+            prop="errorCode"
+            :label="t('automation.common.errorCode')"
+            min-width="150"
+            show-overflow-tooltip
+          />
+          <ElTableColumn
+            prop="errorMessage"
+            :label="t('automation.common.errorSummary')"
+            min-width="220"
+            show-overflow-tooltip
+          />
           <ElTableColumn :label="t('automation.common.startedAt')" width="180">
             <template #default="{ row }">{{ formatTime(row.startedAt) }}</template>
           </ElTableColumn>
@@ -319,7 +353,11 @@ onMounted(loadData);
 
     <ElDrawer
       v-model="detailVisible"
-      :title="detail ? t('automation.run.detail', { name: detail.workflow.name, id: detail.run.id }) : t('automation.run.viewDetail')"
+      :title="
+        detail
+          ? t('automation.run.detail', { name: detail.workflow.name, id: detail.run.id })
+          : t('automation.run.viewDetail')
+      "
       size="82%"
       destroy-on-close
     >
@@ -329,6 +367,10 @@ onMounted(loadData);
           <span>{{ t('automation.common.version') }} v{{ detail.version.version }}</span>
           <span>{{ automationTriggerTypeLabel(detail.run.triggerType) }}</span>
           <span>{{ formatTime(detail.run.startedAt) }}</span>
+          <span>{{ t('automation.run.duration') }} {{ duration(detail.run) }}</span>
+          <span v-if="detail.run.retryFromRunId">
+            {{ t('automation.run.retryOrigin', { id: detail.run.retryFromRunId, sequence: detail.run.retrySequence }) }}
+          </span>
         </div>
         <ElTabs v-model="activeTab" class="detail-tabs">
           <ElTabPane :label="t('automation.run.graph')" name="graph">
@@ -362,13 +404,27 @@ onMounted(loadData);
                 </template>
               </ElTableColumn>
               <ElTableColumn prop="attemptCount" :label="t('automation.common.attempt')" width="90" />
-              <ElTableColumn prop="errorMessage" :label="t('automation.common.errorSummary')" min-width="260" show-overflow-tooltip />
+              <ElTableColumn
+                prop="errorCode"
+                :label="t('automation.common.errorCode')"
+                min-width="150"
+                show-overflow-tooltip
+              />
+              <ElTableColumn
+                prop="errorMessage"
+                :label="t('automation.common.errorSummary')"
+                min-width="260"
+                show-overflow-tooltip
+              />
               <ElTableColumn :label="t('automation.common.startedAt')" width="180">
                 <template #default="{ row }">{{ formatTime(row.startedAt) }}</template>
               </ElTableColumn>
+              <ElTableColumn :label="t('automation.common.completedAt')" width="180">
+                <template #default="{ row }">{{ formatTime(row.completedAt) }}</template>
+              </ElTableColumn>
             </ElTable>
           </ElTabPane>
-          <ElTabPane :label="`Attempt ${detail.attempts.length}`" name="attempts">
+          <ElTabPane :label="t('automation.run.attempts', { count: detail.attempts.length })" name="attempts">
             <ElTable :data="detail.attempts" height="100%">
               <ElTableColumn prop="id" label="ID" width="90" />
               <ElTableColumn prop="nodeRunId" :label="t('automation.common.nodeRun')" width="110" />
@@ -379,13 +435,35 @@ onMounted(loadData);
                 </template>
               </ElTableColumn>
               <ElTableColumn prop="workerId" :label="t('automation.common.executor')" min-width="180" />
-              <ElTableColumn prop="errorMessage" :label="t('automation.common.errorSummary')" min-width="260" show-overflow-tooltip />
+              <ElTableColumn
+                prop="errorCode"
+                :label="t('automation.common.errorCode')"
+                min-width="150"
+                show-overflow-tooltip
+              />
+              <ElTableColumn
+                prop="errorMessage"
+                :label="t('automation.common.errorSummary')"
+                min-width="260"
+                show-overflow-tooltip
+              />
+              <ElTableColumn :label="t('automation.common.startedAt')" width="180">
+                <template #default="{ row }">{{ formatTime(row.startedAt) }}</template>
+              </ElTableColumn>
+              <ElTableColumn :label="t('automation.common.completedAt')" width="180">
+                <template #default="{ row }">{{ formatTime(row.completedAt) }}</template>
+              </ElTableColumn>
             </ElTable>
           </ElTabPane>
           <ElTabPane :label="t('automation.run.loopBatches', { count: loopBatches.length })" name="loops">
-            <ElTable v-loading="loopLoading" :data="loopBatches" height="100%">
+            <ElTable :data="loopBatches" height="100%">
               <ElTableColumn prop="id" :label="t('automation.run.batchId')" width="100" />
-              <ElTableColumn prop="nodeId" :label="t('automation.run.loopNode')" min-width="160" show-overflow-tooltip />
+              <ElTableColumn
+                prop="nodeId"
+                :label="t('automation.run.loopNode')"
+                min-width="160"
+                show-overflow-tooltip
+              />
               <ElTableColumn :label="t('automation.common.status')" width="140">
                 <template #default="{ row }">
                   <ElTag :type="statusType(row.status)" size="small">{{ automationStatusLabel(row.status) }}</ElTag>
@@ -395,7 +473,15 @@ onMounted(loadData);
                 <template #default="{ row }">
                   <div class="loop-progress">
                     <ElProgress :percentage="loopProgress(row)" :stroke-width="8" />
-                    <span>{{ t('automation.run.progressText', { completed: row.completedItems, failed: row.failedItems, total: row.totalItems }) }}</span>
+                    <span>
+                      {{
+                        t('automation.run.progressText', {
+                          completed: row.completedItems,
+                          failed: row.failedItems,
+                          total: row.totalItems
+                        })
+                      }}
+                    </span>
                   </div>
                 </template>
               </ElTableColumn>
@@ -408,9 +494,6 @@ onMounted(loadData);
                 <template #default="{ row }">
                   <ElTooltip :content="t('automation.run.viewLoopItems')">
                     <ElButton link @click="openLoopItems(row)"><SvgIcon icon="mdi:format-list-bulleted" /></ElButton>
-                  </ElTooltip>
-                  <ElTooltip v-if="row.failedItems > 0" :content="t('automation.run.retryFailed')">
-                    <ElButton link type="warning" @click="retryLoopItems(row)"><SvgIcon icon="mdi:restart" /></ElButton>
                   </ElTooltip>
                 </template>
               </ElTableColumn>
@@ -425,7 +508,9 @@ onMounted(loadData);
                   :timestamp="formatTime(event.createdAt)"
                   placement="top"
                 >
-                  <ElTooltip :content="event.eventType"><strong>{{ automationEventTypeLabel(event.eventType) }}</strong></ElTooltip>
+                  <ElTooltip :content="event.eventType">
+                    <strong>{{ automationEventTypeLabel(event.eventType) }}</strong>
+                  </ElTooltip>
                   <p>{{ event.eventKey }}</p>
                 </ElTimelineItem>
               </ElTimeline>
@@ -444,7 +529,12 @@ onMounted(loadData);
     >
       <div class="loop-items-body">
         <div class="loop-filter">
-          <ElSelect v-model="loopItemQuery.status" clearable :placeholder="t('automation.common.allStatus')" @change="loadLoopItems">
+          <ElSelect
+            v-model="loopItemQuery.status"
+            clearable
+            :placeholder="t('automation.common.allStatus')"
+            @change="loadLoopItems"
+          >
             <ElOption
               v-for="value in ['PENDING', 'RUNNING', 'RETRY_WAIT', 'SUCCESS', 'FAILED', 'SKIPPED']"
               :key="value"
@@ -452,28 +542,31 @@ onMounted(loadData);
               :value="value"
             />
           </ElSelect>
-          <ElButton circle :title="t('automation.common.refresh')" @click="loadLoopItems"><SvgIcon icon="mdi:refresh" /></ElButton>
-          <ElButton
-            v-if="selectedBatch && selectedBatch.failedItems > 0"
-            type="warning"
-            plain
-            @click="retryLoopItems(selectedBatch)"
-          >
-            <SvgIcon icon="mdi:restart" />
-            {{ t('automation.run.retryFailed') }}
+          <ElButton circle :title="t('automation.common.refresh')" @click="loadLoopItems">
+            <SvgIcon icon="mdi:refresh" />
           </ElButton>
         </div>
         <div class="loop-items-table">
           <ElTable v-loading="loopItemLoading" :data="loopItems" height="100%">
             <ElTableColumn prop="itemIndex" label="#" width="72" />
-            <ElTableColumn prop="itemKey" :label="t('automation.common.itemKey')" min-width="180" show-overflow-tooltip />
+            <ElTableColumn
+              prop="itemKey"
+              :label="t('automation.common.itemKey')"
+              min-width="180"
+              show-overflow-tooltip
+            />
             <ElTableColumn :label="t('automation.common.status')" width="130">
               <template #default="{ row }">
                 <ElTag :type="statusType(row.status)" size="small">{{ automationStatusLabel(row.status) }}</ElTag>
               </template>
             </ElTableColumn>
             <ElTableColumn prop="attemptCount" :label="t('automation.common.attempt')" width="90" />
-            <ElTableColumn prop="errorMessage" :label="t('automation.common.errorSummary')" min-width="260" show-overflow-tooltip />
+            <ElTableColumn
+              prop="errorMessage"
+              :label="t('automation.common.errorSummary')"
+              min-width="260"
+              show-overflow-tooltip
+            />
             <ElTableColumn :label="t('automation.run.nextRetry')" width="180">
               <template #default="{ row }">{{ formatTime(row.nextRetryAt) }}</template>
             </ElTableColumn>
@@ -502,17 +595,24 @@ onMounted(loadData);
 <style scoped>
 .run-route {
   height: 100%;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 .run-page {
   display: grid;
   height: 100%;
+  min-width: 0;
   min-height: 0;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 12px;
   padding: 18px;
+  overflow: hidden;
   background: #f3f5f7;
   color: #303840;
+}
+.run-page > * {
+  min-width: 0;
 }
 .page-heading,
 .filter-band,
@@ -522,6 +622,12 @@ onMounted(loadData);
 }
 .page-heading {
   justify-content: space-between;
+}
+.heading-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
 }
 .page-heading h1 {
   margin: 0;
@@ -542,11 +648,11 @@ onMounted(loadData);
   gap: 10px;
   border-bottom: 1px solid #e2e6e9;
 }
-.filter-band :deep(.el-input-number) {
-  width: 190px;
-}
 .filter-band :deep(.el-select) {
   width: 190px;
+}
+.filter-band :deep(.workflow-filter) {
+  width: 280px;
 }
 .result-count {
   margin-left: auto;
@@ -554,9 +660,17 @@ onMounted(loadData);
   font-size: 12px;
 }
 .table-band {
+  display: grid;
   min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
   padding: 0 14px;
   background: #fff;
+}
+.records-table {
+  min-width: 0;
+  min-height: 0;
+  grid-row: 2;
 }
 .workflow-reference {
   display: flex;
@@ -575,7 +689,10 @@ onMounted(loadData);
 }
 .pagination-band {
   display: flex;
+  min-height: 54px;
+  align-items: center;
   justify-content: flex-end;
+  overflow: hidden;
 }
 .detail-body {
   display: grid;
@@ -584,6 +701,7 @@ onMounted(loadData);
   grid-template-rows: auto minmax(0, 1fr);
 }
 .detail-summary {
+  flex-wrap: wrap;
   gap: 18px;
   padding: 0 4px 12px;
   border-bottom: 1px solid #e4e8eb;
@@ -591,11 +709,19 @@ onMounted(loadData);
   font-size: 13px;
 }
 .detail-tabs {
+  display: flex;
   min-height: 0;
+  flex-direction: column;
 }
-.detail-tabs :deep(.el-tabs__content),
+.detail-tabs :deep(.el-tabs__header) {
+  flex: 0 0 auto;
+}
+.detail-tabs :deep(.el-tabs__content) {
+  min-height: 0;
+  flex: 1;
+}
 .detail-tabs :deep(.el-tab-pane) {
-  height: calc(100% - 28px);
+  height: 100%;
   min-height: 0;
 }
 .timeline-scroll {

@@ -35,14 +35,14 @@ async function loadData() {
   const to = dateRange.value?.[1] || undefined;
   try {
     const res = await fetchAudits({
-    page: page.value,
-    size: size.value,
-    actionType: actionType.value || undefined,
-    status: status.value || undefined,
-    userId: userId.value,
-    dateFrom: from,
-    dateTo: to
-  });
+      page: page.value,
+      size: size.value,
+      actionType: actionType.value || undefined,
+      status: status.value || undefined,
+      userId: userId.value,
+      dateFrom: from,
+      dateTo: to
+    });
     list.value = res.data?.records || [];
     total.value = res.data?.total || 0;
   } finally {
@@ -78,11 +78,19 @@ function formattedJson(value: unknown) {
   try {
     const parsed = typeof value === 'string' ? JSON.parse(value) : value;
     return JSON.stringify(redact(parsed), null, 2);
-  } catch { return String(value); }
+  } catch {
+    return String(value);
+  }
 }
 function redact(value: any): any {
   if (Array.isArray(value)) return value.map(redact);
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, /password|secret|token|api[-_]?key|authorization|cookie/i.test(key) ? '******' : redact(item)]));
+  if (value && typeof value === 'object')
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        /password|secret|token|api[-_]?key|authorization|cookie/i.test(key) ? '******' : redact(item)
+      ])
+    );
   return value;
 }
 async function copyText(value: unknown) {
@@ -93,6 +101,7 @@ async function copyText(value: unknown) {
 
 <template>
   <div class="page-container h-full">
+    <ElAlert class="mb-4" type="info" :closable="false" show-icon :title="t('rag.audit.pageGuide')" />
     <div class="mb-4 flex gap-4">
       <ElCard
         v-for="card in [
@@ -159,7 +168,7 @@ async function copyText(value: unknown) {
         <ElButton type="primary" @click="loadData">{{ t('rag.common.search') }}</ElButton>
         <ElButton @click="resetSearch">{{ t('common.reset') }}</ElButton>
       </div>
-      <ElTable v-loading="loading" :data="list" stripe border class="w-full">
+      <ElTable v-loading="loading" :data="list" stripe border class="w-full" :empty-text="t('rag.audit.emptyHint')">
         <ElTableColumn :label="t('rag.audit.actionType')" width="100">
           <template #default="{ row }">
             <ElTag size="small">{{ auditActionLabel(row.actionType) }}</ElTag>
@@ -230,16 +239,26 @@ async function copyText(value: unknown) {
           <ElTag size="small">{{ auditStatusLabel(current.status) }}</ElTag>
         </div>
         <div>
-          <div class="flex items-center justify-between"><span class="text-gray-500">{{ t('rag.audit.toolInput') }}：</span><ElButton link size="small" @click="copyText(current.toolInput)">{{ t('rag.common.copy') }}</ElButton></div>
-          <pre class="mt-1 max-h-56 overflow-auto rounded bg-gray-50 p-2 text-xs font-mono">{{ formattedJson(current.toolInput) }}</pre>
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500">{{ t('rag.audit.toolInput') }}：</span>
+            <ElButton link size="small" @click="copyText(current.toolInput)">{{ t('rag.common.copy') }}</ElButton>
+          </div>
+          <pre class="mt-1 max-h-56 overflow-auto rounded bg-gray-50 p-2 text-xs font-mono">{{
+            formattedJson(current.toolInput)
+          }}</pre>
         </div>
         <div v-if="current.cancelReason">
           <span class="text-gray-500">{{ t('rag.audit.cancelReason') }}：</span>
           {{ current.cancelReason }}
         </div>
         <div>
-          <div class="flex items-center justify-between"><span class="text-gray-500">{{ t('rag.audit.contextSnapshot') }}：</span><ElButton link size="small" @click="copyText(current.contextSnapshot)">{{ t('rag.common.copy') }}</ElButton></div>
-          <pre class="mt-1 max-h-56 overflow-auto rounded bg-gray-50 p-2 text-xs font-mono">{{ formattedJson(current.contextSnapshot) }}</pre>
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500">{{ t('rag.audit.contextSnapshot') }}：</span>
+            <ElButton link size="small" @click="copyText(current.contextSnapshot)">{{ t('rag.common.copy') }}</ElButton>
+          </div>
+          <pre class="mt-1 max-h-56 overflow-auto rounded bg-gray-50 p-2 text-xs font-mono">{{
+            formattedJson(current.contextSnapshot)
+          }}</pre>
         </div>
       </div>
     </ElDialog>
