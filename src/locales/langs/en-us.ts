@@ -1289,7 +1289,7 @@ const local: App.I18n.Schema = {
       positiveExamples: 'Positive Examples',
       negativeExamples: 'Exclusion Examples',
       version: 'Version',
-      minScore: 'Min Score',
+      minScore: 'Rule Match Threshold',
       yamlPreview: 'YAML Preview',
       yamlConfig: 'YAML Expert Mode',
       basicInfo: 'Basic Information',
@@ -1531,17 +1531,17 @@ const local: App.I18n.Schema = {
           name: 'Enter a business-facing name used in lists, selectors, and execution results; it should state the task this Skill performs.',
           code: 'Enter a tenant-unique stable code using letters, digits, and underscores. Do not casually rename it after other configurations reference it.',
           description:
-            'Describe scenarios, required input, primary output, and boundaries. It may be blank, but missing semantics makes Agent selection unreliable.',
+            'Describe scenarios, required input, primary output, and boundaries. Name and description participate in vector recall and LLM reranking; the field may be blank, but missing semantics makes selection less reliable.',
           intentType:
             'Knowledge is evidence-oriented. Action and composite mark operational capabilities for routing. This affects priority but does not create steps.',
           triggerKeywords:
-            'Enter intent phrases separated by commas. At least one trigger must match before the Chat semantic fallback considers this Skill; avoid broad words.',
+            'Enter intent phrases separated by commas. Triggers support strong rules and also participate in vector recall and LLM reranking. A Skill without triggers can still be recalled from its name, description, and positive examples; avoid broad words.',
           positiveExamples:
-            'Enter one complete expected request per line. Substring rule matching raises the score to 1.0; do not use a single broad word.',
+            'Enter one complete expected request per line. A substring match is a strong rule match; otherwise examples remain semantic evidence for vector recall and LLM reranking. Do not use a single broad word.',
           negativeExamples:
             'Enter one similar request that must not run the Skill per line. A substring match sets the rule score to 0 and takes precedence.',
           minScore:
-            'Set the rule threshold from 0.50 to 1.00 in 0.05 steps. Higher values reduce false triggers but may miss vague requests; start at 0.65.',
+            'Set the rule threshold from 0.50 to 1.00 in 0.05 steps; start at 0.65. Semantic reranking does not use this field and instead requires system thresholds of 0.85 for knowledge and 0.92 for operational/composite Skills.',
           status:
             'Only enabled Skills can be selected by the Agent. Disabling retains configuration and execution history.',
           stepId:
@@ -1606,7 +1606,7 @@ const local: App.I18n.Schema = {
           'A successful save only proves structural validity. Before enabling, test realistic requests with missing details, synonyms, and multi-turn additions.',
         step1: 'Enter a name, stable code, capability description, and the intent type matching the real task.',
         step2:
-          'Add specific triggers, positive examples, exclusion examples, and a minimum confidence from 0.50 to 1.00.',
+          'Add focused triggers, positive examples, and exclusion examples, then set the rule confidence threshold. Name, description, triggers, and positive examples jointly support semantic recall.',
         step3:
           'Split the workflow by outputs. Give every step a unique ID, type, and clear objective; independent steps may run in parallel.',
         step4:
@@ -1625,7 +1625,7 @@ const local: App.I18n.Schema = {
         rule5:
           'Transform allows at most 20 operations, 200 items, 1 MB JSON, and 32 nesting levels. Only restricted JSONPath and declarative operations are available.',
         effect1:
-          'When enabled, the Agent evaluates intent type, examples, triggers, rule score, and any eligible semantic fallback before selection.',
+          'When enabled, AUTO mode applies exclusions and strong rules first, then vector recall and LLM reranking over the name, description, triggers, and positive examples. Knowledge and General modes do not execute Skills.',
         effect2:
           'Execution inherits tenant, user, and session permissions; downstream steps only receive data and tools authorized for that user.',
         ragGuideTitle: 'Knowledge Retrieval (RAG)',
@@ -1720,16 +1720,16 @@ const local: App.I18n.Schema = {
           'Returns structured JSON with total, processed, succeeded, failed, retryable, and per-item results for summarization and partial-failure recovery.',
         descriptionTitle: 'Capability Description',
         descriptionField:
-          'Describe the goal, input, output, and boundaries. It may be blank, but missing semantics makes selection less reliable; never claim unconfigured capabilities.',
+          'Describe the goal, input, output, and boundaries. Name and description feed vector recall and LLM reranking. It may be blank, but missing semantics makes selection less reliable; never claim unconfigured capabilities.',
         descriptionExample:
           'Query business records visible to the user and combine them with knowledge-base rules; never modifies business data.',
         triggerTitle: 'Trigger Words',
         triggerDescription:
-          'Enter typical intent phrases separated by commas. Triggers also gate semantic fallback candidates, so cover synonyms but avoid broad phrases.',
+          'Enter typical intent phrases separated by commas. Triggers support strong rules and semantic recall, but they are not a gate: name, description, and positive examples can still recall a Skill without triggers. Cover synonyms but avoid broad phrases.',
         triggerExample: 'business record analysis, policy validation, generate operational recommendations',
-        scoreTitle: 'Minimum Confidence',
+        scoreTitle: 'Rule Match Threshold',
         scoreDescription:
-          'The UI range is 0.50–1.00 in 0.05 steps. Higher values reduce false matches but may miss vague requests; start near 0.65. Match Test checks rules only.',
+          'The UI range is 0.50–1.00 in 0.05 steps and controls rule matching only; start near 0.65. Semantic reranking uses system thresholds of 0.85 for knowledge and 0.92 for operational/composite Skills. Match Test checks both rule and semantic selection.',
         stepIdTitle: 'Step ID',
         stepIdDescription:
           'A stable unique identifier used by dependencies, parameter references, and execution logs. Prefer an action_object format such as query_records and use only letters, numbers, and underscores.',

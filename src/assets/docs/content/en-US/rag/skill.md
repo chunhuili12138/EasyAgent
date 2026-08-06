@@ -17,10 +17,10 @@ Main menu: **Agent Management → Skill Management**.
 
 1. Click **Create** and choose the template closest to the business goal.
 2. Enter a name, unique code, capability description, and intent type.
-3. Configure trigger words, positive examples, exclusion examples, and minimum confidence.
+3. Configure trigger words, positive examples, exclusion examples, and the rule match threshold.
 4. Split the task by outputs and configure each step's ID, type, description, dependencies, and type-specific fields.
 5. Use **Trial Run Current Config** to inspect every step. YAML changes must be **Applied to Form** before they can be saved.
-6. Save and enable the Skill, then use **Match Test** for rule matching.
+6. Save and enable the Skill, then use **Match Test** for rule and semantic matching; the result shows the match source.
 7. Finally, use natural multi-turn business requests in Chat to validate routing, permissions, clarification, HITL, and result presentation.
 
 ## Basic Fields
@@ -31,10 +31,10 @@ Main menu: **Agent Management → Skill Management**.
 | Code | Yes | Stable tenant-unique code containing letters, digits, and underscores |
 | Description | No, strongly recommended | Scenario, required input, main output, and boundaries; an empty description makes Agent selection less reliable |
 | Intent type | Yes | `knowledge`, `action`, or `composite` |
-| Trigger words | No | Comma-separated intent phrases; at least one trigger must match before the chat semantic fallback can consider this Skill |
+| Trigger words | No | Comma-separated intent phrases used by strong rules, vector recall, and LLM reranking; without them, the name, description, and positive examples can still support semantic recall |
 | Positive examples | No | One expected request per line; a substring rule match raises the rule score to 1.0 |
 | Exclusion examples | No | One similar request that must not run the Skill per line; a substring match sets the rule score to 0 |
-| Minimum confidence | Yes | UI range 0.50–1.00 in 0.05 steps; default 0.65 |
+| Rule match threshold | Yes | 0.50–1.00 in 0.05 steps; default 0.65. Semantic selection also requires system thresholds of 0.85 for knowledge and 0.92 for operational/composite Skills |
 | Status | Yes | Only enabled Skills enter chat routing and the executable catalog |
 
 ### Choosing an Intent Type
@@ -48,6 +48,17 @@ Intent type does not create or restrict steps. The backend infers it for legacy 
 ### Positive and Exclusion Examples
 
 Use complete phrases a real user would say, not broad words such as “query” or “process.” Positive examples describe requests that should run the Skill; exclusion examples separate similar requests that must not. Exclusions take precedence over triggers and positive examples.
+
+### Matching and Semantic Recall
+
+AUTO Chat and **Match Test** select enabled Skills in this order:
+
+1. Exclusion examples are checked first; a matching exclusion removes the Skill.
+2. A positive example match or a complete trigger-keyword match is handled as a strong rule match.
+3. When rules do not match, the current tenant's enabled Skills are bounded to 100 candidates. The system embeds each Skill's name, description, trigger words, and positive examples, then recalls up to five candidates.
+4. The LLM reranks only those five candidates and its code and confidence are validated. Knowledge Skills require at least 0.85; operational and composite Skills require at least 0.92.
+
+If the embedding service is unavailable, the system falls back to bounded-candidate LLM matching instead of blocking Chat; Match Test reports “LLM semantic match (vector fallback)”. Knowledge and General modes remain isolated from Skill execution; only AUTO mode routes to Skills.
 
 ## Step Types
 
@@ -294,7 +305,7 @@ Web search and nested loops are not supported in the body. An Action API receive
 
 ### Match Test
 
-Match Test checks local rules for **saved, enabled** Skills only: exclusion examples, positive examples, trigger words, and minimum confidence. It does not test unsaved editor content or the LLM semantic fallback used by Chat. A no-match does not prove Chat will never select the Skill, and a match does not prove its execution chain succeeds.
+Match Test checks **saved, enabled** Skills only and excludes unsaved editor content. It applies strong rules first, then vector recall over the name, description, triggers, and positive examples followed by tenant-scoped LLM reranking. The result reports “Rule match” or “Vector recall + LLM semantic rerank”, and reports the fallback source when embeddings are unavailable. It validates Skill selection only; a match does not prove that API, database, HITL, or downstream LLM execution will succeed.
 
 ### Trial Run Current Config
 
