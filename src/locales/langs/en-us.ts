@@ -1437,8 +1437,13 @@ const local: App.I18n.Schema = {
       stepColumn: 'Step',
       output: 'Output',
       noMatch: 'No enabled Skill matched',
-      matchedResult: 'Matched {name} ({code}), score {score}',
-      missingTriggerWarning: 'No trigger words are configured; user questions may not match this Skill.',
+      matchedResult: 'Matched {name} ({code}), score {score}, method: {source}',
+      matchSourceRule: 'Rule match',
+      matchSourceSemantic: 'Vector recall + LLM semantic rerank',
+      matchSourceLlmFallback: 'LLM semantic match (vector fallback)',
+      matchSourceUnknown: 'Compatibility mode',
+      missingTriggerWarning:
+        'No trigger words are configured. Semantic recall still works, but adding focused keywords improves explainability and reranking.',
       apiParamWarning:
         'An API step has no parameters. Confirm the tool needs no parameters or test it on the Tool page first.',
       nl2sqlDatasourceWarning: 'An NL2SQL step has no selected data source.',
@@ -1446,7 +1451,7 @@ const local: App.I18n.Schema = {
       foreachWarning: 'A batch step exists. Trial-run max_items and failure handling first.',
       testQuestionRequired: 'Enter a test question',
       matchTestHint:
-        'Checks trigger words, positive/exclusion examples, and minimum confidence for saved enabled Skills only. It excludes unsaved edits and the Chat LLM semantic fallback.',
+        'Tests saved enabled Skills using strong rules first, then vector recall over the name, description, triggers, and positive examples, followed by tenant-scoped LLM reranking. Exclusion examples always take priority.',
       runTestHint:
         'Query, retrieval, and model steps may execute for real. Action APIs never execute here: disabled means dry-run skip; enabled verifies that HITL blocks the action.',
       actionGateCheck: 'Check Action Approval Gate',

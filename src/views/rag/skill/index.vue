@@ -1393,6 +1393,13 @@ function openMatchTest(row?: any) {
   matchDialogVisible.value = true;
 }
 
+function matchSourceLabel(source?: string) {
+  if (source === 'rule') return t('rag.skill.matchSourceRule');
+  if (source === 'vector_llm') return t('rag.skill.matchSourceSemantic');
+  if (source === 'llm') return t('rag.skill.matchSourceLlmFallback');
+  return t('rag.skill.matchSourceUnknown');
+}
+
 async function runMatchTest() {
   if (!matchQuery.value.trim()) {
     ElMessage.warning(t('rag.skill.testQuestionRequired'));
@@ -2158,7 +2165,8 @@ function goTo(path: string) {
             ? t('rag.skill.matchedResult', {
                 name: matchResult.skillName,
                 code: matchResult.skillCode,
-                score: Number(matchResult.score || 0).toFixed(2)
+                score: Number(matchResult.score || 0).toFixed(2),
+                source: matchSourceLabel(matchResult.source)
               })
             : t('rag.skill.noMatch')
         "
