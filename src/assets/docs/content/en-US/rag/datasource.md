@@ -26,7 +26,10 @@ Main menu: **Agent Management → Datasource Management**.
 ### 2. Configure Schema Permissions
 
 1. Click **Schema Permissions** on the row to open the schema list of this datasource.
-2. Click **Add Schema**, fill in domain code, domain name, view name and column metadata.
+2. Click **Add Schema**, fill in domain code, domain name and view name. Add column metadata and query examples through their structured forms; do not write JSON by hand.
+   - **Column metadata**: add one row for each allowed column and fill in name, data type and business description.
+   - **Query examples**: add one row for each verified natural-language question and read-only SQL pair.
+   - **Sensitive columns**: select columns from the metadata dropdown. Renaming a column updates the selection; deleting or clearing a column removes it from the selection.
 3. Set the **visibility scope** (public / department / post / user) and select authorized objects.
 4. Save the Schema, then click **Test Schema** from its row. Enter a realistic business question. The system calls the LLM to generate SQL and executes a real read-only query using the current signed-in user's Schema permissions; the page previews up to **20 rows**.
 5. Review the generated SQL, row count and fields. Cover normal lookup, time range, enum filters and aggregation. Testing is rejected if the current account is outside the Schema's visibility scope.
@@ -59,10 +62,10 @@ Main menu: **Agent Management → Datasource Management**.
 |---|---|---|
 | Domain code / name | Yes | Unique per datasource; business-readable name |
 | View name | Yes | Real read-only table or masked view |
-| Column metadata | Strongly recommended | JSON array whose items should contain name/type/description. A non-empty array enables the field whitelist and blocks SELECT *. An empty array does not restrict queryable columns and must not be used in production |
-| Examples | No | `fewShotExamples` JSON array whose items contain `question` and `sql`, used to teach business definitions and SQL patterns |
+| Column metadata | Strongly recommended | Add rows with name, data type and business description. The page serializes them as a JSON array. A non-empty list enables the field whitelist and blocks SELECT *. An empty list does not restrict queryable columns and must not be used in production |
+| Examples | No | Add rows with a natural-language question and verified read-only SQL. The page serializes them as the `fewShotExamples` JSON array |
 | Allowed functions | No | `allowedFunctions` array. The UI provides common values and accepts custom ones. A non-empty list limits business functions while built-in safe date/null functions remain allowed; empty adds no function restriction |
-| Sensitive columns | No | Extra guard, e.g. `["customer_phone","id_card_number"]` |
+| Sensitive columns | No | Select physical columns from the metadata rows. This is an extra guard; it is automatically pruned when metadata names no longer exist |
 | Visibility | Yes | public / department / post / user (filtered by user organization at runtime) |
 | Authorized objects | Per scope | Multi-select departments/posts/users |
 | Status | No | Enabled / disabled |
@@ -71,13 +74,15 @@ Main menu: **Agent Management → Datasource Management**.
 
 #### Column Metadata `columnsMeta`
 
-The root must be a JSON array. Each item describes one real database column that queries may use:
+The page uses a structured table instead of a JSON editor. Add a row for each real database column that queries may use, then fill in:
 
 | Field | Required | Purpose |
 |---|---|---|
 | `name` | Yes | Physical column name used by the enforced allowlist; not a display label or SQL alias |
-| `type` | Recommended | Actual database type and precision, helping the model compare, aggregate, and format values; not currently used for JDBC type validation |
-| `description` | Recommended | Business meaning including units, enum values, time semantics, aggregation rules, and relationships |
+| `type` | Yes | Actual database type and precision, helping the model compare, aggregate, and format values; not currently used for JDBC type validation |
+| `description` | Yes | Business meaning including units, enum values, time semantics, aggregation rules, and relationships |
+
+The following is the JSON representation sent to the backend after saving; it is not required as page input:
 
 ```json
 [
@@ -113,10 +118,12 @@ A non-empty array enables the column allowlist and rejects `SELECT *`. Only `nam
 
 #### Query Examples `fewShotExamples`
 
-The root must be a JSON array. Each item contains:
+Use the structured query example table. Add one row for each pair:
 
 - `question`: a realistic natural-language business question;
 - `sql`: one manually verified read-only `SELECT` using only this Schema view, columns, and allowed functions.
+
+The following is the serialized backend representation; it is not required as page input:
 
 ```json
 [
@@ -145,7 +152,9 @@ Use functions supported by the target database. Do not mix MySQL `DATE_FORMAT` w
 
 #### Sensitive Columns `sensitiveColumns`
 
-Enter a JSON array of physical columns that NL2SQL must never reference:
+Select physical columns from the metadata dropdown. The available options always come from the current metadata names. When a metadata row is renamed, its sensitive selection follows the new name; when a row is removed or its name is cleared, the selection is removed.
+
+The following is the serialized backend representation; it is not required as page input:
 
 ```json
 ["customer_phone", "id_card_number", "bank_card_no"]
@@ -153,7 +162,7 @@ Enter a JSON array of physical columns that NL2SQL must never reference:
 
 Use physical column names, not display labels, JSON paths, or masked aliases. SQL containing these identifiers is blocked, but this setting does not replace masked views and least-privilege database accounts. Remove highly sensitive fields from the view.
 
-All JSON fields above require double quotes and cannot contain comments, single quotes, or trailing commas.
+The page generates valid JSON for these fields when saving. Metadata rows require name, data type and description; duplicate names are rejected. Query example rows require both a question and SQL. SQL examples must be manually verified read-only queries using only the Schema scope.
 
 ## Example
 

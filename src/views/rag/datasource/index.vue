@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   fetchCreateDatasource,
@@ -17,10 +17,23 @@ import {
 import { useAppStore } from '@/store/modules/app';
 import { $t } from '@/locales';
 import ConfigHelp from '../shared/config-help.vue';
-import ConfigCodeEditor from '../shared/config-code-editor.vue';
 import { visibilityLabel } from '../shared/display';
 
 defineOptions({ name: 'RagDatasource' });
+
+type SchemaColumnMetadata = {
+  key: number;
+  name: string;
+  type: string;
+  description: string;
+};
+
+type SchemaFewShotExample = {
+  key: number;
+  question: string;
+  sql: string;
+};
+
 const t = $t;
 const appStore = useAppStore();
 const list = ref<any[]>([]);
@@ -40,6 +53,9 @@ const schemaForm = ref<any>({});
 const schemaDatasource = ref<any>(null);
 const schemaEdit = ref(false);
 const schemaSaving = ref(false);
+const schemaColumnsMeta = ref<SchemaColumnMetadata[]>([]);
+const schemaFewShotExamples = ref<SchemaFewShotExample[]>([]);
+const schemaSensitiveColumns = ref<string[]>([]);
 const schemaTestDialogVisible = ref(false);
 const schemaTestTarget = ref<any>(null);
 const schemaTestQuery = ref('');
@@ -47,6 +63,8 @@ const schemaTestResult = ref<any>(null);
 const schemaTestLoading = ref(false);
 const aclOptions = ref<any>({ departments: [], posts: [], users: [] });
 const schemaAllowedFunctions = ref<string[]>([]);
+let schemaFormItemKey = 0;
+let previousColumnNames = new Map<number, string>();
 const commonSqlFunctions = [
   { value: 'COUNT', zhName: '计数' },
   { value: 'SUM', zhName: '求和' },
@@ -71,6 +89,14 @@ const sqlFunctionOptions = computed(() =>
     label: appStore.locale === 'zh-CN' ? `${item.value}（${item.zhName}）` : item.value
   }))
 );
+const schemaColumnNameOptions = computed(() => {
+  const names = new Map<string, string>();
+  for (const column of schemaColumnsMeta.value) {
+    const name = column.name.trim();
+    if (name && !names.has(name.toLowerCase())) names.set(name.toLowerCase(), name);
+  }
+  return [...names.values()];
+});
 const schemaHelpExamples = {
   columns: JSON.stringify(
     [
@@ -97,20 +123,9 @@ const schemaHelpExamples = {
     null,
     2
   ),
-  functions: '["COUNT", "SUM", "AVG", "ROUND"]',
+  functions: 'COUNT, SUM, AVG, ROUND',
   sensitive: '["customer_phone", "id_card_number", "bank_card_no"]'
 };
-const columnsMetaParameters = computed(() => [
-  { name: '[]', description: t('rag.configHelp.schema.columnsFields.root'), example: '[{...}, {...}]', required: true },
-  { name: 'name', description: t('rag.configHelp.schema.columnsFields.name'), example: 'paid_amount', required: true },
-  { name: 'type', description: t('rag.configHelp.schema.columnsFields.type'), example: 'DECIMAL(12,2)' },
-  { name: 'description', description: t('rag.configHelp.schema.columnsFields.description'), example: t('rag.configHelp.schema.columnsFields.descriptionExample') }
-]);
-const fewShotParameters = computed(() => [
-  { name: '[]', description: t('rag.configHelp.schema.fewShotFields.root'), example: '[{...}, {...}]', required: true },
-  { name: 'question', description: t('rag.configHelp.schema.fewShotFields.question'), example: t('rag.configHelp.schema.fewShotFields.questionExample'), required: true },
-  { name: 'sql', description: t('rag.configHelp.schema.fewShotFields.sql'), example: 'SELECT status, COUNT(*) AS order_count ...', required: true }
-]);
 const datasourceParameters = computed(() => [
   {
     name: t('rag.datasource.name'),
@@ -194,12 +209,12 @@ const schemaParameters = computed(() => [
   {
     name: t('rag.datasource.columnsMeta'),
     description: t('rag.configFields.schema.fields.columnsMeta'),
-    example: schemaHelpExamples.columns
+    example: t('rag.datasource.schemaColumnNamePlaceholder')
   },
   {
     name: t('rag.datasource.fewShotExamples'),
     description: t('rag.configFields.schema.fields.fewShotExamples'),
-    example: schemaHelpExamples.fewShot
+    example: t('rag.datasource.schemaExampleQuestionPlaceholder')
   },
   {
     name: t('rag.datasource.allowedFunctions'),
@@ -209,7 +224,7 @@ const schemaParameters = computed(() => [
   {
     name: t('rag.datasource.sensitiveColumns'),
     description: t('rag.configFields.schema.fields.sensitiveColumns'),
-    example: schemaHelpExamples.sensitive
+    example: t('rag.datasource.sensitiveColumnsPlaceholder')
   },
   {
     name: t('rag.tool.visibility'),
@@ -311,6 +326,101 @@ function parseStringArray(value?: string) {
     return [];
   }
 }
+function nextSchemaFormItemKey() {
+  schemaFormItemKey += 1;
+  return schemaFormItemKey;
+}
+function createColumnMetadata(value?: Partial<Omit<SchemaColumnMetadata, 'key'>>): SchemaColumnMetadata {
+  return {
+    key: nextSchemaFormItemKey(),
+    name: value?.name || '',
+    type: value?.type || '',
+    description: value?.description || ''
+  };
+}
+function createFewShotExample(value?: Partial<Omit<SchemaFewShotExample, 'key'>>): SchemaFewShotExample {
+  return {
+    key: nextSchemaFormItemKey(),
+    question: value?.question || '',
+    sql: value?.sql || ''
+  };
+}
+function parseColumnsMeta(value?: string) {
+  try {
+    const parsed = value ? JSON.parse(value) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap(item => {
+      if (typeof item === 'string') return [createColumnMetadata({ name: item })];
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
+      return [
+        createColumnMetadata({
+          name: typeof item.name === 'string' ? item.name : '',
+          type: typeof item.type === 'string' ? item.type : '',
+          description: typeof item.description === 'string' ? item.description : ''
+        })
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+function parseFewShotExamples(value?: string) {
+  try {
+    const parsed = value ? JSON.parse(value) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap(item => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
+      return [
+        createFewShotExample({
+          question: typeof item.question === 'string' ? item.question : '',
+          sql: typeof item.sql === 'string' ? item.sql : ''
+        })
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+function snapshotColumnNames() {
+  return new Map(schemaColumnsMeta.value.map(column => [column.key, column.name.trim()]));
+}
+function syncSensitiveColumns() {
+  const currentNames = new Map<string, string>();
+  for (const column of schemaColumnsMeta.value) {
+    const name = column.name.trim();
+    if (name) currentNames.set(name.toLowerCase(), name);
+  }
+  const renamedNames = new Map<string, string>();
+  for (const column of schemaColumnsMeta.value) {
+    const previousName = previousColumnNames.get(column.key);
+    const currentName = column.name.trim();
+    if (previousName && currentName && previousName.toLowerCase() !== currentName.toLowerCase()) {
+      renamedNames.set(previousName.toLowerCase(), currentName.toLowerCase());
+    }
+  }
+  const selected = new Set<string>();
+  for (const value of schemaSensitiveColumns.value) {
+    const previousName = value.trim().toLowerCase();
+    const currentName = renamedNames.get(previousName) || previousName;
+    const canonicalName = currentNames.get(currentName);
+    if (canonicalName) selected.add(canonicalName);
+  }
+  schemaSensitiveColumns.value = [...selected];
+  previousColumnNames = snapshotColumnNames();
+}
+watch(schemaColumnsMeta, syncSensitiveColumns, { deep: true });
+function addColumnMetadata() {
+  schemaColumnsMeta.value.push(createColumnMetadata());
+}
+function removeColumnMetadata(index: number) {
+  schemaColumnsMeta.value.splice(index, 1);
+}
+function addFewShotExample() {
+  schemaFewShotExamples.value.push(createFewShotExample());
+}
+function removeFewShotExample(index: number) {
+  schemaFewShotExamples.value.splice(index, 1);
+}
 async function manageSchemas(row: any) {
   schemaDatasource.value = row;
   schemaVisible.value = true;
@@ -331,6 +441,10 @@ function openSchemaCreate() {
     sensitiveColumns: '[]',
     status: 1
   };
+  schemaColumnsMeta.value = [];
+  schemaFewShotExamples.value = [];
+  schemaSensitiveColumns.value = [];
+  previousColumnNames = snapshotColumnNames();
   schemaAllowedFunctions.value = [];
   schemaDialogVisible.value = true;
 }
@@ -342,6 +456,11 @@ function openSchemaEdit(row: any) {
     allowedPostIds: parseIds(row.allowedPostIds),
     allowedUserIds: parseIds(row.allowedUserIds)
   };
+  schemaColumnsMeta.value = parseColumnsMeta(row.columnsMeta);
+  schemaFewShotExamples.value = parseFewShotExamples(row.fewShotExamples);
+  schemaSensitiveColumns.value = parseStringArray(row.sensitiveColumns);
+  previousColumnNames = snapshotColumnNames();
+  syncSensitiveColumns();
   schemaAllowedFunctions.value = parseStringArray(row.allowedFunctions);
   schemaDialogVisible.value = true;
 }
@@ -357,23 +476,36 @@ async function saveSchema() {
   schemaForm.value.allowedFunctions = JSON.stringify([
     ...new Set(schemaAllowedFunctions.value.map(item => item.trim().toUpperCase()).filter(Boolean))
   ]);
-  for (const [field, value] of [
-    [t('rag.datasource.columnsMeta'), schemaForm.value.columnsMeta],
-    [t('rag.datasource.fewShotExamples'), schemaForm.value.fewShotExamples],
-    [t('rag.datasource.allowedFunctions'), schemaForm.value.allowedFunctions],
-    [t('rag.datasource.sensitiveColumns'), schemaForm.value.sensitiveColumns]
-  ]) {
-    try {
-      JSON.parse(value || '[]');
-    } catch {
-      ElMessage.warning(t('rag.common.invalidJson', { field }));
-      return;
-    }
+  const columnsMeta = schemaColumnsMeta.value.map(column => ({
+    name: column.name.trim(),
+    type: column.type.trim(),
+    description: column.description.trim()
+  }));
+  if (columnsMeta.some(column => !column.name || !column.type || !column.description)) {
+    ElMessage.warning(t('rag.datasource.schemaColumnRequired'));
+    return;
   }
+  const uniqueColumnNames = new Set(columnsMeta.map(column => column.name.toLowerCase()));
+  if (uniqueColumnNames.size !== columnsMeta.length) {
+    ElMessage.warning(t('rag.datasource.schemaColumnDuplicate'));
+    return;
+  }
+  const fewShotExamples = schemaFewShotExamples.value.map(example => ({
+    sql: example.sql.trim(),
+    question: example.question.trim()
+  }));
+  if (fewShotExamples.some(example => !example.question || !example.sql)) {
+    ElMessage.warning(t('rag.datasource.schemaExampleRequired'));
+    return;
+  }
+  syncSensitiveColumns();
   schemaSaving.value = true;
   try {
     const payload = {
       ...schemaForm.value,
+      columnsMeta: JSON.stringify(columnsMeta),
+      fewShotExamples: JSON.stringify(fewShotExamples),
+      sensitiveColumns: JSON.stringify(schemaSensitiveColumns.value),
       allowedDepartmentIds: JSON.stringify(schemaForm.value.allowedDepartmentIds || []),
       allowedPostIds: JSON.stringify(schemaForm.value.allowedPostIds || []),
       allowedUserIds: JSON.stringify(schemaForm.value.allowedUserIds || [])
@@ -685,21 +817,49 @@ function previewRows(rows: any[]) {
               field
               :title="t('rag.configHelp.schema.columnsTitle')"
               :description="t('rag.configHelp.schema.columnsDescription')"
-              :parameters="columnsMetaParameters"
-              :examples="[schemaHelpExamples.columns]"
-              :rules="[
-                t('rag.configHelp.schema.columnsRule1'),
-                t('rag.configHelp.schema.columnsRule2'),
-                t('rag.configHelp.schema.jsonRule')
-              ]"
+              :rules="[t('rag.configHelp.schema.columnsRule1'), t('rag.configHelp.schema.columnsRule2')]"
             />
           </template>
-          <ConfigCodeEditor
-            v-model="schemaForm.columnsMeta"
-            :rows="4"
-            expected-root="array"
-            :example="schemaHelpExamples.columns"
-          />
+          <div class="w-full space-y-3">
+            <ElAlert
+              v-if="!schemaColumnsMeta.length"
+              type="info"
+              :closable="false"
+              :title="t('rag.datasource.schemaColumnsEmpty')"
+            />
+            <div v-else class="overflow-x-auto">
+              <ElTable :data="schemaColumnsMeta" border class="min-w-155 w-full">
+                <ElTableColumn :label="t('rag.datasource.schemaColumnName')" min-width="150">
+                  <template #default="{ row }">
+                    <ElInput v-model="row.name" :placeholder="t('rag.datasource.schemaColumnNamePlaceholder')" />
+                  </template>
+                </ElTableColumn>
+                <ElTableColumn :label="t('rag.datasource.schemaColumnType')" min-width="150">
+                  <template #default="{ row }">
+                    <ElInput v-model="row.type" :placeholder="t('rag.datasource.schemaColumnTypePlaceholder')" />
+                  </template>
+                </ElTableColumn>
+                <ElTableColumn :label="t('rag.datasource.schemaColumnDescription')" min-width="220">
+                  <template #default="{ row }">
+                    <ElInput
+                      v-model="row.description"
+                      :placeholder="t('rag.datasource.schemaColumnDescriptionPlaceholder')"
+                    />
+                  </template>
+                </ElTableColumn>
+                <ElTableColumn :label="t('rag.common.action')" width="72" fixed="right" align="center">
+                  <template #default="{ $index }">
+                    <ElButton link type="danger" @click="removeColumnMetadata($index)">
+                      {{ t('rag.common.delete') }}
+                    </ElButton>
+                  </template>
+                </ElTableColumn>
+              </ElTable>
+            </div>
+            <ElButton plain type="primary" @click="addColumnMetadata">
+              + {{ t('rag.datasource.addSchemaColumn') }}
+            </ElButton>
+          </div>
         </ElFormItem>
         <ElFormItem :label="t('rag.datasource.fewShotExamples')">
           <template #label>
@@ -708,21 +868,49 @@ function previewRows(rows: any[]) {
               field
               :title="t('rag.configHelp.schema.fewShotTitle')"
               :description="t('rag.configHelp.schema.fewShotDescription')"
-              :parameters="fewShotParameters"
-              :examples="[schemaHelpExamples.fewShot]"
-              :rules="[
-                t('rag.configHelp.schema.fewShotRule1'),
-                t('rag.configHelp.schema.fewShotRule2'),
-                t('rag.configHelp.schema.jsonRule')
-              ]"
+              :rules="[t('rag.configHelp.schema.fewShotRule1'), t('rag.configHelp.schema.fewShotRule2')]"
             />
           </template>
-          <ConfigCodeEditor
-            v-model="schemaForm.fewShotExamples"
-            :rows="3"
-            expected-root="array"
-            :example="schemaHelpExamples.fewShot"
-          />
+          <div class="w-full space-y-3">
+            <ElAlert
+              v-if="!schemaFewShotExamples.length"
+              type="info"
+              :closable="false"
+              :title="t('rag.datasource.schemaExamplesEmpty')"
+            />
+            <div v-else class="overflow-x-auto">
+              <ElTable :data="schemaFewShotExamples" border class="min-w-155 w-full">
+                <ElTableColumn :label="t('rag.datasource.schemaExampleQuestion')" min-width="220">
+                  <template #default="{ row }">
+                    <ElInput
+                      v-model="row.question"
+                      :placeholder="t('rag.datasource.schemaExampleQuestionPlaceholder')"
+                    />
+                  </template>
+                </ElTableColumn>
+                <ElTableColumn :label="t('rag.datasource.schemaExampleSql')" min-width="320">
+                  <template #default="{ row }">
+                    <ElInput
+                      v-model="row.sql"
+                      type="textarea"
+                      :rows="2"
+                      :placeholder="t('rag.datasource.schemaExampleSqlPlaceholder')"
+                    />
+                  </template>
+                </ElTableColumn>
+                <ElTableColumn :label="t('rag.common.action')" width="72" fixed="right" align="center">
+                  <template #default="{ $index }">
+                    <ElButton link type="danger" @click="removeFewShotExample($index)">
+                      {{ t('rag.common.delete') }}
+                    </ElButton>
+                  </template>
+                </ElTableColumn>
+              </ElTable>
+            </div>
+            <ElButton plain type="primary" @click="addFewShotExample">
+              + {{ t('rag.datasource.addSchemaExample') }}
+            </ElButton>
+          </div>
         </ElFormItem>
         <ElFormItem :label="t('rag.datasource.allowedFunctions')">
           <template #label>
@@ -754,20 +942,21 @@ function previewRows(rows: any[]) {
               field
               :title="t('rag.configHelp.schema.sensitiveTitle')"
               :description="t('rag.configHelp.schema.sensitiveDescription')"
-              :examples="[schemaHelpExamples.sensitive]"
-              :rules="[
-                t('rag.configHelp.schema.sensitiveRule1'),
-                t('rag.configHelp.schema.sensitiveRule2'),
-                t('rag.configHelp.schema.jsonRule')
-              ]"
+              :rules="[t('rag.configHelp.schema.sensitiveRule1'), t('rag.configHelp.schema.sensitiveRule2')]"
             />
           </template>
-          <ConfigCodeEditor
-            v-model="schemaForm.sensitiveColumns"
-            :rows="2"
-            expected-root="array"
-            :example="schemaHelpExamples.sensitive"
-          />
+          <ElSelect
+            v-model="schemaSensitiveColumns"
+            multiple
+            filterable
+            collapse-tags
+            collapse-tags-tooltip
+            class="w-full"
+            :disabled="!schemaColumnNameOptions.length"
+            :placeholder="t('rag.datasource.sensitiveColumnsPlaceholder')"
+          >
+            <ElOption v-for="name in schemaColumnNameOptions" :key="name" :label="name" :value="name" />
+          </ElSelect>
         </ElFormItem>
         <ElFormItem :label="t('rag.tool.visibility')">
           <template #label>

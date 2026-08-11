@@ -1867,11 +1867,29 @@ const local: App.I18n.Schema = {
       domainCode: 'Domain Code',
       domainName: 'Domain Name',
       viewName: 'View Name',
-      columnsMeta: 'Columns (JSON)',
-      fewShotExamples: 'Examples (JSON)',
+      columnsMeta: 'Column Metadata',
+      fewShotExamples: 'Query Examples',
       allowedFunctions: 'Allowed Functions',
       allowedFunctionsPlaceholder: 'Select functions, or type a function name and press Enter',
-      sensitiveColumns: 'Sensitive Columns (JSON)',
+      sensitiveColumns: 'Sensitive Columns',
+      addSchemaColumn: 'Add Column',
+      addSchemaExample: 'Add Example',
+      schemaColumnsEmpty: 'No column metadata has been added. An empty list does not enable a column allowlist.',
+      schemaExamplesEmpty: 'No query examples have been added. Add verified natural-language questions and read-only SQL as needed.',
+      schemaColumnName: 'Column Name',
+      schemaColumnType: 'Data Type',
+      schemaColumnDescription: 'Business Description',
+      schemaColumnNamePlaceholder: 'For example, order_no',
+      schemaColumnTypePlaceholder: 'For example, VARCHAR(32)',
+      schemaColumnDescriptionPlaceholder: 'Describe the meaning, unit, or enum values',
+      schemaExampleQuestion: 'Natural-language Question',
+      schemaExampleSql: 'Verified Read-only SQL',
+      schemaExampleQuestionPlaceholder: 'For example, Find paid orders',
+      schemaExampleSqlPlaceholder: 'SELECT ...',
+      sensitiveColumnsPlaceholder: 'Add column metadata before selecting protected columns',
+      schemaColumnRequired: 'Each column requires a name, data type, and business description',
+      schemaColumnDuplicate: 'Column names must be unique, regardless of case',
+      schemaExampleRequired: 'Each query example requires a natural-language question and verified read-only SQL',
       namePlaceholder: 'Enter a data source name',
       codePlaceholder: 'Enter a unique code, e.g. member_db',
       dbTypePlaceholder: 'Select a database type',
@@ -2213,16 +2231,16 @@ const local: App.I18n.Schema = {
         step1: 'Enter a stable code, clear name, and business description for one coherent query domain.',
         step2: 'Choose one read-only table or masked view and avoid mixing unrelated business tables.',
         step3:
-          'Define allowed column names, database types, and meanings as a non-empty JSON array, including units, enums, time semantics, and join keys when needed.',
+          'Use the column metadata form to define allowed column names, database types, and meanings, including units, enums, time semantics, and join keys when needed.',
         step4:
-          'Add a few verified natural-language/read-only-SQL examples, restrict functions, and identify sensitive fields.',
+          'Use the query example form to add verified natural-language/read-only-SQL examples, restrict functions, and select sensitive fields from the column metadata.',
         step5:
           'Choose Public, Department, Post, or User visibility and select one or more subjects for restricted modes.',
         step6:
           'Save the Schema, then click Test Schema from its row. Use a realistic question available to the current account; verify ACL isolation separately from chat or a Skill with an unauthorized account.',
         rule1: 'The domain code is unique within the data source; the table/view must exist and be read-only.',
         rule2:
-          'Columns, few-shot examples, allowed functions, and sensitive columns must be valid JSON arrays. Empty column metadata does not form a column allowlist.',
+          'Column metadata, query examples, allowed functions, and sensitive columns are serialized as JSON arrays when saved. Empty column metadata does not form a column allowlist.',
         rule3:
           'Classification and ACL are one concept. Role is not an ACL subject; only Public, Department, Post, and User are supported.',
         rule4: 'Generated SQL still passes parsing, read-only, Schema-scope, row-limit, and timeout checks.',
@@ -2234,7 +2252,7 @@ const local: App.I18n.Schema = {
         descriptionRule2: 'The model reads this text when selecting a Schema and generating SQL. Incorrect semantics can produce wrong metrics but cannot bypass backend field or function checks.',
         columnsTitle: 'Column Metadata',
         columnsDescription:
-          'Enter a non-empty JSON array where each item contains a real column name, database type, and clear business description. Include units, enums, time semantics, aggregation rules, and join keys. When non-empty, unlisted columns are blocked and SELECT * is rejected; an empty array does not restrict columns.',
+          'Use the form to enter each real column name, database type, and clear business description. Include units, enums, time semantics, aggregation rules, and join keys. When non-empty, unlisted columns are blocked and SELECT * is rejected; an empty list does not restrict columns.',
         columnsExample:
           'Each item contains name, type, and description; for example, explain all allowed values of an order status column',
         columnsFields: {
@@ -2248,7 +2266,7 @@ const local: App.I18n.Schema = {
         columnsRule2: 'name determines allowed columns. type and description guide the model and cannot replace the physical column name.',
         fewShotTitle: 'Query Examples',
         fewShotDescription:
-          'Enter a JSON array of typical natural-language questions and manually verified read-only SQL. Examples explain business conventions and must not fix a specific user or date or reference hidden columns. A few high-quality examples are better than many duplicates.',
+          'Use the form to enter typical natural-language questions and manually verified read-only SQL. Examples explain business conventions and must not fix a specific user or date or reference hidden columns. A few high-quality examples are better than many duplicates.',
         fewShotExample:
           '“Count completed orders by month” maps to an aggregate using completion time and completed status',
         fewShotFields: {
@@ -2266,7 +2284,7 @@ const local: App.I18n.Schema = {
         functionsRule2: 'An empty array means no additional function allowlist, not deny all. For strict control, keep only functions required by the domain.',
         sensitiveTitle: 'Sensitive Columns',
         sensitiveDescription:
-          'Enter a JSON array of physical columns that NL2SQL must never reference. SQL containing one of these identifiers is blocked as defense in depth beyond the allowlist.',
+          'Select physical columns that NL2SQL must never reference from the column metadata. SQL containing one of these identifiers is blocked as defense in depth beyond the allowlist. Removing or renaming a column updates the sensitive selection.',
         sensitiveRule1: 'Enter physical database column names, not display labels, JSON paths, or masked aliases. Matching is case-insensitive.',
         sensitiveRule2: 'This does not replace masked views and least-privilege accounts. Remove highly sensitive fields from the view instead of relying only on application checks.',
         jsonRule: 'Enter valid JSON using double quotes, with no comments, trailing commas, or single quotes.',
