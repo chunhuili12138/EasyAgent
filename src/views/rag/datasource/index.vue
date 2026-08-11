@@ -83,6 +83,90 @@ const commonSqlFunctions = [
   { value: 'LOWER', zhName: '转为小写' },
   { value: 'UPPER', zhName: '转为大写' }
 ];
+const schemaDataTypeOptions = [
+  'TINYINT',
+  'SMALLINT',
+  'MEDIUMINT',
+  'INT',
+  'INTEGER',
+  'BIGINT',
+  'SERIAL',
+  'BIGSERIAL',
+  'DECIMAL',
+  'NUMERIC',
+  'NUMBER',
+  'FLOAT',
+  'REAL',
+  'DOUBLE',
+  'DOUBLE PRECISION',
+  'BINARY_FLOAT',
+  'BINARY_DOUBLE',
+  'MONEY',
+  'SMALLMONEY',
+  'YEAR',
+  'ENUM',
+  'SET',
+  'BIT',
+  'BOOLEAN',
+  'BOOL',
+  'CHAR',
+  'NCHAR',
+  'VARCHAR',
+  'VARCHAR2',
+  'NVARCHAR',
+  'NVARCHAR2',
+  'TEXT',
+  'TINYTEXT',
+  'MEDIUMTEXT',
+  'LONGTEXT',
+  'CLOB',
+  'NCLOB',
+  'BINARY',
+  'VARBINARY',
+  'RAW',
+  'LONG RAW',
+  'BLOB',
+  'TINYBLOB',
+  'MEDIUMBLOB',
+  'LONGBLOB',
+  'BYTEA',
+  'DATE',
+  'TIME',
+  'DATETIME',
+  'DATETIME2',
+  'SMALLDATETIME',
+  'DATETIMEOFFSET',
+  'TIMESTAMP',
+  'TIMESTAMPTZ',
+  'TIMESTAMP WITH TIME ZONE',
+  'TIMESTAMP WITHOUT TIME ZONE',
+  'INTERVAL',
+  'INTERVAL YEAR TO MONTH',
+  'INTERVAL DAY TO SECOND',
+  'JSON',
+  'JSONB',
+  'XML',
+  'UUID',
+  'UNIQUEIDENTIFIER',
+  'ROWID',
+  'UROWID',
+  'BFILE',
+  'IMAGE',
+  'NTEXT',
+  'SQL_VARIANT',
+  'HIERARCHYID',
+  'TSVECTOR',
+  'TSQUERY',
+  'CIDR',
+  'INET',
+  'MACADDR',
+  'ARRAY',
+  'GEOMETRY',
+  'GEOGRAPHY',
+  'POINT',
+  'LINESTRING',
+  'POLYGON'
+];
 const sqlFunctionOptions = computed(() =>
   commonSqlFunctions.map(item => ({
     value: item.value,
@@ -746,7 +830,7 @@ function previewRows(rows: any[]) {
         </ElTableColumn>
       </ElTable>
     </ElDrawer>
-    <ElDialog v-model="schemaDialogVisible" width="min(720px, 95vw)" class="config-editor-dialog" align-center>
+    <ElDialog v-model="schemaDialogVisible" width="min(1080px, 96vw)" class="config-editor-dialog" align-center>
       <template #header>
         <div class="flex items-center">
           <span class="text-base font-medium">
@@ -836,7 +920,17 @@ function previewRows(rows: any[]) {
                 </ElTableColumn>
                 <ElTableColumn :label="t('rag.datasource.schemaColumnType')" min-width="150">
                   <template #default="{ row }">
-                    <ElInput v-model="row.type" :placeholder="t('rag.datasource.schemaColumnTypePlaceholder')" />
+                    <ElSelect
+                      v-model="row.type"
+                      filterable
+                      allow-create
+                      default-first-option
+                      clearable
+                      class="w-full"
+                      :placeholder="t('rag.datasource.schemaColumnTypePlaceholder')"
+                    >
+                      <ElOption v-for="type in schemaDataTypeOptions" :key="type" :label="type" :value="type" />
+                    </ElSelect>
                   </template>
                 </ElTableColumn>
                 <ElTableColumn :label="t('rag.datasource.schemaColumnDescription')" min-width="220">
@@ -949,8 +1043,6 @@ function previewRows(rows: any[]) {
             v-model="schemaSensitiveColumns"
             multiple
             filterable
-            collapse-tags
-            collapse-tags-tooltip
             class="w-full"
             :disabled="!schemaColumnNameOptions.length"
             :placeholder="t('rag.datasource.sensitiveColumnsPlaceholder')"

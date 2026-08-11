@@ -27,7 +27,7 @@ Main menu: **Agent Management → Datasource Management**.
 
 1. Click **Schema Permissions** on the row to open the schema list of this datasource.
 2. Click **Add Schema**, fill in domain code, domain name and view name. Add column metadata and query examples through their structured forms; do not write JSON by hand.
-   - **Column metadata**: add one row for each allowed column and fill in name, data type and business description.
+   - **Column metadata**: add one row for each allowed column and fill in name, data type and business description. Data type is a searchable preset dropdown and also accepts a database-specific custom value.
    - **Query examples**: add one row for each verified natural-language question and read-only SQL pair.
    - **Sensitive columns**: select columns from the metadata dropdown. Renaming a column updates the selection; deleting or clearing a column removes it from the selection.
 3. Set the **visibility scope** (public / department / post / user) and select authorized objects.
