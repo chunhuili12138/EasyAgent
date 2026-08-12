@@ -18,7 +18,7 @@ Main menu: **Agent Management → Skill Management**.
 1. Click **Create** and choose the template closest to the business goal.
 2. Enter a name, unique code, capability description, and intent type.
 3. Configure trigger words, positive examples, exclusion examples, and the rule match threshold.
-4. Split the task by outputs and configure each step's ID, type, description, dependencies, and type-specific fields.
+4. Split the task by outputs and configure each step's ID, type, description, dependencies, and type-specific fields. For API steps, select the tool first, then choose request parameters from its parameter Schema instead of guessing names.
 5. Use **Trial Run Current Config** to inspect every step. YAML changes must be **Applied to Form** before they can be saved.
 6. Save and enable the Skill, then use **Match Test** for rule and semantic matching; the result shows the match source.
 7. Finally, use natural multi-turn business requests in Chat to validate routing, permissions, clarification, HITL, and result presentation.
@@ -72,6 +72,16 @@ If the embedding service is unavailable, the system falls back to bounded-candid
 | `transform` | Deterministic mapping, filtering, aggregation, and assembly | `inputs`/`input`, `operations` |
 | `foreach` | Run an API or built-in tool for each list item | `items`, `body`, `max_items` |
 
+### Step Summaries and Status
+
+The execution-step page shows read-only dependency chains for the current DAG. When it branches, it lists each path from a dependency-free step to a terminal step. Each step card also shows its type, dependency count, parameter count, loop/Transform state, and output-contract summary, along with these scannable statuses:
+
+- **Configuration complete**: the form passes local baseline checks. Save and runtime still enforce backend, permission, Schema, and HITL validation.
+- **Needs attention**: a data source, tool, Prompt, input, operation, or valid dependency is missing, or parameters are duplicated. Resolve the reason shown in the tag.
+- **Unknown parameter / Required parameter missing**: shown only when the selected API tool Schema is available. Select a declared parameter or complete the required ones.
+- **Advanced JSON**: the step or its output contract contains configuration that the form must not overwrite; keep using Advanced JSON for that part.
+- **Action risk / HITL**: the API or foreach body targets an action tool. Chat execution still requires human approval and the page cannot bypass it.
+
 ### Common Step Fields
 
 - `id`: starts with a letter, uses at most 64 letters, digits, or underscores, and is unique within the Skill.
@@ -79,9 +89,13 @@ If the embedding service is unavailable, the system falls back to bounded-candid
 - `depends_on`: upstream step IDs that must complete first. Dependencies must exist and cannot form a cycle; independent steps may run in parallel.
 - `output_schema`: optional JSON Schema for RAG, NL2SQL, API, built-in, or LLM. A mismatch stops downstream execution; an LLM with a Schema must return conforming JSON.
 
-#### Complete `output_schema` Configuration
+#### Configuring `output_schema`
 
 `output_schema` uses **JSON Schema Draft 7** to validate the primary step output itself. It does not add a `data`/`result` wrapper or rename fields.
+
+For ordinary cases, use the step form's **Form** mode: first enable output Schema validation, then select the root type, enter a title and description, add object fields in the table, and configure each field's type, description, and required state. Field advanced properties cover enums, formats, patterns, length limits, and numeric ranges. Array output can select an item type directly; scalar, empty-object, and array contracts can also be saved. The page generates the `output_schema` JSON on save, so `$schema`, `type`, `properties`, and `required` do not need to be written manually.
+
+Ordinary object fields and array items can be expanded recursively in the **Form**, up to five levels. Every object level can maintain child fields, required state, and undeclared-field handling; array items can also be objects or nested arrays. Switch to **Advanced JSON** for `$ref`, `oneOf`, `anyOf`, `allOf`, conditional rules, or structures deeper than five levels. Existing Schemas that cannot be represented losslessly remain in Advanced JSON and are never overwritten by the form. foreach keeps its `output_schema` inside its Advanced JSON configuration.
 
 | Field | Purpose |
 |---|---|
@@ -157,6 +171,10 @@ Select an enabled data source. `query_hint` should state entities, filters, time
 
 Select an enabled tool available to the current user. Enter literals directly; an upstream binding uses these fields:
 
+After a tool is selected, the page reads its parameter Schema and shows the parameter count, required count, types, descriptions, and enums. In normal mode, parameter names are selected from a dropdown; configured names are removed from the choices. Unknown names, duplicates, and missing required parameters are reported before save. Strings, numbers, integers, booleans, and enums use type-aware controls; complex arrays and objects can use Advanced JSON.
+
+Upstream bindings are grouped into source, value selection, and empty-value handling. The source step must also be declared in `depends_on`, and the path uses the restricted JSONPath syntax. If a tool has no readable parameter Schema, free-form parameters remain available, but they must be checked against the Tool page configuration and test result.
+
 | Field | Purpose and values |
 |---|---|
 | Parameter name | Must exactly match a property in the API Tool parameter Schema; case-sensitive |
@@ -199,6 +217,8 @@ In Chat, an `action` tool freezes the request and enters HITL. A standalone Skil
 
 ### Built-in
 
+The page provides common argument names and suitable inputs for each built-in: timezone, date operation, dates, amount, unit, arithmetic expression, and conversion units. Upstream variables such as `{{current_time}}` remain supported; advanced arguments outside the form metadata can still be entered as free-form rows. For `date_calculate`, `add` uses `base_date`, `amount`, and `unit`, while `difference` uses `start_date`, `end_date`, and `unit`.
+
 The normal form offers `current_datetime`, `date_calculate`, `calculator`, and `unit_convert`.
 
 Expert YAML also supports `web_search`. It requires Tavily backend configuration and accepts `query`, `topic`, `search_depth`, `max_results`, and `time_range`. It cannot run inside `foreach`; follow it with an LLM step to synthesize results while preserving source links.
@@ -214,6 +234,8 @@ Expert YAML also supports `web_search`. It requires Tavily backend configuration
 The current user request is also appended to the LLM context. Use Transform, not the LLM, for field mapping, money calculations, filtering, and aggregation.
 
 ### Transform
+
+Use **Form** mode for ordinary Transforms: maintain input bindings row by row with local name, upstream step, JSONPath, and cardinality; select each ordered operation and its common path, while the remaining operation fields stay in that row's JSON object. This still expresses `filter` `operator`/`value`, `project`/`object` `fields`, and `slice` `offset`/`limit`. Transform `output_schema` can also be configured in the same form, with object fields and array items expanded recursively up to five levels. Switch to **Advanced JSON** for complex aggregates, reference/composition/conditional Schemas, structures beyond that depth, migrated configurations, or whole-config editing. Both modes write the existing `inputs`, `operations`, and `output_schema` contract.
 
 Bind structured upstream data through `input` or `inputs`. `inputs` maps a local name to a binding object with the same fields used by API bindings, and every `source` must be in `depends_on`. `operations` run in array order with at most 20 entries and support `select`, `filter`, `project`, `rename`, `distinct`, `sort`, `slice`, `limit`, `aggregate`, `object`, `merge`, `default`, and `cast`.
 
@@ -264,6 +286,8 @@ Bind structured upstream data through `input` or `inputs`. `inputs` maps a local
 Paths are limited to `$`, fields, numeric indexes, and array wildcards. Runtime limits are 200 items, 1 MB JSON, and 32 levels of nesting. Scripts, network access, and file access are not supported.
 
 ### Foreach
+
+Use **Form** mode for an ordinary batch: choose one upstream list reference, optionally enter the array container path, set item limit, retries, and failure handling, then select an API or built-in body and maintain its arguments. Body values support `{{item}}`, `{{item.field}}`, and `{{index}}`. `item_path` may only select an array container such as `records`, `data.records`, `items`, or `rows`; it cannot project a field from each item. Use **Advanced JSON** for extra body configuration, complex bindings, or historical JSON. Both modes write the same `config` contract.
 
 `items` references an upstream array, with optional `item_path`; `body` supports only `api` or ordinary `builtin`.
 
