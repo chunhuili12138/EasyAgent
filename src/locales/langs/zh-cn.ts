@@ -1864,8 +1864,6 @@ const local = {
       startTest: '开始测试'
     },
     tool: {
-      pageGuide:
-        '保存后先关闭“真实请求”验证参数和请求渲染。开启后会立即访问外部接口并绕过聊天 HITL；自动化流程也不会弹出聊天确认。',
       emptyHint: '暂无 API 工具，请先按第三方接口契约新建并完成 dry-run',
       realActionConfirmTitle: '确认执行操作型接口',
       realActionConfirm:
@@ -1891,6 +1889,77 @@ const local = {
       requestHeaders: '请求头',
       requestTemplate: '请求模板',
       responseMapping: '响应映射',
+      builderForm: '表单',
+      builderJson: '高级 JSON',
+      addParameter: '添加参数',
+      addRequestField: '添加请求字段',
+      addResponseMapping: '添加映射',
+      paramSchemaBuilderHint: '按行定义模型可使用的逻辑参数，保存时自动生成 JSON Schema。',
+      requestHeadersHint: '静态请求头使用键值 JSON；动态请求头建议在参数 Schema 中设置位置为 Header。',
+      requestTemplateBuilderHint: '普通请求体由参数 Schema 自动组装；表单适合一级字段，嵌套对象、数组或复杂值请切换到高级 JSON。',
+      requestTemplateAuto: '自动组装',
+      requestTemplateAutoHint: '当前不使用请求模板，Body 参数会根据参数位置自动生成；嵌套对象和数组请使用高级 JSON。',
+      requestTemplateEmptyHint: '还没有请求字段，点击右上角添加字段。',
+      responseRuleBuilderHint: '配置 HTTP 状态和业务状态的判断；全部留空时默认使用 HTTP 2xx。',
+      responseMappingBuilderHint: '将响应路径转换为稳定的工具输出字段；路径相对于成功规则提取后的数据。',
+      parameterName: '参数名',
+      parameterNamePlaceholder: '例如 orderNo',
+      parameterDescription: '参数说明',
+      parameterDescriptionPlaceholder: '说明用途和取值含义',
+      parameterType: '类型',
+      parameterLocation: '位置',
+      parameterLocationAuto: '自动',
+      parameterHttpName: '外部名称',
+      parameterRequired: '必填',
+      parameterAdvanced: '高级属性',
+      parameterDefault: '默认值',
+      parameterDefaultPlaceholder: '输入 JSON 值，例如 1 或 "active"',
+      parameterEnum: '枚举值',
+      parameterEnumPlaceholder: '输入值后回车添加',
+      parameterMinimum: '最小值',
+      parameterMaximum: '最大值',
+      parameterEmptyHint: '还没有参数，点击右上角添加参数。',
+      requestField: '请求字段',
+      requestFieldPlaceholder: '例如 operation_reason',
+      requestValueSource: '值来源',
+      requestParameterSource: '引用参数',
+      requestFixedSource: '固定值',
+      requestValue: '值',
+      requestParameterPlaceholder: '选择或输入参数名',
+      requestFixedValuePlaceholder: '输入固定值',
+      requestFixedType: '值类型',
+      requestFixedString: '文本',
+      requestFixedNumber: '数字',
+      requestFixedBoolean: '布尔值',
+      responseHttpStatuses: '成功状态码',
+      responseHttpStatusesPlaceholder: '选择或输入状态码',
+      responseRuleEmptyHint: '状态路径、消息路径和数据路径均使用点号路径，例如 data.items。',
+      responseRuleEnabled: '启用规则',
+      responseBusinessCheck: '校验业务状态',
+      responseStatusPath: '状态字段路径',
+      responseStatusOperator: '判断方式',
+      responseExpectedValues: '期望值',
+      responseExpectedValuesPlaceholder: '输入值后回车添加',
+      responseMessagePath: '错误消息路径',
+      responseDataPath: '数据提取路径',
+      responseOperatorEquals: '等于',
+      responseOperatorIn: '属于',
+      responseOperatorExists: '存在',
+      responseOperatorNotEmpty: '非空',
+      responseMappingField: '平台字段名',
+      responseMappingFieldPlaceholder: '例如 recordId',
+      responseMappingPath: '响应路径',
+      responseMappingEmptyHint: '还没有输出映射，点击右上角添加映射。',
+      parameterNameRequired: '请填写参数名',
+      parameterNameDuplicate: '参数名不能重复',
+      pathParameterMissing: 'Path 参数 {name} 必须在 URL 中保留同名 {{参数}} 占位符',
+      requestTemplateIncomplete: '请完整填写请求字段和对应值',
+      requestTemplateDuplicate: '请求字段不能重复',
+      responseStatusInvalid: '成功状态码必须是 100 到 599 的整数',
+      responseRuleIncomplete: '业务状态判断需要填写状态路径和期望值',
+      responseMappingIncomplete: '请完整填写平台字段名和响应路径',
+      responseMappingDuplicate: '平台字段名不能重复',
+      saveHint: '建议先 Dry-run，确认请求渲染和响应映射后再启用真实请求。',
       visibility: '访问范围',
       department: '授权部门',
       post: '授权岗位',
@@ -2038,13 +2107,13 @@ const local = {
           viewName: '填写数据库中真实存在的只读表或脱敏视图名称；生成 SQL 只允许访问这里声明的对象。',
           description: '说明该领域的数据范围、统计口径、时间含义、枚举和限制，帮助模型正确选择 Schema 与生成 SQL。',
           columnsMeta:
-            '填写 JSON 数组，推荐每项包含 name、type、description。非空数组会启用强制字段白名单并禁止 SELECT *；空数组不限制可查询字段，生产配置不得留空。',
+            '通过表格逐行填写字段名、数据类型和业务说明。数据类型可从预置列表筛选选择，也可输入数据库特有类型和精度；每行三项均必填且字段名不能重复。保存时自动生成 JSON 数组。非空列表会启用强制字段白名单并禁止 SELECT *；生产配置不得留空。',
           fewShotExamples:
-            '填写 JSON 数组，每项提供典型自然语言问题和已人工验证的只读 SQL；示例也必须遵守本 Schema 的表、列与函数限制。',
+            '通过表格逐行填写典型自然语言问题和已人工验证的只读 SQL；问题和 SQL 均必填，示例也必须遵守本 Schema 的表、列与函数限制。保存时自动生成 JSON 数组。',
           allowedFunctions:
-            '填写允许的 SQL 函数名 JSON 数组，例如 ["COUNT","SUM"]；空数组表示不启用函数白名单限制，而不是禁止所有函数。',
+            '从常用函数多选，或输入数据库方言支持的函数名后按回车添加；空列表表示不启用函数白名单限制，而不是禁止所有函数。保存时自动生成 JSON 数组。',
           sensitiveColumns:
-            '填写禁止查询的字段名 JSON 数组，作为字段白名单之外的额外防线；优先在数据库侧使用脱敏视图。',
+            '从字段元数据的字段名下拉框多选禁止查询的字段，所有已选字段会直接显示；字段改名、删除或清空时选择自动同步。它是字段白名单之外的额外防线；优先在数据库侧使用脱敏视图。',
           visibility:
             '选择公开、授权部门、授权岗位或授权用户；运行时按当前用户实际组织关系过滤，不支持角色作为 ACL 主体。',
           aclSubjects: '当访问范围不是公开时，必须选择一个或多个对应部门、岗位或用户，否则保存会失败。',
@@ -2082,15 +2151,15 @@ const local = {
           identityHeaderName:
             '填写传递签名用户上下文的 HTTP 请求头名称，默认 X-Platform-User-Context；外部服务需按平台协议解析并验签。',
           paramSchema:
-            '填写 JSON Schema Draft 7 对象，定义逻辑参数的类型、业务含义、枚举、格式、范围和 required；每个属性可用 x-in/in 指定 query、path、body 或 header，用 x-http-name/httpName 映射实际 HTTP 名称，用 default 补齐未提供的参数。未指定位置时 GET/DELETE 默认 query，POST/PUT 默认 body；空的可选参数不会发送。',
+            '默认通过参数表格逐行配置逻辑参数名、说明、类型、HTTP 位置、外部名称和必填项；类型支持选择或输入，默认值、枚举和范围在行的高级属性中配置。保存时自动生成 JSON Schema；只有复杂或需要迁移的配置才切换到高级 JSON。',
           requestHeaders:
-            '填写请求头 JSON 对象，值中可使用参数占位符；可从下拉模板快速填入 Accept 或 Content-Type，禁止在这里明文保存认证密钥。',
+            '请求头仍使用 JSON 键值编辑器，可从预置模板快速填入 Accept 或 Content-Type，值中可使用参数占位符。动态请求头请在参数表格中将位置设为 Header；禁止在这里明文保存认证密钥。',
           requestTemplate:
-            '可选。通常由参数 Schema 的 x-in/in 与 x-http-name/httpName 自动组装 JSON 请求体；仅在外部接口需要嵌套结构、固定字段或特殊组合时填写模板。模板变量必须在参数 Schema 中定义；显式标记为 body 的 Schema 参数会合并进对象模板，但不会覆盖模板中已有同名字段。',
+            '默认自动组装普通请求体，无需填写模板。需要固定字段或特殊组合时，在表格中逐行选择参数引用或固定值；嵌套对象、数组和复杂 JSON 切换到高级 JSON。模板变量必须在参数 Schema 中定义。',
           responseRule:
-            '可选。为空时 HTTP 2xx 即成功并保留完整响应；配置后可限制成功状态码，用 equals、in、exists 或 not_empty 判断业务状态，并通过 dataPath 提取后续数据。',
+            '默认使用表单配置成功状态码、业务状态校验、状态路径、判断方式、期望值、消息路径和数据路径；全部留空时 HTTP 2xx 即成功并保留完整响应。复杂规则可切换到高级 JSON。',
           responseMapping:
-            '可选。填写“平台字段名: 外部响应路径”的 JSON 对象，路径从成功规则提取后的数据开始；任一路径不存在会按接口失败处理。'
+            '默认通过表格逐行填写平台输出字段名和响应路径，保存时自动生成映射 JSON。路径从成功规则提取后的数据开始；任一路径不存在会按接口失败处理。复杂映射可切换到高级 JSON。'
         },
         authDescription:
           '按所选类型填写结构化凭据：Bearer 填 token；Basic 填用户名和密码；API Key 填请求头名称和值；AK/SK 只填 accessKey 和 secretKey。AK/SK 的 HMAC-SHA256 签名规则及 X-Platform-Access-Key、X-Platform-Timestamp、X-Platform-Nonce、X-Platform-Signature 请求头由平台固定生成，不支持自定义算法。编辑同类型时全部留空会保留原密钥。',
@@ -2142,8 +2211,10 @@ const local = {
         note3: '“测试 Schema”会执行真实只读查询并写入 SQL 审计；它按当前登录用户 ACL 校验，不是仅生成 SQL 的预览。',
         step1: '为一个清晰的业务查询领域填写稳定编码、易懂名称和业务描述。',
         step2: '选择一个只读表或脱敏视图；一个 Schema 不要混入无关业务表。',
-        step3: '通过字段元数据表单配置允许字段的名称、数据库类型和业务含义，补充枚举值、单位、时间口径等必要语义。',
-        step4: '通过查询示例表单配置少量经过验证的自然语言与只读 SQL，并限制可用函数、从字段元数据中选择敏感字段。',
+        step3:
+          '通过字段元数据表单逐行配置允许字段的名称、数据库类型和业务含义。数据类型可筛选选择或输入数据库特有类型和精度；每行三项必填且字段名不能重复。',
+        step4:
+          '通过查询示例表单配置少量经过验证的自然语言与只读 SQL，并限制可用函数、从字段元数据中多选敏感字段；已选敏感字段会完整显示。',
         step5: '选择公开、授权部门、授权岗位或授权用户，并为后三种模式多选具体授权主体。',
         step6:
           '先保存 Schema，再从列表点击“测试 Schema”；使用当前账号有权访问的正常业务问题检查生成 SQL 和结果，ACL 隔离需再用无权限账号从会话或 Skill 验证。',
@@ -2158,12 +2229,12 @@ const local = {
         descriptionRule2: '模型会直接读取此内容选择 Schema 和生成 SQL，描述错误会造成口径错误，但不会绕过后端字段和函数校验。',
         columnsTitle: '字段元数据',
         columnsDescription:
-          '通过表单逐项填写真实字段名、数据库类型和清晰业务说明。说明应补充单位、枚举、时间含义、可否聚合及关联键；非空时未列出的字段会被拦截并禁止 SELECT *，空列表则不会限制字段。',
+          '通过表单逐项填写真实字段名、数据库类型和清晰业务说明。数据类型可从预置列表筛选选择，也可输入数据库特有类型和精度；三项均必填且字段名不能重复。说明应补充单位、枚举、时间含义、可否聚合及关联键；非空时未列出的字段会被拦截并禁止 SELECT *，空列表则不会限制字段。',
         columnsExample: '每项包含 name、type、description，例如订单状态字段说明允许值和业务含义',
         columnsFields: {
-          root: '根节点必须是 JSON 数组。每个数组项描述一个允许查询的真实数据库列。',
+          root: '页面按行维护允许查询的真实数据库列，保存时自动序列化为 JSON 数组。',
           name: '数据库中真实存在的列名，用于强制字段白名单；区分名称拼写，不能填写展示名或别名。',
-          type: '真实数据库类型及必要精度，帮助模型正确比较、聚合和格式化；后端目前不使用它做 JDBC 类型校验。',
+          type: '从预置类型中筛选选择，或输入真实数据库类型及必要精度，帮助模型正确比较、聚合和格式化；后端目前不使用它做 JDBC 类型校验。',
           description: '字段业务含义，应写明单位、枚举值、时间语义、是否可聚合及与其他字段的关系。',
           descriptionExample: '实付金额，单位元，可求和；退款订单仍保留原实付金额'
         },
@@ -2174,7 +2245,7 @@ const local = {
           '通过表单逐项填写典型自然语言问题和经人工验证的只读 SQL。示例用于解释业务口径，不应固定某个用户或日期，也不能引用未开放字段。少量高质量示例优于大量重复示例。',
         fewShotExample: '“按月统计已完成订单数”对应使用完成时间和已完成状态的聚合 SQL',
         fewShotFields: {
-          root: '根节点必须是 JSON 数组，每项是一组“用户问题 + 正确 SQL”。',
+          root: '页面按行维护“用户问题 + 正确 SQL”，保存时自动序列化为 JSON 数组。',
           question: '业务用户真实会提出的自然语言问题，应包含要表达的业务口径，不要只写 SQL 功能名称。',
           questionExample: '统计各订单状态的订单数',
           sql: '已经在目标数据库人工验证通过的单条只读 SELECT；只能使用当前 Schema 的视图、字段和允许函数。'
@@ -2189,9 +2260,10 @@ const local = {
         sensitiveTitle: '敏感字段',
         sensitiveDescription:
           '从字段元数据中选择禁止 NL2SQL 引用的真实列名。生成 SQL 只要出现这些标识符就会被拦截，用作字段白名单之外的额外保护；字段被删除或改名时，敏感字段会同步更新。',
-        sensitiveRule1: '填写数据库列名，不要填中文展示名、JSON 路径或脱敏后的别名；列名匹配不区分大小写。',
+        sensitiveRule1:
+          '从字段元数据下拉框选择真实数据库列名；不要选择中文展示名、JSON 路径或脱敏后的别名。列名匹配不区分大小写。',
         sensitiveRule2: '该配置不能替代数据库脱敏视图和最小权限。最敏感字段应从视图中移除，而不是只依赖应用层拦截。',
-        jsonRule: '必须是合法 JSON：使用双引号，不能包含注释、尾随逗号或单引号。',
+        jsonRule: '页面会在保存时自动生成合法 JSON；无需手写双引号、数组或对象结构。',
         visibilityTitle: '访问范围',
         visibilityDescription:
           '公开表示租户内所有有 NL2SQL 权限的用户可用；授权部门、岗位、用户会进一步限制可见主体，并支持多选。受限模式至少选择一个主体，否则无法保存；Schema 测试也按当前登录用户的实际归属校验。'
@@ -2211,13 +2283,13 @@ const local = {
         step1: '填写稳定名称、唯一编码和能力描述，明确调用条件、必需信息、返回内容及不能完成的事项。',
         step2: '填写接口基础 URL、HTTP 方法、超时与重试次数；仅 path 参数在 URL 中保留双花括号包裹的同名参数占位符，并根据实际业务影响选择“查询”或“操作”。',
         step3: '选择认证类型并在结构化表单填写凭据；仅在外部服务能够验证平台签名上下文时启用用户身份传递。',
-        step4: '使用 JSON Schema Draft 7 定义所有逻辑参数的类型、含义、必填项、格式和枚举，并用 x-in/in、x-http-name/httpName 和 default 声明 HTTP 位置、外部名称与默认值。',
-        step5: '按需配置固定请求头；只有外部接口需要嵌套对象、固定字段或特殊组合时才填写 JSON 请求体模板，普通 query、body 和 header 参数由执行器按 Schema 自动构造。',
-        step6: '先配置成功响应规则判断 HTTP 与业务成功、提取 dataPath，再配置响应映射输出稳定且易读的字段。',
+        step4: '在参数 Schema 表格中逐行配置参数名、说明、类型、HTTP 位置、外部名称和必填项；类型可选择或输入，默认值、枚举和范围在高级属性中配置，保存时自动生成 JSON Schema。复杂或需要迁移的配置再切换到高级 JSON。',
+        step5: '按需配置固定请求头；请求模板默认自动组装。需要固定字段或特殊组合时，在表格中选择参数引用或固定值；嵌套对象、数组和复杂 JSON 使用高级 JSON。',
+        step6: '在成功响应规则表单中配置状态码、业务状态判断、数据路径和消息路径；全部留空时默认 HTTP 2xx。再在响应映射表格中逐行配置平台字段名和响应路径；设置 dataPath 后路径从提取节点开始。',
         step7:
           '设置公开或单个授权部门、岗位、用户范围，保存后先 Dry-run，再通过真实会话验证选择、追问、HITL 和结果展示。',
         rule1: '工具编码在租户内唯一且保持稳定；描述不能声称接口不具备的查询或操作能力。',
-        rule2: '参数 Schema、请求头、请求模板、成功规则和响应映射必须是合法 JSON；认证凭据通过结构化表单维护。',
+        rule2: '参数 Schema、请求模板、成功规则和响应映射默认由表单维护并在保存时自动生成合法 JSON；请求头仍使用 JSON 编辑器。复杂配置可使用高级 JSON，认证凭据通过结构化表单维护。',
         rule3: '查询工具不得改变外部状态；无法确定是否有副作用时按“操作”处理。',
         rule4: '仅幂等方法执行自动重试；POST 即使配置重试次数也不会重试。',
         effect1: '启用后，Agent 仅向满足租户与 ACL 的用户注入该工具定义，并可根据描述和参数 Schema 规划调用。',
@@ -2231,15 +2303,15 @@ const local = {
         authExample: 'API Key：X-API-Key 与密钥；AK/SK：accessKey 与 secretKey（签名请求头由平台生成）',
         schemaTitle: '参数 Schema',
         schemaDescription:
-          '使用 JSON Schema Draft 7 描述 Agent 可提交的逻辑参数。每个字段应包含 type 和面向业务的 description；按需补充 enum、format、范围并在 required 中列出必填项。x-in/in 可取 query、path、body、header；x-http-name/httpName 指定外部参数名；default 只补齐未提供的值。未指定位置时 GET/DELETE 默认 query，POST/PUT 默认 body；null 或空字符串的可选值不会发送。path 参数必须在 URL 中保留双花括号包裹的同名参数占位符。',
+          '默认使用参数表格逐行维护逻辑参数名、说明、类型、位置、外部名称和必填项，保存时自动生成 JSON Schema。类型可选择或输入；默认值、枚举和范围在每行高级属性中配置。自动位置遵循 GET/DELETE 为 query、POST/PUT 为 body；path 参数必须在 URL 中保留同名双花括号占位符。仅复杂或迁移配置使用高级 JSON。',
         schemaExample: '完整示例同时展示 path、query、body、header、参数名映射、枚举、范围、默认值和 required',
         requestTitle: '请求模板',
         requestDescription:
-          '请求模板是可选的：参数 Schema 已能把参数自动放入 query、path、body 或 header，并可用 x-http-name/httpName 完成字段映射。只有外部接口要求嵌套 JSON、固定字段或特殊组合时才填写模板；变量名必须与 Schema 一致。显式 body 参数会合并到对象模板且不覆盖模板已有字段；占位符独占字符串值时保留原始类型，嵌在文本中时转为字符串。旧的双花括号 param URL 模板仍兼容，已消费参数不会重复追加。',
+          '请求模板默认自动组装普通请求体，无需手写 JSON。需要固定字段或特殊组合时，在表格中逐行选择参数引用或固定值；嵌套对象、数组和复杂 JSON 使用高级 JSON。模板变量必须来自参数 Schema；参数 Schema 中显式标记为 body 的字段会参与对象模板组装。',
         requestExample: '基础 URL 使用 /orders/ 后跟双花括号 orderNo；status 和 page 自动进入 query，requestId 进入 header，reason 以 operation_reason 进入 body',
         responseTitle: '成功规则与响应映射',
         responseDescription:
-          '成功规则先检查 HTTP 状态和业务状态，并可通过 dataPath 提取数据；响应映射随后把当前节点路径映射为稳定业务字段。保留下游需要的 ID，同时输出名称、状态等可读字段；任一路径不存在会判定失败。',
+          '成功规则默认通过表单配置 HTTP 状态、业务状态判断、数据路径和消息路径；全部留空时 HTTP 2xx 即成功。响应映射通过表格逐行维护平台字段名和路径，路径相对于 dataPath 提取后的节点；任一路径不存在会判定失败。复杂配置可切换到高级 JSON。',
         responseExample:
           'dataPath 为 data 时，将 id 映射为 recordId、name 映射为 recordName、status_name 映射为 statusName'
       }

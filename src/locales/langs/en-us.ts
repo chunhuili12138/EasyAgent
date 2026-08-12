@@ -1920,8 +1920,6 @@ const local: App.I18n.Schema = {
       startTest: 'Start Test'
     },
     tool: {
-      pageGuide:
-        'After saving, keep Real Request off to validate parameters and request rendering first. Turning it on calls the external API immediately and bypasses chat HITL; automation workflows also do not show chat confirmation.',
       emptyHint: 'No API tools yet. Create one from the external contract and complete a dry-run first.',
       realActionConfirmTitle: 'Confirm Action API Call',
       realActionConfirm:
@@ -1947,6 +1945,77 @@ const local: App.I18n.Schema = {
       requestHeaders: 'Request Headers',
       requestTemplate: 'Request Template',
       responseMapping: 'Response Mapping',
+      builderForm: 'Form',
+      builderJson: 'Advanced JSON',
+      addParameter: 'Add Parameter',
+      addRequestField: 'Add Request Field',
+      addResponseMapping: 'Add Mapping',
+      paramSchemaBuilderHint: 'Define model-facing logical parameters row by row; the page generates JSON Schema when saving.',
+      requestHeadersHint: 'Use JSON key-value pairs for static headers; define dynamic headers as Header parameters in the Schema.',
+      requestTemplateBuilderHint: 'The body is assembled from the parameter Schema by default; the form covers top-level fields, while nested objects, arrays, and complex values require Advanced JSON.',
+      requestTemplateAuto: 'Auto Build',
+      requestTemplateAutoHint: 'No request template is used. Body parameters are assembled from their configured locations; use Advanced JSON for nested objects and arrays.',
+      requestTemplateEmptyHint: 'No request fields yet. Add one from the upper-right corner.',
+      responseRuleBuilderHint: 'Configure HTTP and business-status checks. Leaving every field empty keeps the default HTTP 2xx behavior.',
+      responseMappingBuilderHint: 'Map response paths to stable tool output fields. Paths are relative to the extracted success data.',
+      parameterName: 'Parameter Name',
+      parameterNamePlaceholder: 'For example, orderNo',
+      parameterDescription: 'Description',
+      parameterDescriptionPlaceholder: 'Explain purpose and value meaning',
+      parameterType: 'Type',
+      parameterLocation: 'Location',
+      parameterLocationAuto: 'Auto',
+      parameterHttpName: 'External Name',
+      parameterRequired: 'Required',
+      parameterAdvanced: 'Advanced Properties',
+      parameterDefault: 'Default Value',
+      parameterDefaultPlaceholder: 'Enter a JSON value, e.g. 1 or "active"',
+      parameterEnum: 'Enum Values',
+      parameterEnumPlaceholder: 'Type a value and press Enter',
+      parameterMinimum: 'Minimum',
+      parameterMaximum: 'Maximum',
+      parameterEmptyHint: 'No parameters yet. Add one from the upper-right corner.',
+      requestField: 'Request Field',
+      requestFieldPlaceholder: 'For example, operation_reason',
+      requestValueSource: 'Value Source',
+      requestParameterSource: 'Parameter',
+      requestFixedSource: 'Fixed Value',
+      requestValue: 'Value',
+      requestParameterPlaceholder: 'Select or type a parameter name',
+      requestFixedValuePlaceholder: 'Enter a fixed value',
+      requestFixedType: 'Value Type',
+      requestFixedString: 'Text',
+      requestFixedNumber: 'Number',
+      requestFixedBoolean: 'Boolean',
+      responseHttpStatuses: 'Success Statuses',
+      responseHttpStatusesPlaceholder: 'Select or type a status code',
+      responseRuleEmptyHint: 'Status, message, and data paths use dot notation, for example data.items.',
+      responseRuleEnabled: 'Enable Rule',
+      responseBusinessCheck: 'Check Business Status',
+      responseStatusPath: 'Status Path',
+      responseStatusOperator: 'Operator',
+      responseExpectedValues: 'Expected Values',
+      responseExpectedValuesPlaceholder: 'Type a value and press Enter',
+      responseMessagePath: 'Message Path',
+      responseDataPath: 'Data Path',
+      responseOperatorEquals: 'Equals',
+      responseOperatorIn: 'In List',
+      responseOperatorExists: 'Exists',
+      responseOperatorNotEmpty: 'Not Empty',
+      responseMappingField: 'Output Field',
+      responseMappingFieldPlaceholder: 'For example, recordId',
+      responseMappingPath: 'Response Path',
+      responseMappingEmptyHint: 'No output mappings yet. Add one from the upper-right corner.',
+      parameterNameRequired: 'Enter a parameter name',
+      parameterNameDuplicate: 'Parameter names must be unique',
+      pathParameterMissing: 'Path parameter {name} must have a matching {{parameter}} placeholder in the URL',
+      requestTemplateIncomplete: 'Complete every request field and value',
+      requestTemplateDuplicate: 'Request fields must be unique',
+      responseStatusInvalid: 'Success statuses must be integers from 100 to 599',
+      responseRuleIncomplete: 'Business-status checks require a status path and expected value',
+      responseMappingIncomplete: 'Complete every output field and response path',
+      responseMappingDuplicate: 'Output field names must be unique',
+      saveHint: 'Run a dry-run first to verify request rendering and response mapping before enabling real requests.',
       visibility: 'Visibility',
       department: 'Department',
       post: 'Post',
@@ -2106,13 +2175,13 @@ const local: App.I18n.Schema = {
           description:
             'Explain data scope, metric definitions, time semantics, enums, and limitations so the model can select and query the Schema correctly.',
           columnsMeta:
-            'Enter a JSON array, preferably objects with name, type, and description. A non-empty array enforces the column allowlist and rejects SELECT *. An empty array does not restrict queryable columns and must not be used in production.',
+            'Use the table to enter a column name, data type, and business description on each row. Filter the preset data types or type a database-specific type and precision; all three values are required and column names must be unique. The page serializes them as JSON when saving. A non-empty list enforces the column allowlist and rejects SELECT *; it must not be empty in production.',
           fewShotExamples:
-            'Enter a JSON array of typical questions and manually verified read-only SQL. Every example must obey this Schema table, column, and function policy.',
+            'Use the table to enter a typical question and manually verified read-only SQL on each row. Both values are required, and every example must obey this Schema table, column, and function policy. The page serializes them as JSON when saving.',
           allowedFunctions:
-            'Enter allowed SQL function names, for example ["COUNT","SUM"]. An empty array means no function allowlist restriction, not deny all functions.',
+            'Select common SQL functions or type a database-specific function name and press Enter. An empty list means no function allowlist restriction, not deny all functions. The page serializes the selection as JSON when saving.',
           sensitiveColumns:
-            'Enter a JSON array of forbidden column names as defense in depth. Prefer masked database views for primary protection.',
+            'Select forbidden columns from the column metadata dropdown. All selected columns remain visible, and the selection follows metadata renames or is removed when a name is deleted or cleared. This is defense in depth; prefer masked database views for primary protection.',
           visibility:
             'Choose Public, Department, Post, or User. Runtime uses the user current organization relationship; role is not an ACL subject.',
           aclSubjects:
@@ -2158,15 +2227,15 @@ const local: App.I18n.Schema = {
           identityHeaderName:
             'Enter the HTTP header carrying the signed user context, default X-Platform-User-Context. The provider must implement the platform verification protocol.',
           paramSchema:
-            'Enter a JSON Schema Draft 7 object defining logical parameter types, business meanings, enums, formats, ranges, and required fields. Each property may use x-in/in for query, path, body, or header; x-http-name/httpName for the external name; and default for a missing value. Without x-in, GET/DELETE use query and POST/PUT use body. Blank optional values are omitted.',
+            'Use the parameter table by default to define the logical name, description, type, HTTP location, external name, and required state row by row. Types can be selected or typed; configure defaults, enums, and bounds in each row\'s advanced properties. The page generates JSON Schema when saving; use Advanced JSON only for complex or migrated configurations.',
           requestHeaders:
-            'Enter a JSON header object whose values may use parameter placeholders. Insert common Accept or Content-Type headers from presets; never store authentication secrets here.',
+            'Use the JSON key-value editor for request headers and insert common Accept or Content-Type presets. Values may use parameter placeholders. Configure dynamic headers as Header parameters in the parameter table; never store authentication secrets here.',
           requestTemplate:
-            'Optional. Normally the executor builds the JSON body from x-in/in and x-http-name/httpName in the parameter Schema. Use a template only for nested structures, fixed fields, or special composition. Variables must exist in the Schema; explicit body parameters are merged into an object template without overwriting fields already present in it.',
+            'The ordinary request body is built automatically by default. For fixed fields or special composition, add rows and choose a parameter reference or fixed value; use Advanced JSON for nested objects, arrays, and complex JSON. Template variables must exist in the parameter Schema.',
           responseRule:
-            'Optional. Empty means any HTTP 2xx succeeds with the full response. Otherwise restrict success statuses, evaluate business status with equals, in, exists, or not_empty, and optionally extract dataPath.',
+            'Use the form to configure success statuses, business-status validation, status/operator/expected values, message path, and data path. Leaving every field empty means any HTTP 2xx succeeds with the full response. Switch to Advanced JSON for complex rules.',
           responseMapping:
-            'Optional JSON mapping from platform field names to paths after success-rule extraction. A missing path fails the call instead of returning null.'
+            'Use the table to add one platform output field and response path per row; the page generates the mapping JSON when saving. Paths start after success-rule extraction, and a missing path fails the call. Use Advanced JSON for complex mappings.'
         },
         authDescription:
           'Use the structured fields for the selected type: token for Bearer; username and password for Basic; header and value for API Key; accessKey and secretKey for AK/SK. The platform fixes HMAC-SHA256 signing and generates X-Platform-Access-Key, X-Platform-Timestamp, X-Platform-Nonce, and X-Platform-Signature headers; the algorithm is not configurable. Leaving every field blank while editing the same type retains the secret.',
@@ -2231,9 +2300,9 @@ const local: App.I18n.Schema = {
         step1: 'Enter a stable code, clear name, and business description for one coherent query domain.',
         step2: 'Choose one read-only table or masked view and avoid mixing unrelated business tables.',
         step3:
-          'Use the column metadata form to define allowed column names, database types, and meanings, including units, enums, time semantics, and join keys when needed.',
+          'Use the column metadata form to define allowed column names, database types, and meanings. Filter preset data types or type a database-specific type and precision; all three values are required and column names must be unique.',
         step4:
-          'Use the query example form to add verified natural-language/read-only-SQL examples, restrict functions, and select sensitive fields from the column metadata.',
+          'Use the query example form to add verified natural-language/read-only-SQL examples, restrict functions, and select sensitive fields from the column metadata. All selected sensitive fields remain visible.',
         step5:
           'Choose Public, Department, Post, or User visibility and select one or more subjects for restricted modes.',
         step6:
@@ -2252,13 +2321,13 @@ const local: App.I18n.Schema = {
         descriptionRule2: 'The model reads this text when selecting a Schema and generating SQL. Incorrect semantics can produce wrong metrics but cannot bypass backend field or function checks.',
         columnsTitle: 'Column Metadata',
         columnsDescription:
-          'Use the form to enter each real column name, database type, and clear business description. Include units, enums, time semantics, aggregation rules, and join keys. When non-empty, unlisted columns are blocked and SELECT * is rejected; an empty list does not restrict columns.',
+          'Use the form to enter each real column name, database type, and clear business description. Filter preset data types or type a database-specific type and precision; all three values are required and column names must be unique. Include units, enums, time semantics, aggregation rules, and join keys. When non-empty, unlisted columns are blocked and SELECT * is rejected; an empty list does not restrict columns.',
         columnsExample:
           'Each item contains name, type, and description; for example, explain all allowed values of an order status column',
         columnsFields: {
-          root: 'The root must be a JSON array. Each item describes one real database column that queries may use.',
+          root: 'The page maintains one allowed real database column per row and serializes them as a JSON array when saving.',
           name: 'Real database column name used by the enforced allowlist. Enter the physical name, not a display label or SQL alias.',
-          type: 'Actual database type and precision, helping the model compare, aggregate, and format values. The backend does not currently use it for JDBC type validation.',
+          type: 'Filter preset data types or enter the actual database type and precision, helping the model compare, aggregate, and format values. The backend does not currently use it for JDBC type validation.',
           description: 'Business meaning including units, enum values, time semantics, aggregation rules, and relationships to other fields.',
           descriptionExample: 'Paid amount in yuan; may be summed; refunded orders retain the original paid amount'
         },
@@ -2270,7 +2339,7 @@ const local: App.I18n.Schema = {
         fewShotExample:
           '“Count completed orders by month” maps to an aggregate using completion time and completed status',
         fewShotFields: {
-          root: 'The root must be a JSON array. Each item pairs one user question with its correct SQL.',
+          root: 'The page maintains one user-question and correct-SQL pair per row and serializes them as a JSON array when saving.',
           question: 'A realistic business question that expresses the intended convention, not only an SQL feature name.',
           questionExample: 'Count orders by order status',
           sql: 'One manually verified read-only SELECT for the target database using only this Schema view, columns, and allowed functions.'
@@ -2284,10 +2353,12 @@ const local: App.I18n.Schema = {
         functionsRule2: 'An empty array means no additional function allowlist, not deny all. For strict control, keep only functions required by the domain.',
         sensitiveTitle: 'Sensitive Columns',
         sensitiveDescription:
-          'Select physical columns that NL2SQL must never reference from the column metadata. SQL containing one of these identifiers is blocked as defense in depth beyond the allowlist. Removing or renaming a column updates the sensitive selection.',
-        sensitiveRule1: 'Enter physical database column names, not display labels, JSON paths, or masked aliases. Matching is case-insensitive.',
+          'Select physical columns that NL2SQL must never reference from the column metadata dropdown. Every selected column remains visible. SQL containing one of these identifiers is blocked as defense in depth beyond the allowlist. Removing or renaming a column updates the sensitive selection.',
+        sensitiveRule1:
+          'Select physical database column names from the column metadata dropdown, not display labels, JSON paths, or masked aliases. Matching is case-insensitive.',
         sensitiveRule2: 'This does not replace masked views and least-privilege accounts. Remove highly sensitive fields from the view instead of relying only on application checks.',
-        jsonRule: 'Enter valid JSON using double quotes, with no comments, trailing commas, or single quotes.',
+        jsonRule:
+          'The page generates valid JSON automatically when saving; do not enter quotes, arrays, or object syntax manually.',
         visibilityTitle: 'Visibility',
         visibilityDescription:
           'Public is available to tenant users with NL2SQL permission. Department, Post, and User apply additional subject restrictions and allow multiple selections. Restricted modes require at least one subject, and Schema tests also check the current signed-in user membership.'
@@ -2311,17 +2382,17 @@ const local: App.I18n.Schema = {
         step3:
           'Choose authentication and use the structured credential fields. Propagate identity only when the external service verifies the signed context.',
         step4:
-          'Define logical input fields, types, meanings, required fields, formats, and enums in JSON Schema Draft 7. Use x-in/in, x-http-name/httpName, and default to declare HTTP placement, external names, and defaults.',
+          'Use the parameter Schema table to define the name, description, type, HTTP location, external name, and required state row by row. Types can be selected or typed; configure defaults, enums, and bounds in advanced properties, and let the page generate JSON Schema when saving. Use Advanced JSON only for complex or migrated configurations.',
         step5:
-          'Configure fixed headers as needed. Add a JSON body template only for nested objects, fixed fields, or special composition; ordinary query, body, and header values are constructed automatically from the Schema.',
+          'Configure fixed headers as needed. Request bodies are auto-built by default; for fixed fields or special composition, use the request-field table with parameter references or fixed values. Use Advanced JSON for nested objects, arrays, and complex JSON.',
         step6:
-          'Configure the success rule first to evaluate HTTP/business success and extract dataPath, then map the extracted response to stable readable fields.',
+          'Use the success-rule form to configure statuses, business checks, data/message paths, and expected values; empty fields keep the default HTTP 2xx rule. Then add platform output fields and response paths in the mapping table; paths start after dataPath extraction.',
         step7:
           'Set Public or one authorized Department, Post, or User, save, run dry-run, and verify selection, clarification, HITL, and rendering in real chat.',
         rule1:
           'Tool codes are tenant-unique and stable. Descriptions must not claim unsupported query or action capabilities.',
         rule2:
-          'Parameter Schema, headers, request template, success rule, and response mapping must be valid JSON; credentials use the structured form.',
+          'Parameter Schema, request template, success rule, and response mapping are maintained by forms and serialized as valid JSON when saving; request headers still use the JSON editor. Advanced JSON remains available for complex configurations, and credentials use structured fields.',
         rule3: 'Query tools must have no side effects. If side effects are uncertain, classify the endpoint as Action.',
         rule4: 'Only idempotent methods are retried. POST does not retry even when retry count is greater than zero.',
         effect1:
@@ -2338,15 +2409,15 @@ const local: App.I18n.Schema = {
           'API Key: X-API-Key and key value; AK/SK: accessKey and secretKey (signature headers are generated)',
         schemaTitle: 'Parameter Schema',
         schemaDescription:
-          'Use JSON Schema Draft 7 for every logical parameter the Agent may submit. Give each field a type and business description; add enum, format, bounds, and required as needed. x-in/in accepts query, path, body, or header; x-http-name/httpName sets the external name; default supplies only missing values. Without x-in, GET/DELETE default to query and POST/PUT to body. Optional null or blank-string values are omitted. A path parameter must have its same logical name wrapped in double braces in the URL.',
+          'Use the parameter table by default to maintain the logical name, description, type, location, external name, and required state row by row; the page generates JSON Schema when saving. Types can be selected or typed, while defaults, enums, and bounds are configured in each row\'s advanced properties. Auto location follows GET/DELETE query and POST/PUT body defaults; a path parameter must have a matching double-brace placeholder in the URL. Use Advanced JSON only for complex or migrated configurations.',
         schemaExample: 'The full example covers path, query, body, header, external-name mapping, enums, bounds, defaults, and required fields',
         requestTitle: 'Request Template',
         requestDescription:
-          'The request template is optional because the parameter Schema can route values to query, path, body, or header and rename them with x-http-name/httpName. Use a template only for nested JSON, fixed fields, or special composition; variables must match the Schema. Explicit body parameters merge into an object template without replacing existing fields. A whole-value placeholder preserves its type, while an embedded one becomes text. Legacy double-brace param URL templates remain supported without duplicate appends.',
+          'The request body is auto-built by default, so ordinary parameters do not require hand-written JSON. For fixed fields or special composition, add request-field rows and choose a parameter reference or fixed value; use Advanced JSON for nested objects, arrays, and complex JSON. Template variables must exist in the parameter Schema, and explicit body parameters participate in object-template assembly.',
         requestExample: 'Use /orders/ followed by orderNo in double braces; status and page become query values, requestId becomes a header, and reason becomes operation_reason in the body',
         responseTitle: 'Success Rule and Response Mapping',
         responseDescription:
-          'The success rule checks HTTP and business status and may extract dataPath. Response mapping then maps paths from the extracted node to stable business fields. Preserve downstream IDs but also return readable names/statuses; any missing path fails the call.',
+          'Use the success-rule form for HTTP statuses, business-status checks, data/message paths, and expected values; empty fields keep the default HTTP 2xx behavior. Add platform output fields and paths in the response-mapping table. Mapping paths are relative to the dataPath result, and any missing path fails the call. Use Advanced JSON for complex configurations.',
         responseExample: 'With dataPath=data, map id to recordId, name to recordName, and status_name to statusName'
       }
     },

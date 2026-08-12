@@ -47,25 +47,26 @@ const visible = ref(false);
 </script>
 
 <template>
-  <ElTooltip :content="title" placement="top">
-    <ElButton
-      text
-      circle
-      :class="field ? 'config-help__field' : 'config-help__panel'"
-      :aria-label="title"
-      @click.stop="visible = true"
+  <span class="config-help">
+    <ElTooltip :content="title" placement="top">
+      <ElButton
+        text
+        circle
+        :class="field ? 'config-help__field' : 'config-help__panel'"
+        :aria-label="title"
+        @click.stop="visible = true"
+      >
+        <SvgIcon icon="mdi:help-circle-outline" />
+      </ElButton>
+    </ElTooltip>
+    <ElDrawer
+      v-model="visible"
+      :title="title"
+      :size="field ? 'min(480px, 94vw)' : 'min(560px, 94vw)'"
+      append-to-body
+      destroy-on-close
     >
-      <SvgIcon icon="mdi:help-circle-outline" />
-    </ElButton>
-  </ElTooltip>
-  <ElDrawer
-    v-model="visible"
-    :title="title"
-    :size="field ? 'min(480px, 94vw)' : 'min(560px, 94vw)'"
-    append-to-body
-    destroy-on-close
-  >
-    <div class="config-help__content text-sm leading-6 space-y-6">
+      <div class="config-help__content text-sm leading-6 space-y-6">
       <section>
         <div class="mb-2 text-gray-800 font-medium">
           {{ $t('rag.help.description') }}
@@ -169,8 +170,9 @@ const visible = ref(false);
           <li v-for="note in notes" :key="note">{{ note }}</li>
         </ul>
       </section>
-    </div>
-  </ElDrawer>
+      </div>
+    </ElDrawer>
+  </span>
 </template>
 
 <style scoped>
@@ -180,6 +182,11 @@ const visible = ref(false);
   margin-left: 3px;
   color: var(--el-color-info);
   vertical-align: middle;
+}
+
+.config-help {
+  display: inline-flex;
+  align-items: center;
 }
 
 .config-help__panel {

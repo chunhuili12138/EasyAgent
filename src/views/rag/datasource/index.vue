@@ -690,7 +690,7 @@ function previewRows(rows: any[]) {
             </ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn :label="t('rag.common.action')" width="240" fixed="right" align="center">
+        <ElTableColumn :label="t('rag.common.action')" width="340" fixed="right" align="center">
           <template #default="{ row }">
             <ElButton size="small" text @click="testConnection(row)">{{ t('rag.datasource.testConn') }}</ElButton>
             <ElButton size="small" text type="primary" @click="manageSchemas(row)">

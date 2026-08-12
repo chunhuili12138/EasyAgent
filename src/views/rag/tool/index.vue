@@ -94,6 +94,432 @@ const toolHelpExamples = {
     '{"httpSuccessStatuses":[200,201],"successPath":"code","successOperator":"in","successValues":[0,"0","SUCCESS"],"messagePath":"message","dataPath":"data"}',
   response: '{"recordId":"id","recordName":"name","statusName":"status_name"}'
 };
+type BuilderMode = 'form' | 'json';
+type RequestTemplateMode = BuilderMode | 'auto';
+
+let builderItemKey = 0;
+const paramSchemaMode = ref<BuilderMode>('form');
+const requestTemplateMode = ref<RequestTemplateMode>('auto');
+const responseRuleMode = ref<BuilderMode>('form');
+const responseMappingMode = ref<BuilderMode>('form');
+const paramRows = ref<any[]>([]);
+const requestTemplateRows = ref<any[]>([]);
+const responseMappingRows = ref<any[]>([]);
+const paramSchemaRootExtra = ref<Record<string, any>>({ additionalProperties: false });
+const responseRuleExtra = ref<Record<string, any>>({});
+const responseRuleForm = ref({
+  httpSuccessStatuses: [] as string[],
+  checkBusinessStatus: false,
+  successPath: '',
+  successOperator: 'equals',
+  successValues: [] as string[],
+  messagePath: '',
+  dataPath: ''
+});
+const parameterTypeOptions = ['string', 'integer', 'number', 'boolean', 'array', 'object'];
+const parameterLocationOptions = computed(() => [
+  { value: 'auto', label: t('rag.tool.parameterLocationAuto') },
+  { value: 'query', label: 'Query' },
+  { value: 'path', label: 'Path' },
+  { value: 'body', label: 'Body' },
+  { value: 'header', label: 'Header' }
+]);
+const responseOperatorOptions = computed(() => [
+  { value: 'equals', label: t('rag.tool.responseOperatorEquals') },
+  { value: 'in', label: t('rag.tool.responseOperatorIn') },
+  { value: 'exists', label: t('rag.tool.responseOperatorExists') },
+  { value: 'not_empty', label: t('rag.tool.responseOperatorNotEmpty') }
+]);
+const requestFixedTypeOptions = computed(() => [
+  { value: 'string', label: t('rag.tool.requestFixedString') },
+  { value: 'number', label: t('rag.tool.requestFixedNumber') },
+  { value: 'boolean', label: t('rag.tool.requestFixedBoolean') },
+  { value: 'json', label: 'JSON' }
+]);
+
+function nextBuilderItemKey() {
+  builderItemKey += 1;
+  return builderItemKey;
+}
+
+function createParamRow(value?: Partial<any>) {
+  return {
+    key: nextBuilderItemKey(),
+    name: '',
+    description: '',
+    type: 'string',
+    location: 'auto',
+    httpName: '',
+    required: false,
+    enumValues: [] as string[],
+    hasDefault: false,
+    defaultValue: '',
+    minimum: undefined as number | undefined,
+    maximum: undefined as number | undefined,
+    extra: {} as Record<string, any>,
+    ...value
+  };
+}
+
+function createRequestTemplateRow(value?: Partial<any>) {
+  return {
+    key: nextBuilderItemKey(),
+    name: '',
+    source: 'parameter',
+    parameter: '',
+    fixedValue: '',
+    fixedType: 'string',
+    ...value
+  };
+}
+
+function createResponseMappingRow(value?: Partial<any>) {
+  return {
+    key: nextBuilderItemKey(),
+    name: '',
+    path: '',
+    ...value
+  };
+}
+
+function parseJsonObject(value?: string) {
+  if (!value?.trim()) return undefined;
+  const parsed = JSON.parse(value);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Expected JSON object');
+  return parsed as Record<string, any>;
+}
+
+function parseEditorValue(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
+function omitKeys<T extends Record<string, any>>(value: T, keys: string[]) {
+  return Object.fromEntries(Object.entries(value).filter(([key]) => !keys.includes(key)));
+}
+
+function inferFixedType(value: any) {
+  if (typeof value === 'number') return 'number';
+  if (typeof value === 'boolean') return 'boolean';
+  return 'string';
+}
+
+function loadParamSchemaEditor(value?: string) {
+  paramRows.value = [];
+  paramSchemaRootExtra.value = { additionalProperties: false };
+  paramSchemaMode.value = 'form';
+  if (!value?.trim()) return;
+  try {
+    const schema = parseJsonObject(value) || {};
+    if (schema?.type && schema.type !== 'object' || schema?.properties && (typeof schema.properties !== 'object' || Array.isArray(schema.properties))) {
+      paramSchemaMode.value = 'json';
+      return;
+    }
+    const required = new Set(Array.isArray(schema?.required) ? schema.required.map(String) : []);
+    const rootExtra = omitKeys(schema, ['type', 'properties', 'required']);
+    paramSchemaRootExtra.value = rootExtra;
+    Object.entries(schema?.properties || {}).forEach(([name, definition]) => {
+      if (!definition || typeof definition !== 'object' || Array.isArray(definition)) {
+        paramSchemaMode.value = 'json';
+        return;
+      }
+      const property = definition as Record<string, any>;
+      const extra = omitKeys(property, [
+        'type',
+        'description',
+        'enum',
+        'default',
+        'minimum',
+        'maximum',
+        'x-in',
+        'in',
+        'x-http-name',
+        'httpName'
+      ]);
+      const hasDefault = Object.hasOwn(property, 'default');
+      paramRows.value.push(
+        createParamRow({
+          name,
+          description: typeof property.description === 'string' ? property.description : '',
+          type: typeof property.type === 'string' ? property.type : 'string',
+          location: property['x-in'] || property.in || 'auto',
+          httpName: property['x-http-name'] || property.httpName || '',
+          required: required.has(name),
+          enumValues: Array.isArray(property.enum) ? property.enum.map(item => JSON.stringify(item)) : [],
+          hasDefault,
+          defaultValue: hasDefault ? JSON.stringify(property.default) : '',
+          minimum: typeof property.minimum === 'number' ? property.minimum : undefined,
+          maximum: typeof property.maximum === 'number' ? property.maximum : undefined,
+          extra
+        })
+      );
+    });
+  } catch {
+    paramSchemaMode.value = 'json';
+  }
+}
+
+function loadRequestTemplateEditor(value?: string) {
+  requestTemplateRows.value = [];
+  requestTemplateMode.value = 'auto';
+  if (!value?.trim()) return;
+  try {
+    const template = parseJsonObject(value);
+    for (const [name, rawValue] of Object.entries(template || {})) {
+      if (rawValue && typeof rawValue === 'object') {
+        requestTemplateMode.value = 'json';
+        return;
+      }
+      const placeholder = typeof rawValue === 'string' ? rawValue.match(/^{{([^{}]+)}}$/) : undefined;
+      const fixedType = inferFixedType(rawValue);
+      requestTemplateRows.value.push(
+        createRequestTemplateRow({
+          name,
+          source: placeholder ? 'parameter' : 'fixed',
+          parameter: placeholder?.[1] || '',
+          fixedValue: placeholder ? '' : String(rawValue ?? ''),
+          fixedType
+        })
+      );
+    }
+    requestTemplateMode.value = 'form';
+  } catch {
+    requestTemplateMode.value = 'json';
+  }
+}
+
+function loadResponseRuleEditor(value?: string) {
+  responseRuleMode.value = 'form';
+  responseRuleExtra.value = {};
+  responseRuleForm.value = {
+    httpSuccessStatuses: [],
+    checkBusinessStatus: false,
+    successPath: '',
+    successOperator: 'equals',
+    successValues: [],
+    messagePath: '',
+    dataPath: ''
+  };
+  if (!value?.trim()) return;
+  try {
+    const rule = parseJsonObject(value) || {};
+    const extra = omitKeys(rule, ['httpSuccessStatuses', 'successPath', 'successOperator', 'successValues', 'messagePath', 'dataPath']);
+    responseRuleExtra.value = extra;
+    responseRuleForm.value = {
+      httpSuccessStatuses: Array.isArray(rule?.httpSuccessStatuses) ? rule.httpSuccessStatuses.map(String) : [],
+      checkBusinessStatus: Boolean(rule?.successPath),
+      successPath: typeof rule?.successPath === 'string' ? rule.successPath : '',
+      successOperator: typeof rule?.successOperator === 'string' ? rule.successOperator : 'equals',
+      successValues: Array.isArray(rule?.successValues) ? rule.successValues.map(item => JSON.stringify(item)) : [],
+      messagePath: typeof rule?.messagePath === 'string' ? rule.messagePath : '',
+      dataPath: typeof rule?.dataPath === 'string' ? rule.dataPath : ''
+    };
+  } catch {
+    responseRuleMode.value = 'json';
+  }
+}
+
+function loadResponseMappingEditor(value?: string) {
+  responseMappingRows.value = [];
+  responseMappingMode.value = 'form';
+  if (!value?.trim()) return;
+  try {
+    const mapping = parseJsonObject(value);
+    if (Object.values(mapping || {}).some(path => typeof path !== 'string')) {
+      responseMappingMode.value = 'json';
+      return;
+    }
+    responseMappingRows.value = Object.entries(mapping || {}).map(([name, path]) =>
+      createResponseMappingRow({ name, path })
+    );
+  } catch {
+    responseMappingMode.value = 'json';
+  }
+}
+
+function loadStructuredEditors() {
+  loadParamSchemaEditor(form.value.paramSchema);
+  loadRequestTemplateEditor(form.value.requestTemplate);
+  loadResponseRuleEditor(form.value.responseRule);
+  loadResponseMappingEditor(form.value.responseMapping);
+}
+
+function serializeParamSchema() {
+  if (!paramRows.value.length) return '';
+  const names = new Set<string>();
+  const required: string[] = [];
+  const properties: Record<string, any> = {};
+  for (const row of paramRows.value) {
+    const name = row.name.trim();
+    if (!name) throw new Error(t('rag.tool.parameterNameRequired'));
+    if (names.has(name)) throw new Error(t('rag.tool.parameterNameDuplicate'));
+    if (row.location === 'path' && !form.value.urlTemplate?.includes(`{{${name}}}`)) {
+      throw new Error(t('rag.tool.pathParameterMissing', { name }));
+    }
+    names.add(name);
+    const property: Record<string, any> = { ...row.extra, type: row.type || 'string' };
+    if (row.description.trim()) property.description = row.description.trim();
+    if (row.location !== 'auto') property['x-in'] = row.location;
+    if (row.httpName.trim()) property['x-http-name'] = row.httpName.trim();
+    const enumValues = row.enumValues.map((value: string) => parseEditorValue(value)).filter((value: any) => value !== '');
+    if (enumValues.length) property.enum = enumValues;
+    if (row.hasDefault) property.default = parseEditorValue(row.defaultValue);
+    if (typeof row.minimum === 'number') property.minimum = row.minimum;
+    if (typeof row.maximum === 'number') property.maximum = row.maximum;
+    if (row.required) required.push(name);
+    properties[name] = property;
+  }
+  const schema: Record<string, any> = { ...paramSchemaRootExtra.value, type: 'object', properties };
+  if (required.length) schema.required = required;
+  return JSON.stringify(schema);
+}
+
+function serializeRequestTemplate() {
+  if (requestTemplateMode.value === 'auto' || !requestTemplateRows.value.length) return '';
+  const template: Record<string, any> = {};
+  for (const row of requestTemplateRows.value) {
+    const name = row.name.trim();
+    if (!name) throw new Error(t('rag.tool.requestTemplateIncomplete'));
+    if (Object.hasOwn(template, name)) throw new Error(t('rag.tool.requestTemplateDuplicate'));
+    if (row.source === 'parameter') {
+      if (!row.parameter) throw new Error(t('rag.tool.requestTemplateIncomplete'));
+      template[name] = `{{${row.parameter}}}`;
+    } else if (row.fixedType === 'number') {
+      const value = Number(row.fixedValue);
+      if (!Number.isFinite(value)) throw new Error(t('rag.tool.requestTemplateIncomplete'));
+      template[name] = value;
+    } else if (row.fixedType === 'boolean') {
+      if (!['true', 'false'].includes(row.fixedValue)) throw new Error(t('rag.tool.requestTemplateIncomplete'));
+      template[name] = row.fixedValue === 'true';
+    } else if (row.fixedType === 'json') {
+      try {
+        template[name] = JSON.parse(row.fixedValue);
+      } catch {
+        throw new Error(t('rag.tool.requestTemplateIncomplete'));
+      }
+    } else {
+      template[name] = row.fixedValue;
+    }
+  }
+  return JSON.stringify(template);
+}
+
+function serializeResponseRule() {
+  const hasConfig =
+    responseRuleForm.value.httpSuccessStatuses.length > 0 ||
+    responseRuleForm.value.checkBusinessStatus ||
+    responseRuleForm.value.messagePath.trim() ||
+    responseRuleForm.value.dataPath.trim();
+  if (!hasConfig) return '';
+  const rule: Record<string, any> = { ...responseRuleExtra.value };
+  const statuses = responseRuleForm.value.httpSuccessStatuses.filter(Boolean).map(value => Number(value));
+  if (statuses.some(value => !Number.isInteger(value) || value < 100 || value > 599)) {
+    throw new Error(t('rag.tool.responseStatusInvalid'));
+  }
+  if (statuses.length) rule.httpSuccessStatuses = statuses;
+  if (responseRuleForm.value.checkBusinessStatus) {
+    const successPath = responseRuleForm.value.successPath.trim();
+    if (!successPath) throw new Error(t('rag.tool.responseRuleIncomplete'));
+    rule.successPath = successPath;
+    rule.successOperator = responseRuleForm.value.successOperator;
+    if (['equals', 'in'].includes(rule.successOperator)) {
+      const values = responseRuleForm.value.successValues.map(parseEditorValue).filter(value => value !== '');
+      if (!values.length) throw new Error(t('rag.tool.responseRuleIncomplete'));
+      rule.successValues = values;
+    }
+  }
+  if (responseRuleForm.value.messagePath.trim()) rule.messagePath = responseRuleForm.value.messagePath.trim();
+  if (responseRuleForm.value.dataPath.trim()) rule.dataPath = responseRuleForm.value.dataPath.trim();
+  return JSON.stringify(rule);
+}
+
+function serializeResponseMapping() {
+  if (!responseMappingRows.value.length) return '';
+  const mapping: Record<string, string> = {};
+  for (const row of responseMappingRows.value) {
+    const name = row.name.trim();
+    const path = row.path.trim();
+    if (!name || !path) throw new Error(t('rag.tool.responseMappingIncomplete'));
+    if (Object.hasOwn(mapping, name)) throw new Error(t('rag.tool.responseMappingDuplicate'));
+    mapping[name] = path;
+  }
+  return JSON.stringify(mapping);
+}
+
+function buildStructuredFields() {
+  return {
+    paramSchema: paramSchemaMode.value === 'form' ? serializeParamSchema() : form.value.paramSchema,
+    requestTemplate:
+      requestTemplateMode.value === 'json' ? form.value.requestTemplate : serializeRequestTemplate(),
+    responseRule: responseRuleMode.value === 'form' ? serializeResponseRule() : form.value.responseRule,
+    responseMapping: responseMappingMode.value === 'form' ? serializeResponseMapping() : form.value.responseMapping
+  };
+}
+
+function switchParamSchemaMode(mode: BuilderMode) {
+  if (mode === 'form') {
+    loadParamSchemaEditor(form.value.paramSchema);
+    return;
+  }
+  try {
+    form.value.paramSchema = serializeParamSchema();
+    paramSchemaMode.value = 'json';
+  } catch (error: any) {
+    ElMessage.warning(error.message);
+    paramSchemaMode.value = 'form';
+  }
+}
+
+function switchRequestTemplateMode(mode: RequestTemplateMode) {
+  if (mode === 'form') {
+    loadRequestTemplateEditor(form.value.requestTemplate);
+    requestTemplateMode.value = 'form';
+    return;
+  }
+  if (mode === 'json') {
+    try {
+      form.value.requestTemplate = serializeRequestTemplate();
+    } catch (error: any) {
+      ElMessage.warning(error.message);
+      requestTemplateMode.value = 'form';
+      return;
+    }
+  }
+  requestTemplateMode.value = mode;
+}
+
+function switchResponseRuleMode(mode: BuilderMode) {
+  if (mode === 'form') {
+    loadResponseRuleEditor(form.value.responseRule);
+    return;
+  }
+  try {
+    form.value.responseRule = serializeResponseRule();
+    responseRuleMode.value = 'json';
+  } catch (error: any) {
+    ElMessage.warning(error.message);
+    responseRuleMode.value = 'form';
+  }
+}
+
+function switchResponseMappingMode(mode: BuilderMode) {
+  if (mode === 'form') {
+    loadResponseMappingEditor(form.value.responseMapping);
+    return;
+  }
+  try {
+    form.value.responseMapping = serializeResponseMapping();
+    responseMappingMode.value = 'json';
+  } catch (error: any) {
+    ElMessage.warning(error.message);
+    responseMappingMode.value = 'form';
+  }
+}
 const toolSchemaExample = computed(() =>
   appStore.locale === 'zh-CN'
     ? `{
@@ -336,6 +762,7 @@ function openCreate() {
   resetAuthFields();
   requestHeaderPreset.value = '';
   activeTab.value = 'basic';
+  loadStructuredEditors();
   dialogVisible.value = true;
 }
 async function openEdit(row: any) {
@@ -346,6 +773,7 @@ async function openEdit(row: any) {
   resetAuthFields();
   requestHeaderPreset.value = '';
   activeTab.value = 'basic';
+  loadStructuredEditors();
   dialogVisible.value = true;
 }
 async function save() {
@@ -361,12 +789,21 @@ async function save() {
     activeTab.value = 'auth';
     return;
   }
+  let structuredFields: Record<string, string>;
+  try {
+    structuredFields = buildStructuredFields();
+  } catch (error: any) {
+    ElMessage.warning(error.message);
+    activeTab.value = 'params';
+    return;
+  }
+  const payload = { ...form.value, ...structuredFields };
   for (const [field, value] of [
-    [t('rag.tool.paramSchema'), form.value.paramSchema],
+    [t('rag.tool.paramSchema'), payload.paramSchema],
     [t('rag.tool.requestHeaders'), form.value.requestHeaders],
-    [t('rag.tool.requestTemplate'), form.value.requestTemplate],
-    [t('rag.responseRule'), form.value.responseRule],
-    [t('rag.tool.responseMapping'), form.value.responseMapping]
+    [t('rag.tool.requestTemplate'), payload.requestTemplate],
+    [t('rag.responseRule'), payload.responseRule],
+    [t('rag.tool.responseMapping'), payload.responseMapping]
   ]) {
     if (value) {
       try {
@@ -379,7 +816,6 @@ async function save() {
   }
   saving.value = true;
   try {
-    const payload = { ...form.value };
     delete payload.authConfig;
     if (authConfig) payload.authConfig = authConfig;
     if (isEdit.value) await fetchUpdateTool(payload.id, payload);
@@ -502,7 +938,7 @@ async function runToolTest() {
   let params: Record<string, any>;
   try {
     params = JSON.parse(testParams.value || '{}');
-    if (!params || typeof params !== 'object' || Array.isArray(params)) throw new Error();
+    if (!params || typeof params !== 'object' || Array.isArray(params)) throw new Error('Expected JSON object');
   } catch {
     ElMessage.warning(t('rag.common.invalidJson', { field: t('rag.skill.parameters') }));
     return;
@@ -561,7 +997,6 @@ const responseDisplay = computed(() => {
 <template>
   <div class="page-container h-full">
     <ElCard class="w-full">
-      <ElAlert class="mb-4" type="info" :closable="false" show-icon :title="t('rag.tool.pageGuide')" />
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElInput
           v-model="keyword"
@@ -577,36 +1012,40 @@ const responseDisplay = computed(() => {
         <ElButton type="primary" @click="openCreate">+ {{ t('rag.common.create') }}</ElButton>
       </div>
       <ElTable v-loading="loading" :data="list" stripe border class="w-full" :empty-text="t('rag.tool.emptyHint')">
-        <ElTableColumn prop="name" :label="t('rag.tool.name')" min-width="150" />
-        <ElTableColumn prop="code" :label="t('rag.tool.code')" min-width="120" />
-        <ElTableColumn prop="httpMethod" :label="t('rag.tool.method')" width="70" />
-        <ElTableColumn :label="t('rag.tool.operationType')" width="90">
-          <template #default="{ row }">{{ operationTypeLabel(row.operationType) }}</template>
-        </ElTableColumn>
-        <ElTableColumn :label="t('rag.tool.authType')" width="100">
-          <template #default="{ row }">{{ authTypeLabel(row.authType) }}</template>
-        </ElTableColumn>
-        <ElTableColumn :label="t('rag.tool.visibility')" width="110">
-          <template #default="{ row }">{{ visibilityLabel(row.visibility) }}</template>
-        </ElTableColumn>
-        <ElTableColumn prop="urlTemplate" :label="t('rag.tool.urlTemplate')" min-width="200" show-overflow-tooltip />
-        <ElTableColumn prop="timeout" :label="t('rag.tool.timeout')" width="80" />
-        <ElTableColumn :label="t('rag.common.status')" width="70">
-          <template #default="{ row }">
-            <ElTag :type="row.status === 1 ? 'success' : 'danger'" size="small">
-              {{ row.status === 1 ? t('common.on') : t('common.off') }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn :label="t('rag.common.action')" width="170" fixed="right" align="center">
-          <template #default="{ row }">
-            <ElButton size="small" link type="primary" @click="openToolTest(row)">
-              {{ t('rag.tool.startTest') }}
-            </ElButton>
-            <ElButton size="small" link @click="openEdit(row)">{{ t('rag.common.edit') }}</ElButton>
-            <ElButton size="small" link type="danger" @click="deleteItem(row)">{{ t('rag.common.delete') }}</ElButton>
-          </template>
-        </ElTableColumn>
+          <ElTableColumn prop="name" :label="t('rag.tool.name')" min-width="150" />
+          <ElTableColumn prop="code" :label="t('rag.tool.code')" min-width="120" />
+          <ElTableColumn prop="httpMethod" :label="t('rag.tool.method')" width="70" />
+          <ElTableColumn :label="t('rag.tool.operationType')" width="90">
+            <template #default="{ row }">{{ operationTypeLabel(row.operationType) }}</template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('rag.tool.authType')" width="100">
+            <template #default="{ row }">{{ authTypeLabel(row.authType) }}</template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('rag.tool.visibility')" width="110">
+            <template #default="{ row }">{{ visibilityLabel(row.visibility) }}</template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('rag.tool.urlTemplate')" min-width="200">
+            <template #default="{ row }">
+              <span class="tool-url-cell" :title="row.urlTemplate">{{ row.urlTemplate }}</span>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="timeout" :label="t('rag.tool.timeout')" width="80" />
+          <ElTableColumn :label="t('rag.common.status')" width="70">
+            <template #default="{ row }">
+              <ElTag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+                {{ row.status === 1 ? t('common.on') : t('common.off') }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn :label="t('rag.common.action')" width="170" fixed="right" align="center">
+            <template #default="{ row }">
+              <ElButton size="small" link type="primary" @click="openToolTest(row)">
+                {{ t('rag.tool.startTest') }}
+              </ElButton>
+              <ElButton size="small" link @click="openEdit(row)">{{ t('rag.common.edit') }}</ElButton>
+              <ElButton size="small" link type="danger" @click="deleteItem(row)">{{ t('rag.common.delete') }}</ElButton>
+            </template>
+          </ElTableColumn>
       </ElTable>
       <div class="mt-4 flex justify-end">
         <ElPagination
@@ -626,7 +1065,12 @@ const responseDisplay = computed(() => {
       </div>
     </ElCard>
 
-    <ElDialog v-model="dialogVisible" width="min(820px, 95vw)" class="config-editor-dialog" align-center>
+    <ElDialog
+      v-model="dialogVisible"
+      width="min(1280px, 96vw)"
+      class="config-editor-dialog tool-config-dialog"
+      align-center
+    >
       <template #header>
         <div class="flex items-center">
           <span class="text-base font-medium">{{ isEdit ? t('common.edit') : t('common.create') }}</span>
@@ -805,94 +1249,458 @@ const responseDisplay = computed(() => {
           </ElForm>
         </ElTabPane>
         <ElTabPane :label="t('rag.tool.paramSchema')" name="params">
-          <ElForm :model="form" label-width="160px" class="mt-2">
-            <ElFormItem :label="t('rag.tool.paramSchema')">
-              <template #label>
-                <span>{{ t('rag.tool.paramSchema') }}</span>
-                <ConfigHelp
-                  field
-                  :title="t('rag.configHelp.tool.schemaTitle')"
-                  :description="t('rag.configHelp.tool.schemaDescription')"
-                  :examples="[toolSchemaExample]"
+          <div class="tool-builder-tab">
+            <section class="tool-builder-section">
+              <div class="tool-builder-section__header">
+                <div>
+                  <div class="tool-builder-section__title">
+                    <span>{{ t('rag.tool.paramSchema') }}</span>
+                    <ConfigHelp
+                      field
+                      :title="t('rag.configHelp.tool.schemaTitle')"
+                      :description="t('rag.configHelp.tool.schemaDescription')"
+                      :examples="[toolSchemaExample]"
+                    />
+                  </div>
+                  <div class="tool-builder-section__hint">{{ t('rag.tool.paramSchemaBuilderHint') }}</div>
+                </div>
+                <div class="tool-builder-section__actions">
+                  <ElSegmented
+                    :model-value="paramSchemaMode"
+                    size="small"
+                    :options="[
+                      { label: t('rag.tool.builderForm'), value: 'form' },
+                      { label: t('rag.tool.builderJson'), value: 'json' }
+                    ]"
+                    @change="switchParamSchemaMode"
+                  />
+                  <ElButton v-if="paramSchemaMode === 'form'" size="small" type="primary" plain @click="paramRows.push(createParamRow())">
+                    <SvgIcon icon="mdi:plus" />
+                    {{ t('rag.tool.addParameter') }}
+                  </ElButton>
+                </div>
+              </div>
+              <template v-if="paramSchemaMode === 'form'">
+                <ElAlert
+                  v-if="!paramRows.length"
+                  class="mb-3"
+                  type="info"
+                  :closable="false"
+                  :title="t('rag.tool.parameterEmptyHint')"
                 />
+                <div v-else class="tool-builder-table-wrap">
+                  <ElTable :data="paramRows" border class="tool-builder-table" row-key="key">
+                    <ElTableColumn :label="t('rag.tool.parameterName')" min-width="150">
+                      <template #default="{ row }">
+                        <ElInput v-model="row.name" :placeholder="t('rag.tool.parameterNamePlaceholder')" />
+                      </template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.tool.parameterDescription')" min-width="210">
+                      <template #default="{ row }">
+                        <ElInput v-model="row.description" :placeholder="t('rag.tool.parameterDescriptionPlaceholder')" />
+                      </template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.tool.parameterType')" width="138">
+                      <template #default="{ row }">
+                        <ElSelect v-model="row.type" class="w-full" filterable allow-create>
+                          <ElOption v-for="type in parameterTypeOptions" :key="type" :label="type" :value="type" />
+                        </ElSelect>
+                      </template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.tool.parameterLocation')" width="138">
+                      <template #default="{ row }">
+                        <ElSelect v-model="row.location" class="w-full">
+                          <ElOption
+                            v-for="location in parameterLocationOptions"
+                            :key="location.value"
+                            :label="location.label"
+                            :value="location.value"
+                          />
+                        </ElSelect>
+                      </template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.tool.parameterHttpName')" min-width="150">
+                      <template #default="{ row }">
+                        <ElInput v-model="row.httpName" :placeholder="row.name || t('rag.tool.parameterName')" />
+                      </template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.tool.parameterRequired')" width="82" align="center">
+                      <template #default="{ row }"><ElSwitch v-model="row.required" /></template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.common.action')" width="100" fixed="right" align="center">
+                      <template #default="{ row, $index }">
+                        <ElPopover placement="left" :title="t('rag.tool.parameterAdvanced')" :width="420" trigger="click">
+                          <template #reference>
+                            <ElButton
+                              link
+                              type="primary"
+                              size="small"
+                              :title="t('rag.tool.parameterAdvanced')"
+                              :aria-label="t('rag.tool.parameterAdvanced')"
+                            >
+                              <SvgIcon icon="mdi:tune-variant" />
+                            </ElButton>
+                          </template>
+                          <ElForm label-position="top" class="tool-popover-form">
+                            <ElFormItem :label="t('rag.tool.parameterDefault')">
+                              <ElInput v-model="row.defaultValue" :placeholder="t('rag.tool.parameterDefaultPlaceholder')">
+                                <template #prepend><ElSwitch v-model="row.hasDefault" /></template>
+                              </ElInput>
+                            </ElFormItem>
+                            <ElFormItem :label="t('rag.tool.parameterEnum')">
+                              <ElSelect
+                                v-model="row.enumValues"
+                                class="w-full"
+                                multiple
+                                filterable
+                                allow-create
+                                default-first-option
+                                :placeholder="t('rag.tool.parameterEnumPlaceholder')"
+                              />
+                            </ElFormItem>
+                            <div class="grid grid-cols-2 gap-3">
+                              <ElFormItem :label="t('rag.tool.parameterMinimum')">
+                                <ElInputNumber v-model="row.minimum" class="w-full" controls-position="right" />
+                              </ElFormItem>
+                              <ElFormItem :label="t('rag.tool.parameterMaximum')">
+                                <ElInputNumber v-model="row.maximum" class="w-full" controls-position="right" />
+                              </ElFormItem>
+                            </div>
+                          </ElForm>
+                        </ElPopover>
+                        <ElButton
+                          link
+                          type="danger"
+                          size="small"
+                          :title="t('rag.common.delete')"
+                          :aria-label="t('rag.common.delete')"
+                          @click="paramRows.splice($index, 1)"
+                        >
+                          <SvgIcon icon="mdi:delete-outline" />
+                        </ElButton>
+                      </template>
+                    </ElTableColumn>
+                  </ElTable>
+                </div>
               </template>
               <ConfigCodeEditor
+                v-else
                 v-model="form.paramSchema"
-                :rows="6"
+                :rows="12"
                 expected-root="object"
                 :example="toolSchemaExample"
               />
-            </ElFormItem>
-            <ElFormItem :label="t('rag.tool.requestHeaders')">
-              <div class="w-full">
-                <ElSelect
-                  v-model="requestHeaderPreset"
-                  class="mb-2 w-full"
-                  clearable
-                  :placeholder="requestHeaderPresetPlaceholder"
-                  @change="applyRequestHeaderPreset"
-                >
-                  <ElOption
-                    v-for="preset in requestHeaderPresets"
-                    :key="preset.value"
-                    :label="preset.label"
-                    :value="preset.value"
-                  />
-                </ElSelect>
-                <ConfigCodeEditor v-model="form.requestHeaders" :rows="5" expected-root="object" />
+            </section>
+
+            <section class="tool-builder-section">
+              <div class="tool-builder-section__header">
+                <div>
+                  <div class="tool-builder-section__title">
+                    <span>{{ t('rag.tool.requestHeaders') }}</span>
+                  </div>
+                  <div class="tool-builder-section__hint">{{ t('rag.tool.requestHeadersHint') }}</div>
+                </div>
               </div>
-            </ElFormItem>
-            <ElFormItem :label="t('rag.tool.requestTemplate')">
-              <template #label>
-                <span>{{ t('rag.tool.requestTemplate') }}</span>
-                <ConfigHelp
-                  field
-                  :title="t('rag.configHelp.tool.requestTitle')"
-                  :description="t('rag.configHelp.tool.requestDescription')"
-                  :examples="[toolHelpExamples.request]"
+              <ElSelect
+                v-model="requestHeaderPreset"
+                class="mb-2 w-full"
+                clearable
+                :placeholder="requestHeaderPresetPlaceholder"
+                @change="applyRequestHeaderPreset"
+              >
+                <ElOption
+                  v-for="preset in requestHeaderPresets"
+                  :key="preset.value"
+                  :label="preset.label"
+                  :value="preset.value"
                 />
+              </ElSelect>
+              <ConfigCodeEditor v-model="form.requestHeaders" :rows="5" expected-root="object" />
+            </section>
+
+            <section class="tool-builder-section">
+              <div class="tool-builder-section__header">
+                <div>
+                  <div class="tool-builder-section__title">
+                    <span>{{ t('rag.tool.requestTemplate') }}</span>
+                    <ConfigHelp
+                      field
+                      :title="t('rag.configHelp.tool.requestTitle')"
+                      :description="t('rag.configHelp.tool.requestDescription')"
+                      :examples="[toolHelpExamples.request]"
+                    />
+                  </div>
+                  <div class="tool-builder-section__hint">{{ t('rag.tool.requestTemplateBuilderHint') }}</div>
+                </div>
+                <div class="tool-builder-section__actions">
+                  <ElSegmented
+                    :model-value="requestTemplateMode"
+                    size="small"
+                    :options="[
+                      { label: t('rag.tool.requestTemplateAuto'), value: 'auto' },
+                      { label: t('rag.tool.builderForm'), value: 'form' },
+                      { label: t('rag.tool.builderJson'), value: 'json' }
+                    ]"
+                    @change="switchRequestTemplateMode"
+                  />
+                  <ElButton
+                    v-if="requestTemplateMode === 'form'"
+                    size="small"
+                    type="primary"
+                    plain
+                    @click="requestTemplateRows.push(createRequestTemplateRow())"
+                  >
+                    <SvgIcon icon="mdi:plus" />
+                    {{ t('rag.tool.addRequestField') }}
+                  </ElButton>
+                </div>
+              </div>
+              <ElAlert
+                v-if="requestTemplateMode === 'auto'"
+                type="info"
+                :closable="false"
+                :title="t('rag.tool.requestTemplateAutoHint')"
+              />
+              <template v-else-if="requestTemplateMode === 'form'">
+                <ElAlert
+                  v-if="!requestTemplateRows.length"
+                  type="info"
+                  :closable="false"
+                  :title="t('rag.tool.requestTemplateEmptyHint')"
+                />
+                <div v-else class="tool-builder-table-wrap">
+                  <ElTable :data="requestTemplateRows" border class="tool-builder-table" row-key="key">
+                    <ElTableColumn :label="t('rag.tool.requestField')" min-width="180">
+                      <template #default="{ row }"><ElInput v-model="row.name" :placeholder="t('rag.tool.requestFieldPlaceholder')" /></template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.tool.requestValueSource')" width="150">
+                      <template #default="{ row }">
+                        <ElSelect v-model="row.source" class="w-full">
+                          <ElOption :label="t('rag.tool.requestParameterSource')" value="parameter" />
+                          <ElOption :label="t('rag.tool.requestFixedSource')" value="fixed" />
+                        </ElSelect>
+                      </template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.tool.requestValue')" min-width="260">
+                      <template #default="{ row }">
+                        <ElSelect
+                          v-if="row.source === 'parameter'"
+                          v-model="row.parameter"
+                          class="w-full"
+                          filterable
+                          allow-create
+                          :placeholder="t('rag.tool.requestParameterPlaceholder')"
+                        >
+                          <ElOption v-for="parameter in paramRows" :key="parameter.key" :label="parameter.name" :value="parameter.name" />
+                        </ElSelect>
+                        <ElInput v-else v-model="row.fixedValue" :placeholder="t('rag.tool.requestFixedValuePlaceholder')" />
+                      </template>
+                    </ElTableColumn>
+                    <ElTableColumn v-if="requestTemplateRows.some(row => row.source === 'fixed')" :label="t('rag.tool.requestFixedType')" width="140">
+                      <template #default="{ row }">
+                        <ElSelect v-if="row.source === 'fixed'" v-model="row.fixedType" class="w-full">
+                          <ElOption v-for="type in requestFixedTypeOptions" :key="type.value" :label="type.label" :value="type.value" />
+                        </ElSelect>
+                      </template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.common.action')" width="72" fixed="right" align="center">
+                      <template #default="{ $index }">
+                        <ElButton
+                          link
+                          type="danger"
+                          size="small"
+                          :title="t('rag.common.delete')"
+                          :aria-label="t('rag.common.delete')"
+                          @click="requestTemplateRows.splice($index, 1)"
+                        >
+                          <SvgIcon icon="mdi:delete-outline" />
+                        </ElButton>
+                      </template>
+                    </ElTableColumn>
+                  </ElTable>
+                </div>
               </template>
               <ConfigCodeEditor
+                v-else
                 v-model="form.requestTemplate"
-                :rows="6"
+                :rows="10"
                 expected-root="object"
                 :example="toolHelpExamples.request"
               />
-            </ElFormItem>
-            <ElFormItem :label="t('rag.responseRule')">
-              <template #label>
-                <span>{{ t('rag.responseRule') }}</span>
+            </section>
+
+            <section class="tool-builder-section">
+              <div class="tool-builder-section__header">
+                <div>
+                  <div class="tool-builder-section__title">
+                    <span>{{ t('rag.responseRule') }}</span>
+                    <ConfigHelp
+                      field
+                      :title="t('rag.responseRule')"
+                      :description="t('rag.configFields.tool.fields.responseRule')"
+                      :examples="[toolHelpExamples.responseRule]"
+                    />
+                  </div>
+                  <div class="tool-builder-section__hint">{{ t('rag.tool.responseRuleBuilderHint') }}</div>
+                </div>
+                <ElSegmented
+                  :model-value="responseRuleMode"
+                  size="small"
+                  :options="[
+                    { label: t('rag.tool.builderForm'), value: 'form' },
+                    { label: t('rag.tool.builderJson'), value: 'json' }
+                  ]"
+                  @change="switchResponseRuleMode"
+                />
+              </div>
+              <template v-if="responseRuleMode === 'form'">
+                <ElForm label-position="top" class="tool-builder-form">
+                  <div class="tool-builder-grid tool-builder-grid--three">
+                    <ElFormItem :label="t('rag.tool.responseHttpStatuses')">
+                      <ElSelect
+                        v-model="responseRuleForm.httpSuccessStatuses"
+                        class="w-full"
+                        multiple
+                        filterable
+                        allow-create
+                        default-first-option
+                        :placeholder="t('rag.tool.responseHttpStatusesPlaceholder')"
+                      >
+                        <ElOption v-for="status in ['200', '201', '202', '204']" :key="status" :label="status" :value="status" />
+                      </ElSelect>
+                    </ElFormItem>
+                    <ElFormItem :label="t('rag.tool.responseBusinessCheck')">
+                      <ElSwitch v-model="responseRuleForm.checkBusinessStatus" />
+                    </ElFormItem>
+                    <ElFormItem :label="t('rag.tool.responseDataPath')">
+                      <ElInput v-model="responseRuleForm.dataPath" placeholder="data.items" />
+                    </ElFormItem>
+                  </div>
+                  <div v-if="responseRuleForm.checkBusinessStatus" class="tool-builder-grid tool-builder-grid--three">
+                    <ElFormItem :label="t('rag.tool.responseStatusPath')">
+                      <ElInput v-model="responseRuleForm.successPath" placeholder="code" />
+                    </ElFormItem>
+                    <ElFormItem :label="t('rag.tool.responseStatusOperator')">
+                      <ElSelect v-model="responseRuleForm.successOperator" class="w-full">
+                        <ElOption v-for="operator in responseOperatorOptions" :key="operator.value" :label="operator.label" :value="operator.value" />
+                      </ElSelect>
+                    </ElFormItem>
+                    <ElFormItem v-if="['equals', 'in'].includes(responseRuleForm.successOperator)" :label="t('rag.tool.responseExpectedValues')">
+                      <ElSelect
+                        v-model="responseRuleForm.successValues"
+                        class="w-full"
+                        multiple
+                        filterable
+                        allow-create
+                        default-first-option
+                        :placeholder="t('rag.tool.responseExpectedValuesPlaceholder')"
+                      />
+                    </ElFormItem>
+                  </div>
+                  <div class="tool-builder-grid tool-builder-grid--two">
+                    <ElFormItem :label="t('rag.tool.responseMessagePath')">
+                      <ElInput v-model="responseRuleForm.messagePath" placeholder="message" />
+                    </ElFormItem>
+                    <div class="tool-builder-inline-hint">{{ t('rag.tool.responseRuleEmptyHint') }}</div>
+                  </div>
+                </ElForm>
               </template>
               <ConfigCodeEditor
+                v-else
                 v-model="form.responseRule"
-                :rows="6"
+                :rows="10"
                 expected-root="object"
                 :example="toolHelpExamples.responseRule"
               />
-            </ElFormItem>
-            <ElFormItem :label="t('rag.tool.responseMapping')">
-              <template #label>
-                <span>{{ t('rag.tool.responseMapping') }}</span>
-                <ConfigHelp
-                  field
-                  :title="t('rag.configHelp.tool.responseTitle')"
-                  :description="t('rag.configHelp.tool.responseDescription')"
-                  :examples="[toolHelpExamples.response]"
+            </section>
+
+            <section class="tool-builder-section">
+              <div class="tool-builder-section__header">
+                <div>
+                  <div class="tool-builder-section__title">
+                    <span>{{ t('rag.tool.responseMapping') }}</span>
+                    <ConfigHelp
+                      field
+                      :title="t('rag.configHelp.tool.responseTitle')"
+                      :description="t('rag.configHelp.tool.responseDescription')"
+                      :examples="[toolHelpExamples.response]"
+                    />
+                  </div>
+                  <div class="tool-builder-section__hint">{{ t('rag.tool.responseMappingBuilderHint') }}</div>
+                </div>
+                <div class="tool-builder-section__actions">
+                  <ElSegmented
+                    :model-value="responseMappingMode"
+                    size="small"
+                    :options="[
+                      { label: t('rag.tool.builderForm'), value: 'form' },
+                      { label: t('rag.tool.builderJson'), value: 'json' }
+                    ]"
+                    @change="switchResponseMappingMode"
+                  />
+                  <ElButton
+                    v-if="responseMappingMode === 'form'"
+                    size="small"
+                    type="primary"
+                    plain
+                    @click="responseMappingRows.push(createResponseMappingRow())"
+                  >
+                    <SvgIcon icon="mdi:plus" />
+                    {{ t('rag.tool.addResponseMapping') }}
+                  </ElButton>
+                </div>
+              </div>
+              <template v-if="responseMappingMode === 'form'">
+                <ElAlert
+                  v-if="!responseMappingRows.length"
+                  type="info"
+                  :closable="false"
+                  :title="t('rag.tool.responseMappingEmptyHint')"
                 />
+                <div v-else class="tool-builder-table-wrap">
+                  <ElTable :data="responseMappingRows" border class="tool-builder-table" row-key="key">
+                    <ElTableColumn :label="t('rag.tool.responseMappingField')" min-width="220">
+                      <template #default="{ row }"><ElInput v-model="row.name" :placeholder="t('rag.tool.responseMappingFieldPlaceholder')" /></template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.tool.responseMappingPath')" min-width="320">
+                      <template #default="{ row }"><ElInput v-model="row.path" placeholder="id or customer.id" /></template>
+                    </ElTableColumn>
+                    <ElTableColumn :label="t('rag.common.action')" width="72" fixed="right" align="center">
+                      <template #default="{ $index }">
+                        <ElButton
+                          link
+                          type="danger"
+                          size="small"
+                          :title="t('rag.common.delete')"
+                          :aria-label="t('rag.common.delete')"
+                          @click="responseMappingRows.splice($index, 1)"
+                        >
+                          <SvgIcon icon="mdi:delete-outline" />
+                        </ElButton>
+                      </template>
+                    </ElTableColumn>
+                  </ElTable>
+                </div>
               </template>
               <ConfigCodeEditor
+                v-else
                 v-model="form.responseMapping"
-                :rows="5"
+                :rows="10"
                 expected-root="object"
                 :example="toolHelpExamples.response"
               />
-            </ElFormItem>
-          </ElForm>
+            </section>
+          </div>
         </ElTabPane>
       </ElTabs>
       <template #footer>
-        <ElButton @click="dialogVisible = false">{{ t('rag.common.cancel') }}</ElButton>
-        <ElButton type="primary" :loading="saving" @click="save">{{ t('rag.common.save') }}</ElButton>
+        <div class="tool-dialog-footer">
+          <span class="tool-dialog-footer__hint">{{ t('rag.tool.saveHint') }}</span>
+          <div class="tool-dialog-footer__actions">
+            <ElButton @click="dialogVisible = false">{{ t('rag.common.cancel') }}</ElButton>
+            <ElButton type="primary" :loading="saving" @click="save">{{ t('rag.common.save') }}</ElButton>
+          </div>
+        </div>
       </template>
     </ElDialog>
 
@@ -959,6 +1767,143 @@ const responseDisplay = computed(() => {
 </template>
 
 <style scoped>
+.tool-builder-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tool-url-cell {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-builder-section {
+  padding: 16px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  background: var(--el-bg-color);
+}
+
+.tool-builder-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.tool-builder-section__title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tool-builder-section__hint {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tool-builder-section__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tool-builder-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tool-builder-table {
+  min-width: 920px;
+}
+
+.tool-builder-form :deep(.el-form-item) {
+  margin-bottom: 12px;
+}
+
+.tool-builder-grid {
+  display: grid;
+  gap: 12px 16px;
+}
+
+.tool-builder-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tool-builder-grid--two {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+}
+
+.tool-builder-inline-hint {
+  align-self: center;
+  padding: 8px 12px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tool-popover-form :deep(.el-form-item) {
+  margin-bottom: 12px;
+}
+
+.tool-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tool-dialog-footer__hint {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tool-dialog-footer__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+:global(.tool-config-dialog .el-dialog__body) {
+  max-height: calc(100vh - 190px);
+  overflow-y: auto;
+  padding-top: 8px;
+}
+
+:global(.tool-config-dialog .el-dialog__footer) {
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+@media (max-width: 768px) {
+  .tool-builder-section__header,
+  .tool-dialog-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tool-builder-section__actions,
+  .tool-dialog-footer__actions {
+    justify-content: flex-start;
+  }
+
+  .tool-builder-grid--three,
+  .tool-builder-grid--two {
+    grid-template-columns: 1fr;
+  }
+}
+
 .tool-test-result {
   min-width: 0;
   max-width: 100%;

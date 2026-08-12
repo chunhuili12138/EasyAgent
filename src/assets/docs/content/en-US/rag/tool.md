@@ -18,7 +18,7 @@ Main menu: **Agent Management → Tool Management**.
 1. Click **Create** to open the editor (three tabs).
 2. **Basic info**: name, code, description, endpoint base URL, method, operation type, visibility scope, timeout and retry count. Keep `{{param}}` placeholders only for path parameters.
 3. **Authentication**: choose the auth type and fill in credentials (see reference below).
-4. **Parameter schema**: define parameters, headers, request template, success rule and response mapping.
+4. **Parameter schema**: use the request builder to configure parameters, headers, request-body assembly, success rules, and response mappings. Ordinary configurations do not require hand-written JSON; use Advanced JSON in the relevant area only for complex nested structures or migrated configurations.
 5. Click **Save**. Back in the tool list, click **Test** on that row. Run dry-run first, then decide whether a real request is safe.
 
 Prefer separate tools for reads and writes. For example, configure “Get Order” as `query` and “Update Order” as `action`. Never label a write endpoint as a query merely to avoid approval.
@@ -88,11 +88,22 @@ Credentials are encrypted with the platform crypto key at rest and are never ret
 
 | Field | Description |
 |---|---|
-| Parameter schema | JSON Schema Draft 7 for logical types, meanings, enums, bounds, and required fields; `x-in`/`in`, `x-http-name`/`httpName`, and `default` declare placement, external names, and defaults |
-| Request headers | JSON object. Values may use `{{param}}`. Choosing a preset **replaces** the current header JSON rather than merging it. Never store secrets here |
-| Request template | Optional JSON body template. Ordinary values are assembled from the Schema; use it only for nested JSON, fixed fields, or special composition. A whole-value `{{param}}` preserves its type; an embedded placeholder becomes text |
-| Success rule | Optional. Empty means any HTTP 2xx succeeds with the full response. Configure status codes, business success and `dataPath` extraction when needed |
-| Response mapping | Optional `platform field: external response path` mapping applied after success-rule extraction. A missing path fails the call |
+| Parameter schema | Use the parameter table by default to maintain the logical name, description, type, HTTP location, external name, and required state. Saving serializes the rows into the JSON Schema Draft 7 used by the executor. Configure defaults, enums, and numeric bounds in a row's advanced properties; use Advanced JSON only for nested objects, arrays, or migrated complex schemas. The generated Schema uses `x-in`/`in`, `x-http-name`/`httpName`, and `default` for placement, external names, and defaults |
+| Request headers | This remains a JSON key-value editor for static values or `{{param}}` placeholders. Choosing a preset **replaces** the current headers rather than merging them. Configure dynamic headers as Header parameters in the parameter table; never store credentials here |
+| Request template | Auto Build is the default: ordinary flat request bodies are generated from body parameters in the Schema, with no template required. For fixed fields or special composition, add rows and choose a Parameter reference or Fixed Value. Use Advanced JSON for nested JSON, arrays, and complex JSON values. A whole-value `{{param}}` preserves its type; an embedded placeholder becomes text |
+| Success rule | Use the form by default to configure success HTTP statuses, business-status checks, status path, operator, expected values, message path, and `dataPath`. Leaving every field empty means any HTTP 2xx succeeds with the full response; use Advanced JSON for complex rules |
+| Response mapping | Use the table by default to add a platform output field and external response path per row; saving generates the mapping JSON. Mapping runs on the data extracted by the success rule, and paths are relative to that node when `dataPath` is set. A missing path fails the call; use Advanced JSON for complex mappings |
+
+### Form Configuration
+
+The tool page uses a request builder by default and generates the JSON configuration expected by the executor when saving. Switch an area to Advanced JSON only for existing complex configurations, nested objects, or arrays.
+
+1. **Param Schema**: add logical parameters row by row and set the name, description, type, HTTP location, external name, and required state. Types can be selected or typed. Auto location keeps the GET/DELETE query and POST/PUT body defaults. A Path parameter must have a same-name placeholder in the URL. Configure defaults, enums, and numeric ranges from the row's advanced properties.
+2. **Request Template**: use Auto Build for ordinary top-level request bodies. Add rows only for fixed fields or special composition, choosing a Parameter or Fixed Value source. The form currently maintains top-level fields only; use Advanced JSON for nested objects, arrays, and complex JSON values. The backend executor supports these structures.
+3. **Success Response Rule**: select or type success HTTP statuses. Enable business-status validation only when needed, then enter its path, operator, and expected values. Data and message paths are optional dot paths. Leaving every field empty keeps the default HTTP 2xx rule.
+4. **Response Mapping**: add an output-field and response-path row for each value the Agent needs. When the success rule has a `dataPath`, mapping paths are relative to that extracted node: with `dataPath: data`, map an order ID as `id`, not `data.id`.
+
+The form and Advanced JSON save the same configuration. Save current form edits before switching to Advanced JSON so unsaved form input is not replaced.
 
 ## Example
 
