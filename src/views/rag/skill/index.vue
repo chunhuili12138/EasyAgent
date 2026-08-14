@@ -2409,8 +2409,8 @@ async function save() {
       status: form.value.status,
       definition: definition()
     };
-    if (isEdit.value) await fetchUpdateSkill(form.value.id, payload);
-    else await fetchCreateSkill(payload);
+    const res = isEdit.value ? await fetchUpdateSkill(form.value.id, payload) : await fetchCreateSkill(payload);
+    if (!res) return;
     ElMessage.success($t(isEdit.value ? 'common.updateSuccess' : 'common.addSuccess'));
     dialogVisible.value = false;
     await loadData();

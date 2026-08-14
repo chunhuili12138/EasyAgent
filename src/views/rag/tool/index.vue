@@ -829,8 +829,8 @@ async function save() {
   try {
     delete payload.authConfig;
     if (authConfig) payload.authConfig = authConfig;
-    if (isEdit.value) await fetchUpdateTool(payload.id, payload);
-    else await fetchCreateTool(payload);
+    const res = isEdit.value ? await fetchUpdateTool(payload.id, payload) : await fetchCreateTool(payload);
+    if (!res) return;
     ElMessage.success(t(isEdit.value ? 'common.updateSuccess' : 'common.addSuccess'));
     dialogVisible.value = false;
     await loadData();

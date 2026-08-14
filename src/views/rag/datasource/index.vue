@@ -374,8 +374,8 @@ async function save() {
   try {
     const payload = { ...form.value };
     if (isEdit.value && !payload.password) delete payload.password;
-    if (isEdit.value) await fetchUpdateDatasource(payload.id, payload);
-    else await fetchCreateDatasource(payload);
+    const res = isEdit.value ? await fetchUpdateDatasource(payload.id, payload) : await fetchCreateDatasource(payload);
+    if (!res) return;
     ElMessage.success(t(isEdit.value ? 'common.updateSuccess' : 'common.addSuccess'));
     dialogVisible.value = false;
     await loadData();
@@ -594,8 +594,8 @@ async function saveSchema() {
       allowedPostIds: JSON.stringify(schemaForm.value.allowedPostIds || []),
       allowedUserIds: JSON.stringify(schemaForm.value.allowedUserIds || [])
     };
-    if (schemaEdit.value) await fetchUpdateSchema(payload.id, payload);
-    else await fetchCreateSchema(schemaDatasource.value.id, payload);
+    const res = schemaEdit.value ? await fetchUpdateSchema(payload.id, payload) : await fetchCreateSchema(schemaDatasource.value.id, payload);
+    if (!res) return;
     ElMessage.success(t(schemaEdit.value ? 'common.updateSuccess' : 'common.addSuccess'));
     schemaDialogVisible.value = false;
     await manageSchemas(schemaDatasource.value);
