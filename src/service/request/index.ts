@@ -91,9 +91,14 @@ export const request = createFlatRequest(
 
           return instance.request(response.config) as Promise<AxiosResponse>;
         }
+
+        // refresh token failed: the login flow will handle the expired session, skip the error toast here
+        return null;
       }
 
       // when the backend response code is not success, show the error message
+      // note: the interceptor will call onError with the same backend error afterwards; the
+      // errMsgStack dedup in showErrorMsg keeps a single toast for both paths
       if (backendError.message) {
         showErrorMsg(request.state, backendError.message);
       }
