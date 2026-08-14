@@ -254,6 +254,7 @@ function activateSession(session: Session, options: { resetMessages?: boolean; r
 
 async function createSession() {
   const res = await fetchCreateSession({ title: $t('rag.chat.newSession') });
+  if (res.error || !res.data) return null;
   const s: Session = {
     id: res.data.id,
     title: res.data.title || $t('rag.chat.newSession'),
@@ -359,7 +360,8 @@ async function deleteSession(session: Session) {
 
 async function togglePin(session: Session) {
   const newPinned = !session.isPinned;
-  await fetchUpdateSession(session.id, { isPinned: newPinned });
+  const { data, error } = await fetchUpdateSession(session.id, { isPinned: newPinned });
+  if (error || !data) return;
   session.isPinned = newPinned;
 }
 
