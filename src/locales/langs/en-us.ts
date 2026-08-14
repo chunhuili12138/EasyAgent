@@ -1346,18 +1346,21 @@ const local: App.I18n.Schema = {
       apiToolQuery: 'Query Tool',
       apiToolAction: 'Action Tool',
       apiParameterLoading: 'Loading the selected tool parameter Schema…',
-      apiParameterSchemaUnavailable: 'This tool does not expose a readable parameter Schema. Free-form parameters remain available; use the tool configuration and test results as the source of truth.',
+      apiParameterSchemaUnavailable:
+        'This tool does not expose a readable parameter Schema. Free-form parameters remain available; use the tool configuration and test results as the source of truth.',
       apiParameterSummary: 'The tool declares {count} parameters, including {required} required.',
       apiParameterSelect: 'Select a tool parameter',
       apiParameterSelectHint: 'Select a parameter from the chosen tool Schema first.',
-      apiParameterUnknown: 'This parameter is not declared by the chosen tool Schema. Select a valid parameter or change the tool.',
+      apiParameterUnknown:
+        'This parameter is not declared by the chosen tool Schema. Select a valid parameter or change the tool.',
       apiParameterRequired: 'Required',
       apiParameterOptional: 'Optional',
       apiParameterRequiredMissing: 'Required parameters declared by the chosen tool are not all configured.',
       apiParameterTypeInvalid: 'The literal does not match the type declared by the tool parameter.',
       apiParameterEnumInvalid: 'The literal is not one of the values allowed by the tool parameter enum.',
       apiParameterRangeInvalid: 'The literal is outside the numeric range allowed by the tool parameter.',
-      builtinArgumentsHint: 'Parameter names come from the selected built-in tool. You can retain upstream variable references or enter literals. Date add and difference use different date fields.',
+      builtinArgumentsHint:
+        'Parameter names come from the selected built-in tool. You can retain upstream variable references or enter literals. Date add and difference use different date fields.',
       paramValue: 'Fixed value or upstream step field reference',
       addParameter: 'Add Parameter',
       paramLiteral: 'Literal',
@@ -1380,7 +1383,8 @@ const local: App.I18n.Schema = {
       insertOutput: 'Insert upstream output:',
       temperature: 'Temperature',
       foreachConfig: 'Batch Loop Configuration',
-      foreachFormHint: 'Use the form for ordinary loops: the list source must be one upstream reference, and item_path selects only an array container field. Use Advanced JSON for complex loops.',
+      foreachFormHint:
+        'Use the form for ordinary loops: the list source must be one upstream reference, and item_path selects only an array container field. Use Advanced JSON for complex loops.',
       foreachItems: 'List Source',
       foreachItemPath: 'Array Path (optional)',
       foreachMaxItems: 'Maximum Items',
@@ -1390,7 +1394,8 @@ const local: App.I18n.Schema = {
       foreachBodyTool: 'Body Tool',
       foreachItemsRequired: 'Enter the loop list source',
       transformConfig: 'Deterministic Transform Configuration',
-      transformFormHint: 'Use the form for ordinary input bindings and operations. Each operation keeps its remaining fields as a JSON object; use Advanced JSON for complex configurations.',
+      transformFormHint:
+        'Use the form for ordinary input bindings and operations. Each operation keeps its remaining fields as a JSON object; use Advanced JSON for complex configurations.',
       transformInputs: 'Input Bindings',
       transformOperationsTitle: 'Transform Operations',
       stepSummaryDependencies: '{count} dependencies',
@@ -1418,8 +1423,10 @@ const local: App.I18n.Schema = {
       schemaForm: 'Form',
       schemaJson: 'Advanced JSON',
       outputSchemaEnabled: 'Enable Output Schema Validation',
-      outputSchemaDisabledHint: 'Output Schema is not enabled. Enable it, then select a root type and maintain fields; it is written to the step only when saved.',
-      outputSchemaAdvancedHint: 'This configuration uses Advanced JSON. Keep this mode for references, composition, conditional, or other complex Schema rules; the form never overwrites it.',
+      outputSchemaDisabledHint:
+        'Output Schema is not enabled. Enable it, then select a root type and maintain fields; it is written to the step only when saved.',
+      outputSchemaAdvancedHint:
+        'This configuration uses Advanced JSON. Keep this mode for references, composition, conditional, or other complex Schema rules; the form never overwrites it.',
       outputSchemaRootType: 'Root Type',
       outputSchemaTitle: 'Title',
       outputSchemaTitlePlaceholder: 'For example, RefundDecision',
@@ -1429,8 +1436,10 @@ const local: App.I18n.Schema = {
       outputSchemaAdditionalProperties: 'Allow undeclared fields',
       outputSchemaArrayItemType: 'Array Item Type',
       outputSchemaFieldsTitle: 'Object Fields',
-      outputSchemaFieldsHint: 'Field names become downstream reference paths. Required checkboxes generate required automatically. Object and array child structures can be expanded here.',
-      outputSchemaNestedFieldsHint: 'Field paths become downstream references. Expand objects and arrays here, up to five levels.',
+      outputSchemaFieldsHint:
+        'Field names become downstream reference paths. Required checkboxes generate required automatically. Object and array child structures can be expanded here.',
+      outputSchemaNestedFieldsHint:
+        'Field paths become downstream references. Expand objects and arrays here, up to five levels.',
       outputSchemaAddField: 'Add Field',
       outputSchemaFieldsEmpty: 'No fields yet. Object output should declare the fields downstream steps use.',
       outputSchemaFieldName: 'Field Name',
@@ -1454,7 +1463,8 @@ const local: App.I18n.Schema = {
       outputSchemaArrayItems: 'Array Item Definition',
       outputSchemaChildFields: 'Child Fields',
       outputSchemaAddChildField: 'Add Child Field',
-      outputSchemaMaxDepthHint: 'The form nesting limit ({count} levels) has been reached. Use Advanced JSON for deeper or complex structures.',
+      outputSchemaMaxDepthHint:
+        'The form nesting limit ({count} levels) has been reached. Use Advanced JSON for deeper or complex structures.',
       stepsRequired: 'Add at least one execution step',
       stepIdRequired: 'Step ID is required',
       stepIdDuplicate: 'Step IDs must be unique',
@@ -1477,6 +1487,7 @@ const local: App.I18n.Schema = {
       regenerateYaml: 'Regenerate from Form',
       firstUseGuide:
         'Recommended first setup flow: 1. Configure a data source/Schema or tool. 2. Verify it with Test. 3. Create a Skill from a template. 4. Use forms first for API, built-in, Transform, and batch steps; switch to Advanced JSON for references, composition, conditional rules, structures deeper than five levels, whole-config editing, or configurations that cannot be restored losslessly. 5. Define downstream fields with the Output Schema form. 6. Trial-run the execution chain. 7. Validate it in Chat.',
+      firstUseGuideTitle: 'Configuration Guide',
       quickDatasource: 'Data Source',
       quickTool: 'Tool',
       quickChat: 'Chat Test',
@@ -1829,37 +1840,53 @@ const local: App.I18n.Schema = {
         positiveExamplesTitle: 'Positive Examples',
         negativeExamplesTitle: 'Exclusion Examples',
         exampleRules: {
-          onePerLine: 'Enter one complete utterance per line. Blank lines are ignored; do not enter a JSON array, comma list, or numbering.',
-          realUtterance: 'Cover realistic wording, synonyms, and different information completeness; avoid broad words such as query or process.',
-          negativePriority: 'Exclusion examples override triggers and positive examples. Include only similar requests that must not run this Skill.'
+          onePerLine:
+            'Enter one complete utterance per line. Blank lines are ignored; do not enter a JSON array, comma list, or numbering.',
+          realUtterance:
+            'Cover realistic wording, synonyms, and different information completeness; avoid broad words such as query or process.',
+          negativePriority:
+            'Exclusion examples override triggers and positive examples. Include only similar requests that must not run this Skill.'
         },
         ragQueryTitle: 'Retrieval Query',
-        ragQueryRule1: 'Leave blank to search the current user request. A fixed value always searches the same topic and suits stable policy material.',
-        ragQueryRule2: 'Upstream references must name declared dependencies. Any unresolved double-brace reference fails the step.',
+        ragQueryRule1:
+          'Leave blank to search the current user request. A fixed value always searches the same topic and suits stable policy material.',
+        ragQueryRule2:
+          'Upstream references must name declared dependencies. Any unresolved double-brace reference fails the step.',
         queryHintTitle: 'Query Intent',
-        queryHintRule1: 'Specify data object, filters, time range, metric convention, sorting, limit, and returned fields instead of saying only query related data.',
-        queryHintRule2: 'The executor uses this text directly; it does not append the user request or substitute upstream step variables.',
+        queryHintRule1:
+          'Specify data object, filters, time range, metric convention, sorting, limit, and returned fields instead of saying only query related data.',
+        queryHintRule2:
+          'The executor uses this text directly; it does not append the user request or substitute upstream step variables.',
         argumentsTitle: 'Built-in Tool Arguments',
         argumentsExample:
           'Date: operation=add, base_date=2026-08-05, amount=7, unit=days\nMath: expression=(125.5 + 86.3) * 0.9\nUnit conversion: value=1.5, from=kg, to=g',
-        argumentsRule1: 'Argument names must follow the selected built-in Tool contract; arguments from different Tools cannot be mixed.',
-        argumentsRule2: 'Every upstream reference requires a dependency. Pass raw numbers for money and quantities instead of formatted display text.',
+        argumentsRule1:
+          'Argument names must follow the selected built-in Tool contract; arguments from different Tools cannot be mixed.',
+        argumentsRule2:
+          'Every upstream reference requires a dependency. Pass raw numbers for money and quantities instead of formatted display text.',
         bindingFields: {
-          paramName: 'Logical parameter name from the target API Tool properties. It is case-sensitive and must match exactly.',
-          literal: 'Use literals for channels, versions, or constants. Object, array, number, and boolean text that is valid JSON is stored as that JSON type.',
-          source: 'Upstream step ID supplying the value. It must also be selected as a dependency and complete successfully.',
+          paramName:
+            'Logical parameter name from the target API Tool properties. It is case-sensitive and must match exactly.',
+          literal:
+            'Use literals for channels, versions, or constants. Object, array, number, and boolean text that is valid JSON is stored as that JSON type.',
+          source:
+            'Upstream step ID supplying the value. It must also be selected as a dependency and complete successfully.',
           path: 'Restricted JSONPath into upstream primary data. Supports $, dotted fields, numeric indexes, and array wildcards, such as $[0].orderNo.',
           cardinality: 'one expects a single value; many expects an array. A mismatch fails at runtime.',
           onEmpty: 'fail rejects missing data; skip omits the parameter; default uses the configured default value.',
           defaultValue: 'Used only with on_empty=default and may be a string, number, boolean, object, or array.',
-          onMultiple: 'When one receives several values, fail rejects them and first explicitly selects the first. The runtime never does this silently.',
+          onMultiple:
+            'When one receives several values, fail rejects them and first explicitly selects the first. The runtime never does this silently.',
           maxItems: 'Maximum array size retained by a many binding, from 1 to 200.',
           overflow: 'When the array exceeds max_items, fail rejects it and truncate cuts it to the limit.'
         },
         bindingRules: {
-          dependency: 'Every source must be a dependency. A source that did not run, failed, or was skipped cannot be resolved.',
-          safePath: 'Paths do not support filters, functions, recursive lookup, or scripts. Use Transform first for filtering, aggregation, or renaming.',
-          toolSchema: 'Resolved parameters must satisfy the API Tool JSON Schema. The Tool executor adds property defaults for parameters not supplied.',
+          dependency:
+            'Every source must be a dependency. A source that did not run, failed, or was skipped cannot be resolved.',
+          safePath:
+            'Paths do not support filters, functions, recursive lookup, or scripts. Use Transform first for filtering, aggregation, or renaming.',
+          toolSchema:
+            'Resolved parameters must satisfy the API Tool JSON Schema. The Tool executor adds property defaults for parameters not supplied.',
           transport:
             'Skills do not configure HTTP placement. The Tool uses x-in/in and x-http-name/httpName from the parameter Schema; legacy double-brace param URL placeholders remain supported without duplication.'
         },
@@ -1867,53 +1894,77 @@ const local: App.I18n.Schema = {
           schema: 'Optional Draft 7 declaration. Keep it for easier review and migration.',
           metadata: 'Optional human-readable contract name and overall explanation; neither changes the output.',
           type: 'Root type of the step primary output: object, array, string, integer, number, boolean, or null.',
-          properties: 'For object output, define allowed fields. Give every field a type and description plus business constraints where needed.',
-          required: 'For object output, list fields that must be present. Every listed name must also exist in properties.',
-          additionalProperties: 'Set false to reject fields outside properties, useful for downstream API parameters and stable structured output.',
-          enumConst: 'enum restricts a value to a set; const restricts it to one fixed value, useful for status, kind, and version.',
-          formatPattern: 'format describes date, date-time, email, or uri; pattern constrains string shape with a regular expression.',
+          properties:
+            'For object output, define allowed fields. Give every field a type and description plus business constraints where needed.',
+          required:
+            'For object output, list fields that must be present. Every listed name must also exist in properties.',
+          additionalProperties:
+            'Set false to reject fields outside properties, useful for downstream API parameters and stable structured output.',
+          enumConst:
+            'enum restricts a value to a set; const restricts it to one fixed value, useful for status, kind, and version.',
+          formatPattern:
+            'format describes date, date-time, email, or uri; pattern constrains string shape with a regular expression.',
           stringRange: 'Set minimum and maximum string length to reject empty reasons or oversized descriptions.',
           numberRange: 'Set numeric bounds and increments, such as a minimum of 0.01 and two-decimal money precision.',
-          arrayRules: 'items defines each element Schema; minItems, maxItems, and uniqueItems control count and uniqueness.'
+          arrayRules:
+            'items defines each element Schema; minItems, maxItems, and uniqueItems control count and uniqueness.'
         },
         outputSchemaRules: {
-          primaryData: 'The Schema validates primary data itself. It does not add a data or result wrapper and does not rename fields.',
-          requiredProperties: 'required only enforces presence; define type, enum, length, and range separately under properties.',
-          defaultValue: 'default in a Skill output Schema is annotation only and does not fill values. Use Transform default or explicit LLM instructions to generate defaults.',
-          stableNames: 'Field names are case-sensitive and referenced directly downstream. Keep them stable after release.',
-          validJson: 'Enter a valid JSON object only: no comments, trailing commas, single quotes, or JavaScript expressions.'
+          primaryData:
+            'The Schema validates primary data itself. It does not add a data or result wrapper and does not rename fields.',
+          requiredProperties:
+            'required only enforces presence; define type, enum, length, and range separately under properties.',
+          defaultValue:
+            'default in a Skill output Schema is annotation only and does not fill values. Use Transform default or explicit LLM instructions to generate defaults.',
+          stableNames:
+            'Field names are case-sensitive and referenced directly downstream. Keep them stable after release.',
+          validJson:
+            'Enter a valid JSON object only: no comments, trailing commas, single quotes, or JavaScript expressions.'
         },
         foreachFields: {
-          items: 'Reference an upstream step by putting its ID, such as query_orders, inside double braces. It must be a dependency and return an array or an object containing one.',
-          itemPath: 'When upstream returns an object, identify its array path, such as records or data.records. Omit it for direct arrays.',
+          items:
+            'Reference an upstream step by putting its ID, such as query_orders, inside double braces. It must be a dependency and return an array or an object containing one.',
+          itemPath:
+            'When upstream returns an object, identify its array path, such as records or data.records. Omit it for direct arrays.',
           maxItems: 'Maximum items processed in this run, from 1 to 200. A larger input fails.',
           maxAttempts: 'Per-item attempts from 1 to 3. Non-idempotent Action APIs are not retried automatically.',
           continueOnError: 'true records an item failure and continues; false stops at the first failed item.',
           bodyType: 'Only api or builtin is supported. The body cannot nest foreach, call an LLM, or use web_search.',
           toolCode: 'Configured API Tool code or built-in Tool code invoked for each item.',
-          bodyParams: 'Use params for API and arguments for built-ins. Put item, item.field, or zero-based index inside double braces to reference them.',
-          outputSchema: 'Optional Draft 7 validation for the whole batch result object, not each individual Tool response.'
+          bodyParams:
+            'Use params for API and arguments for built-ins. Put item, item.field, or zero-based index inside double braces to reference them.',
+          outputSchema:
+            'Optional Draft 7 validation for the whole batch result object, not each individual Tool response.'
         },
         foreachRules: {
           dependency: 'The items source must be a dependency, and item_path must resolve to an array.',
-          limit: 'max_items cannot exceed 200. Limit the upstream query and verify the count in Trial Run before a batch action.',
-          retry: 'Non-idempotent Action APIs execute once even when max_attempts is greater than 1, preventing duplicate side effects.',
+          limit:
+            'max_items cannot exceed 200. Limit the upstream query and verify the count in Trial Run before a batch action.',
+          retry:
+            'Non-idempotent Action APIs execute once even when max_attempts is greater than 1, preventing duplicate side effects.',
           body: 'An Action API receives one HITL for the batch. The body cannot use web_search or nest another loop.'
         },
         transformFields: {
-          inputs: 'Name one or more upstream inputs. inputs is a name-to-binding object; input may be one binding. Every source must be a dependency.',
+          inputs:
+            'Name one or more upstream inputs. inputs is a name-to-binding object; input may be one binding. Every source must be a dependency.',
           sourcePath: 'source names the upstream step and path reads its primary data through restricted JSONPath.',
-          bindingPolicies: 'Bindings support one/many, on_empty, on_multiple, default, max_items, and overflow with the same meaning as API parameter bindings.',
-          operations: 'Execute 1 to 20 deterministic operations in array order. Every element must be a JSON object containing op.',
+          bindingPolicies:
+            'Bindings support one/many, on_empty, on_multiple, default, max_items, and overflow with the same meaning as API parameter bindings.',
+          operations:
+            'Execute 1 to 20 deterministic operations in array order. Every element must be a JSON object containing op.',
           op: 'Supported operations are select, filter, project, rename, distinct, sort, slice, limit, aggregate, object, merge, default, and cast.',
-          operationFields: 'Fields vary by op: path selects data, fields projects/renames/builds objects, and value supplies a filter, default, or merge object.',
-          outputSchema: 'Optional but strongly recommended Draft 7 contract for the final object or array. A mismatch blocks downstream execution.'
+          operationFields:
+            'Fields vary by op: path selects data, fields projects/renames/builds objects, and value supplies a filter, default, or merge object.',
+          outputSchema:
+            'Optional but strongly recommended Draft 7 contract for the final object or array. A mismatch blocks downstream execution.'
         },
         transformRules: {
           dependency: 'Every source under input/inputs must be a current-step dependency.',
           path: 'Paths support $, dotted fields, numeric indexes, and array wildcards only; no scripts, functions, recursion, or filter expressions.',
-          operations: 'filter operators are equals, not_equals, in, contains, exists, gt, gte, lt, and lte; sort supports asc or desc only.',
-          limits: 'At most 20 operations, 200 items, 1 MB JSON, and 32 nesting levels; every intermediate result is checked.'
+          operations:
+            'filter operators are equals, not_equals, in, contains, exists, gt, gte, lt, and lte; sort supports asc or desc only.',
+          limits:
+            'At most 20 operations, 200 items, 1 MB JSON, and 32 nesting levels; every intermediate result is checked.'
         },
         promptTitle: 'Prompt Template',
         promptDescription:
@@ -1960,7 +2011,8 @@ const local: App.I18n.Schema = {
       addSchemaColumn: 'Add Column',
       addSchemaExample: 'Add Example',
       schemaColumnsEmpty: 'No column metadata has been added. An empty list does not enable a column allowlist.',
-      schemaExamplesEmpty: 'No query examples have been added. Add verified natural-language questions and read-only SQL as needed.',
+      schemaExamplesEmpty:
+        'No query examples have been added. Add verified natural-language questions and read-only SQL as needed.',
       schemaColumnName: 'Column Name',
       schemaColumnType: 'Data Type',
       schemaColumnDescription: 'Business Description',
@@ -2035,14 +2087,20 @@ const local: App.I18n.Schema = {
       addParameter: 'Add Parameter',
       addRequestField: 'Add Request Field',
       addResponseMapping: 'Add Mapping',
-      paramSchemaBuilderHint: 'Define model-facing logical parameters row by row; the page generates JSON Schema when saving.',
-      requestHeadersHint: 'Use JSON key-value pairs for static headers; define dynamic headers as Header parameters in the Schema.',
-      requestTemplateBuilderHint: 'The body is assembled from the parameter Schema by default; the form covers top-level fields, while nested objects, arrays, and complex values require Advanced JSON.',
+      paramSchemaBuilderHint:
+        'Define model-facing logical parameters row by row; the page generates JSON Schema when saving.',
+      requestHeadersHint:
+        'Use JSON key-value pairs for static headers; define dynamic headers as Header parameters in the Schema.',
+      requestTemplateBuilderHint:
+        'The body is assembled from the parameter Schema by default; the form covers top-level fields, while nested objects, arrays, and complex values require Advanced JSON.',
       requestTemplateAuto: 'Auto Build',
-      requestTemplateAutoHint: 'No request template is used. Body parameters are assembled from their configured locations; use Advanced JSON for nested objects and arrays.',
+      requestTemplateAutoHint:
+        'No request template is used. Body parameters are assembled from their configured locations; use Advanced JSON for nested objects and arrays.',
       requestTemplateEmptyHint: 'No request fields yet. Add one from the upper-right corner.',
-      responseRuleBuilderHint: 'Configure HTTP and business-status checks. Leaving every field empty keeps the default HTTP 2xx behavior.',
-      responseMappingBuilderHint: 'Map response paths to stable tool output fields. Paths are relative to the extracted success data.',
+      responseRuleBuilderHint:
+        'Configure HTTP and business-status checks. Leaving every field empty keeps the default HTTP 2xx behavior.',
+      responseMappingBuilderHint:
+        'Map response paths to stable tool output fields. Paths are relative to the extracted success data.',
       parameterName: 'Parameter Name',
       parameterNamePlaceholder: 'For example, orderNo',
       parameterDescription: 'Description',
@@ -2312,7 +2370,7 @@ const local: App.I18n.Schema = {
           identityHeaderName:
             'Enter the HTTP header carrying the signed user context, default X-Platform-User-Context. The provider must implement the platform verification protocol.',
           paramSchema:
-            'Use the parameter table by default to define the logical name, description, type, HTTP location, external name, and required state row by row. Types can be selected or typed; configure defaults, enums, and bounds in each row\'s advanced properties. The page generates JSON Schema when saving; use Advanced JSON only for complex or migrated configurations.',
+            "Use the parameter table by default to define the logical name, description, type, HTTP location, external name, and required state row by row. Types can be selected or typed; configure defaults, enums, and bounds in each row's advanced properties. The page generates JSON Schema when saving; use Advanced JSON only for complex or migrated configurations.",
           requestHeaders:
             'Use the JSON key-value editor for request headers and insert common Accept or Content-Type presets. Values may use parameter placeholders. Configure dynamic headers as Header parameters in the parameter table; never store authentication secrets here.',
           requestTemplate:
@@ -2402,8 +2460,10 @@ const local: App.I18n.Schema = {
         effect2:
           'Disabling or deleting it removes the structure from future queries while retaining existing audit records.',
         descriptionTitle: 'Business Description',
-        descriptionRule1: 'Explain data scope, metric definitions, units, status enums, time semantics, and exclusions instead of repeating the domain name.',
-        descriptionRule2: 'The model reads this text when selecting a Schema and generating SQL. Incorrect semantics can produce wrong metrics but cannot bypass backend field or function checks.',
+        descriptionRule1:
+          'Explain data scope, metric definitions, units, status enums, time semantics, and exclusions instead of repeating the domain name.',
+        descriptionRule2:
+          'The model reads this text when selecting a Schema and generating SQL. Incorrect semantics can produce wrong metrics but cannot bypass backend field or function checks.',
         columnsTitle: 'Column Metadata',
         columnsDescription:
           'Use the form to enter each real column name, database type, and clear business description. Filter preset data types or type a database-specific type and precision; all three values are required and column names must be unique. Include units, enums, time semantics, aggregation rules, and join keys. When non-empty, unlisted columns are blocked and SELECT * is rejected; an empty list does not restrict columns.',
@@ -2413,11 +2473,14 @@ const local: App.I18n.Schema = {
           root: 'The page maintains one allowed real database column per row and serializes them as a JSON array when saving.',
           name: 'Real database column name used by the enforced allowlist. Enter the physical name, not a display label or SQL alias.',
           type: 'Filter preset data types or enter the actual database type and precision, helping the model compare, aggregate, and format values. The backend does not currently use it for JDBC type validation.',
-          description: 'Business meaning including units, enum values, time semantics, aggregation rules, and relationships to other fields.',
+          description:
+            'Business meaning including units, enum values, time semantics, aggregation rules, and relationships to other fields.',
           descriptionExample: 'Paid amount in yuan; may be summed; refunded orders retain the original paid amount'
         },
-        columnsRule1: 'A non-empty array enables the column allowlist and rejects SELECT *. Do not use an empty array in production.',
-        columnsRule2: 'name determines allowed columns. type and description guide the model and cannot replace the physical column name.',
+        columnsRule1:
+          'A non-empty array enables the column allowlist and rejects SELECT *. Do not use an empty array in production.',
+        columnsRule2:
+          'name determines allowed columns. type and description guide the model and cannot replace the physical column name.',
         fewShotTitle: 'Query Examples',
         fewShotDescription:
           'Use the form to enter typical natural-language questions and manually verified read-only SQL. Examples explain business conventions and must not fix a specific user or date or reference hidden columns. A few high-quality examples are better than many duplicates.',
@@ -2425,23 +2488,29 @@ const local: App.I18n.Schema = {
           '“Count completed orders by month” maps to an aggregate using completion time and completed status',
         fewShotFields: {
           root: 'The page maintains one user-question and correct-SQL pair per row and serializes them as a JSON array when saving.',
-          question: 'A realistic business question that expresses the intended convention, not only an SQL feature name.',
+          question:
+            'A realistic business question that expresses the intended convention, not only an SQL feature name.',
           questionExample: 'Count orders by order status',
           sql: 'One manually verified read-only SELECT for the target database using only this Schema view, columns, and allowed functions.'
         },
-        fewShotRule1: 'Do not use INSERT, UPDATE, DELETE, DDL, multiple statements, named parameters, or unauthorized fields. Examples are not parameterized statements.',
-        fewShotRule2: 'Avoid one specific user, order, or soon-stale absolute date. Use a few examples for error-prone enums, time semantics, and metrics.',
+        fewShotRule1:
+          'Do not use INSERT, UPDATE, DELETE, DDL, multiple statements, named parameters, or unauthorized fields. Examples are not parameterized statements.',
+        fewShotRule2:
+          'Avoid one specific user, order, or soon-stale absolute date. Use a few examples for error-prone enums, time semantics, and metrics.',
         functionsTitle: 'Allowed Functions',
         functionsDescription:
           'Select or enter SQL function names the model may use for this Schema. They are stored as a string array and checked by name; platform safe read-only functions remain governed by built-in rules.',
-        functionsRule1: 'Use functions supported by the actual database and prefer uppercase for review. Do not mix MySQL DATE_FORMAT with PostgreSQL DATE_TRUNC.',
-        functionsRule2: 'An empty array means no additional function allowlist, not deny all. For strict control, keep only functions required by the domain.',
+        functionsRule1:
+          'Use functions supported by the actual database and prefer uppercase for review. Do not mix MySQL DATE_FORMAT with PostgreSQL DATE_TRUNC.',
+        functionsRule2:
+          'An empty array means no additional function allowlist, not deny all. For strict control, keep only functions required by the domain.',
         sensitiveTitle: 'Sensitive Columns',
         sensitiveDescription:
           'Select physical columns that NL2SQL must never reference from the column metadata dropdown. Every selected column remains visible. SQL containing one of these identifiers is blocked as defense in depth beyond the allowlist. Removing or renaming a column updates the sensitive selection.',
         sensitiveRule1:
           'Select physical database column names from the column metadata dropdown, not display labels, JSON paths, or masked aliases. Matching is case-insensitive.',
-        sensitiveRule2: 'This does not replace masked views and least-privilege accounts. Remove highly sensitive fields from the view instead of relying only on application checks.',
+        sensitiveRule2:
+          'This does not replace masked views and least-privilege accounts. Remove highly sensitive fields from the view instead of relying only on application checks.',
         jsonRule:
           'The page generates valid JSON automatically when saving; do not enter quotes, arrays, or object syntax manually.',
         visibilityTitle: 'Visibility',
@@ -2494,12 +2563,14 @@ const local: App.I18n.Schema = {
           'API Key: X-API-Key and key value; AK/SK: accessKey and secretKey (signature headers are generated)',
         schemaTitle: 'Parameter Schema',
         schemaDescription:
-          'Use the parameter table by default to maintain the logical name, description, type, location, external name, and required state row by row; the page generates JSON Schema when saving. Types can be selected or typed, while defaults, enums, and bounds are configured in each row\'s advanced properties. Auto location follows GET/DELETE query and POST/PUT body defaults; a path parameter must have a matching double-brace placeholder in the URL. Use Advanced JSON only for complex or migrated configurations.',
-        schemaExample: 'The full example covers path, query, body, header, external-name mapping, enums, bounds, defaults, and required fields',
+          "Use the parameter table by default to maintain the logical name, description, type, location, external name, and required state row by row; the page generates JSON Schema when saving. Types can be selected or typed, while defaults, enums, and bounds are configured in each row's advanced properties. Auto location follows GET/DELETE query and POST/PUT body defaults; a path parameter must have a matching double-brace placeholder in the URL. Use Advanced JSON only for complex or migrated configurations.",
+        schemaExample:
+          'The full example covers path, query, body, header, external-name mapping, enums, bounds, defaults, and required fields',
         requestTitle: 'Request Template',
         requestDescription:
           'The request body is auto-built by default, so ordinary parameters do not require hand-written JSON. For fixed fields or special composition, add request-field rows and choose a parameter reference or fixed value; use Advanced JSON for nested objects, arrays, and complex JSON. Template variables must exist in the parameter Schema, and explicit body parameters participate in object-template assembly.',
-        requestExample: 'Use /orders/ followed by orderNo in double braces; status and page become query values, requestId becomes a header, and reason becomes operation_reason in the body',
+        requestExample:
+          'Use /orders/ followed by orderNo in double braces; status and page become query values, requestId becomes a header, and reason becomes operation_reason in the body',
         responseTitle: 'Success Rule and Response Mapping',
         responseDescription:
           'Use the success-rule form for HTTP statuses, business-status checks, data/message paths, and expected values; empty fields keep the default HTTP 2xx behavior. Add platform output fields and paths in the response-mapping table. Mapping paths are relative to the dataPath result, and any missing path fails the call. Use Advanced JSON for complex configurations.',
@@ -2734,6 +2805,7 @@ const local: App.I18n.Schema = {
       required: 'Select a workflow and enter a name',
       updated: 'Trigger updated',
       created: 'Trigger created',
+      createdDisabledHint: 'The trigger is disabled by default. Enable it before calling.',
       enabled: 'Trigger enabled',
       disabled: 'Trigger disabled',
       rotateConfirm: 'The old secret stops working immediately. Continue?',

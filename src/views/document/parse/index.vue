@@ -2,16 +2,16 @@
 import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { TagProps } from 'element-plus';
-import { $t } from '@/locales';
 import {
-  fetchGetParsePage,
-  fetchGetParseContent,
-  fetchRetryParse,
+  fetchBatchStartProcess,
   fetchDeleteParse,
-  fetchStartProcess,
-  fetchBatchStartProcess
+  fetchGetParseContent,
+  fetchGetParsePage,
+  fetchRetryParse,
+  fetchStartProcess
 } from '@/service/api/document';
 import { request } from '@/service/request';
+import { $t } from '@/locales';
 import DocumentProcessingHelp from '../shared/document-processing-help.vue';
 
 defineOptions({ name: 'DocumentParse' });
@@ -98,7 +98,7 @@ function showQueueFeedback(data: any) {
 
 function showMetrics(row: any) {
   try {
-    metrics.value = typeof row.parseDetail === 'string' ? JSON.parse(row.parseDetail) : (row.parseDetail || {});
+    metrics.value = typeof row.parseDetail === 'string' ? JSON.parse(row.parseDetail) : row.parseDetail || {};
   } catch {
     metrics.value = {};
   }
@@ -108,7 +108,7 @@ function showMetrics(row: any) {
 async function getList() {
   loading.value = true;
   try {
-    const { data, error } = await fetchGetParsePage(queryParams) as any;
+    const { data, error } = (await fetchGetParsePage(queryParams)) as any;
     if (!error) {
       dataList.value = data?.records || [];
       total.value = data?.total || 0;
@@ -144,9 +144,13 @@ function handleSizeChange(size: number) {
   getList();
 }
 
-  async function handleRetry(id: number) {
-    try { await ElMessageBox.confirm($t('page.manage.parse.retryConfirm'), $t('common.tip'), { type: 'warning' }); } catch { return; }
-    const { error } = await fetchRetryParse(id) as any;
+async function handleRetry(id: number) {
+  try {
+    await ElMessageBox.confirm($t('page.manage.parse.retryConfirm'), $t('common.tip'), { type: 'warning' });
+  } catch {
+    return;
+  }
+  const { error } = (await fetchRetryParse(id)) as any;
   if (error) return;
   ElMessage.success($t('page.manage.parse.retrySubmitted'));
   getList();
@@ -159,7 +163,7 @@ async function handleDelete(row: any) {
       $t('page.manage.parse.deleteConfirm'),
       { type: 'warning' }
     );
-    const { error } = await fetchDeleteParse(row.id) as any;
+    const { error } = (await fetchDeleteParse(row.id)) as any;
     if (error) return;
     ElMessage.success($t('page.manage.parse.deleteSuccess'));
     getList();
@@ -167,7 +171,7 @@ async function handleDelete(row: any) {
 }
 
 async function showContent(id: number, fileName: string) {
-  const { data, error } = await fetchGetParseContent(id) as any;
+  const { data, error } = (await fetchGetParseContent(id)) as any;
   if (error) return;
   contentDialogTitle.value = `${$t('page.manage.parse.viewContent')} — ${fileName}`;
   mdContent.value = data || '';
@@ -176,14 +180,21 @@ async function showContent(id: number, fileName: string) {
   contentDialogVisible.value = true;
 }
 
-  async function saveContent() {
-    try { await ElMessageBox.confirm($t('page.manage.parse.saveContentConfirm'), $t('common.tip'), { type: 'warning' }); } catch { return; }
-    const { error } = await request({
+async function saveContent() {
+  try {
+    await ElMessageBox.confirm($t('page.manage.parse.saveContentConfirm'), $t('common.tip'), { type: 'warning' });
+  } catch {
+    return;
+  }
+  const { error } = (await request({
     url: `/document/parse/${editingTaskId.value}/content`,
     method: 'put',
     data: { mdContent: mdContent.value }
-  }) as any;
-  if (error) { ElMessage.warning(error?.message || $t('page.manage.parse.saveFailed')); return; }
+  })) as any;
+  if (error) {
+    ElMessage.warning(error?.message || $t('page.manage.parse.saveFailed'));
+    return;
+  }
   ElMessage.success($t('page.manage.parse.saveSuccess'));
   editing.value = false;
 }
@@ -195,15 +206,17 @@ async function handleStartProcess(row: any) {
       $t('common.confirm'),
       { type: 'warning' }
     );
-    const { data, error } = await fetchStartProcess(row.id) as any;
+    const { data, error } = (await fetchStartProcess(row.id)) as any;
     if (error) return;
     if (data?.needConfirm) {
       try {
         await ElMessageBox.confirm(data.message, $t('common.confirm'), { type: 'warning' });
-        const { data: queued, error: e2 } = await fetchStartProcess(row.id, true) as any;
+        const { data: queued, error: e2 } = (await fetchStartProcess(row.id, true)) as any;
         if (e2) return;
         showQueueFeedback(queued);
-      } catch { return; }
+      } catch {
+        return;
+      }
     } else {
       showQueueFeedback(data);
     }
@@ -218,7 +231,7 @@ async function handleReProcess(row: any) {
     : $t('page.manage.parse.reprocessMsgDone', { name: row.fileName });
   try {
     await ElMessageBox.confirm(msg, $t('page.manage.parse.reprocessConfirm'), { type: 'warning' });
-    const { data, error } = await fetchStartProcess(row.id, true) as any;
+    const { data, error } = (await fetchStartProcess(row.id, true)) as any;
     if (error) return;
     showQueueFeedback(data);
     getList();
@@ -232,7 +245,7 @@ async function handleRetryProcess(row: any) {
       $t('page.manage.parse.retryProcess'),
       { type: 'warning' }
     );
-    const { error } = await fetchStartProcess(row.id, true) as any;
+    const { error } = (await fetchStartProcess(row.id, true)) as any;
     if (error) return;
     ElMessage.success($t('page.manage.parse.retryProcessSubmitted'));
     getList();
@@ -254,7 +267,7 @@ async function handleBatchProcess() {
       { type: 'warning' }
     );
     const ids = validRows.map(r => r.id);
-    const { error } = await fetchBatchStartProcess(ids) as any;
+    const { error } = (await fetchBatchStartProcess(ids)) as any;
     if (error) return;
     ElMessage.success($t('page.manage.parse.batchSubmitted'));
     selectedRows.value = [];
@@ -271,17 +284,32 @@ onUnmounted(stopPolling);
 </script>
 
 <template>
-  <div class="h-full page-container">
+  <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
-        <ElInput v-model="queryParams.fileName" :placeholder="$t('page.manage.parse.fileName')" clearable style="width: 180px" />
-        <ElSelect v-model="queryParams.status" :placeholder="$t('page.manage.parse.parseStatus')" clearable style="width: 130px">
+        <ElInput
+          v-model="queryParams.fileName"
+          :placeholder="$t('page.manage.parse.fileName')"
+          clearable
+          style="width: 180px"
+        />
+        <ElSelect
+          v-model="queryParams.status"
+          :placeholder="$t('page.manage.parse.parseStatus')"
+          clearable
+          style="width: 130px"
+        >
           <ElOption :label="$t('page.manage.parse.pending')" value="pending" />
           <ElOption :label="$t('page.manage.parse.parsing')" value="processing" />
           <ElOption :label="$t('page.manage.parse.done')" value="done" />
           <ElOption :label="$t('page.manage.parse.failed')" value="failed" />
         </ElSelect>
-        <ElSelect v-model="queryParams.processStatus" :placeholder="$t('page.manage.parse.processStatus')" clearable style="width: 130px">
+        <ElSelect
+          v-model="queryParams.processStatus"
+          :placeholder="$t('page.manage.parse.processStatus')"
+          clearable
+          style="width: 130px"
+        >
           <ElOption :label="$t('page.manage.parse.notProcessed')" value="not_processed" />
           <ElOption :label="$t('page.manage.parse.processing')" value="processing" />
           <ElOption :label="$t('page.manage.parse.processed')" value="processed" />
@@ -300,26 +328,52 @@ onUnmounted(stopPolling);
           </ElButton>
         </ElTooltip>
       </div>
-      <ElTable v-loading="loading" :data="dataList" border stripe style="width: 100%" @selection-change="handleSelectionChange">
-        <ElTableColumn type="selection" width="50" :selectable="(row: any) => row.status === 'done' && (row.processStatus === 'not_processed' || !row.processStatus)" />
+      <ElTable
+        v-loading="loading"
+        :data="dataList"
+        border
+        stripe
+        style="width: 100%"
+        @selection-change="handleSelectionChange"
+      >
+        <ElTableColumn
+          type="selection"
+          width="50"
+          :selectable="
+            (row: any) => row.status === 'done' && (row.processStatus === 'not_processed' || !row.processStatus)
+          "
+        />
         <ElTableColumn type="index" width="50" label="#" />
-        <ElTableColumn prop="fileName" :label="$t('page.manage.parse.fileName')" min-width="200" align="left" show-overflow-tooltip />
+        <ElTableColumn
+          prop="fileName"
+          :label="$t('page.manage.parse.fileName')"
+          min-width="200"
+          align="left"
+          show-overflow-tooltip
+        />
         <ElTableColumn prop="fileType" :label="$t('page.manage.parse.fileType')" min-width="80" align="center">
           <template #default="{ row }">{{ (row.fileType || '').toUpperCase() }}</template>
         </ElTableColumn>
         <ElTableColumn :label="$t('page.manage.parse.duration')" min-width="100" align="center">
           <template #default="{ row }">
             <span v-if="row.parseDuration != null" class="text-12px">{{ formatActual(row.parseDuration) }}</span>
-            <span v-else-if="row.status === 'processing'" class="text-12px text-blue-400">{{ $t('page.manage.parse.parsing') }}...</span>
+            <span v-else-if="row.status === 'processing'" class="text-12px text-blue-400">
+              {{ $t('page.manage.parse.parsing') }}...
+            </span>
             <span v-else class="text-12px text-gray-400">-</span>
           </template>
         </ElTableColumn>
         <ElTableColumn prop="qualityScore" :label="$t('page.manage.parse.qualityScore')" min-width="100" align="center">
           <template #default="{ row }">
-            <span v-if="row.qualityScore != null" :class="[
-              'text-14px font-600',
-              row.qualityScore >= 70 ? 'text-green-500' : row.qualityScore >= 50 ? 'text-orange-500' : 'text-red-500'
-            ]">{{ row.qualityScore }}{{ $t('page.manage.parse.scoreUnit') }}</span>
+            <span
+              v-if="row.qualityScore != null"
+              class="text-14px font-600"
+              :class="[
+                row.qualityScore >= 70 ? 'text-green-500' : row.qualityScore >= 50 ? 'text-orange-500' : 'text-red-500'
+              ]"
+            >
+              {{ row.qualityScore }}{{ $t('page.manage.parse.scoreUnit') }}
+            </span>
             <span v-else class="text-gray-400">-</span>
           </template>
         </ElTableColumn>
@@ -332,7 +386,11 @@ onUnmounted(stopPolling);
         </ElTableColumn>
         <ElTableColumn :label="$t('page.manage.parse.processStatus')" min-width="100" align="center">
           <template #default="{ row }">
-            <ElTag v-if="row.processStatus" :type="(processStatusMap[row.processStatus] || { tagType: 'info' }).tagType" size="small">
+            <ElTag
+              v-if="row.processStatus"
+              :type="(processStatusMap[row.processStatus] || { tagType: 'info' }).tagType"
+              size="small"
+            >
               {{ $t((processStatusMap[row.processStatus] || { labelKey: 'common.noData' }).labelKey) }}
             </ElTag>
             <span v-else>-</span>
@@ -341,19 +399,57 @@ onUnmounted(stopPolling);
         <ElTableColumn prop="createdAt" :label="$t('common.createTime')" min-width="170" align="left" />
         <ElTableColumn :label="$t('common.action')" min-width="280" fixed="right" align="center">
           <template #default="{ row }">
-            <ElButton v-if="row.status === 'done' && (!row.processStatus || row.processStatus === 'not_processed')" type="success" link size="small" @click="handleStartProcess(row)">
+            <ElButton
+              v-if="row.status === 'done' && (!row.processStatus || row.processStatus === 'not_processed')"
+              type="success"
+              link
+              size="small"
+              @click="handleStartProcess(row)"
+            >
               {{ $t('page.manage.parse.submitProcess') }}
             </ElButton>
-            <ElButton v-if="row.status === 'done' && (row.processStatus === 'processed')" type="warning" link size="small" @click="handleReProcess(row)">
+            <ElButton
+              v-if="row.status === 'done' && row.processStatus === 'processed'"
+              type="warning"
+              link
+              size="small"
+              @click="handleReProcess(row)"
+            >
               {{ $t('page.manage.parse.reprocess') }}
             </ElButton>
-            <ElButton v-if="row.status === 'done' && row.processStatus === 'failed'" type="warning" link size="small" @click="handleRetryProcess(row)">
+            <ElButton
+              v-if="row.status === 'done' && row.processStatus === 'failed'"
+              type="warning"
+              link
+              size="small"
+              @click="handleRetryProcess(row)"
+            >
               {{ $t('page.manage.parse.retryProcess') }}
             </ElButton>
-            <ElButton v-if="row.status === 'done'" type="primary" link size="small" @click="showContent(row.id, row.fileName)">{{ $t('page.manage.parse.viewContent') }}</ElButton>
-            <ElButton v-if="row.parseDetail" type="info" link size="small" @click="showMetrics(row)">{{ $t('page.manage.parse.metrics') }}</ElButton>
-            <ElButton v-if="row.status === 'failed'" type="warning" link size="small" @click="handleRetry(row.id)">{{ $t('page.manage.parse.retry') }}</ElButton>
-            <ElButton v-if="row.status !== 'processing' && row.processStatus !== 'processing'" type="danger" link size="small" @click="handleDelete(row)">{{ $t('page.manage.parse.delete') }}</ElButton>
+            <ElButton
+              v-if="row.status === 'done'"
+              type="primary"
+              link
+              size="small"
+              @click="showContent(row.id, row.fileName)"
+            >
+              {{ $t('page.manage.parse.viewContent') }}
+            </ElButton>
+            <ElButton v-if="row.parseDetail" type="info" link size="small" @click="showMetrics(row)">
+              {{ $t('page.manage.parse.metrics') }}
+            </ElButton>
+            <ElButton v-if="row.status === 'failed'" type="warning" link size="small" @click="handleRetry(row.id)">
+              {{ $t('page.manage.parse.retry') }}
+            </ElButton>
+            <ElButton
+              v-if="row.status !== 'processing' && row.processStatus !== 'processing'"
+              type="danger"
+              link
+              size="small"
+              @click="handleDelete(row)"
+            >
+              {{ $t('page.manage.parse.delete') }}
+            </ElButton>
           </template>
         </ElTableColumn>
       </ElTable>
@@ -370,8 +466,26 @@ onUnmounted(stopPolling);
       </div>
     </ElCard>
 
-    <ElDialog v-model="contentDialogVisible" :title="contentDialogTitle" width="800px" top="5vh" @close="editing = false">
-      <div v-if="!editing" class="markdown-body" style="max-height: 70vh; overflow-y: auto; white-space: pre-wrap; font-family: monospace; background: #f8f9fa; padding: 16px; border-radius: 4px;">
+    <ElDialog
+      v-model="contentDialogVisible"
+      :title="contentDialogTitle"
+      width="800px"
+      top="5vh"
+      @close="editing = false"
+    >
+      <div
+        v-if="!editing"
+        class="markdown-body"
+        style="
+          max-height: 70vh;
+          overflow-y: auto;
+          white-space: pre-wrap;
+          font-family: monospace;
+          background: #f8f9fa;
+          padding: 16px;
+          border-radius: 4px;
+        "
+      >
         {{ mdContent || $t('page.manage.parse.noContent') }}
       </div>
       <ElInput v-else v-model="mdContent" type="textarea" :rows="20" />
@@ -391,23 +505,54 @@ onUnmounted(stopPolling);
       </template>
     </ElDialog>
 
-    <ElDialog v-model="metricsDialogVisible" :title="$t('page.manage.parse.metricsTitle')" width="min(1100px, 96vw)" top="8vh">
+    <ElDialog
+      v-model="metricsDialogVisible"
+      :title="$t('page.manage.parse.metricsTitle')"
+      width="min(1100px, 96vw)"
+      top="8vh"
+    >
       <ElDescriptions :column="3" border>
         <ElDescriptionsItem :label="$t('page.manage.parse.parser')">{{ metrics.parser || '-' }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.parserFallback')">{{ metrics.fallbackFrom || '-' }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.ocrPages')">{{ formatMetricList(metrics.ocrPages) }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.ocrRegions')">{{ metrics.ocrRegions ?? 0 }}</ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.parserFallback')">
+          {{ metrics.fallbackFrom || '-' }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.ocrPages')">
+          {{ formatMetricList(metrics.ocrPages) }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.ocrRegions')">
+          {{ metrics.ocrRegions ?? 0 }}
+        </ElDescriptionsItem>
         <ElDescriptionsItem :label="$t('page.manage.parse.ocrImages')">{{ metrics.ocrImages ?? 0 }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.ocrPreprocessing')">{{ formatMetricList(metrics.ocrPreprocessing) }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.downloadStage')">{{ formatActual(metrics.stages?.downloadMs) }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.extractionStage')">{{ formatActual(metrics.stages?.extractionMs) }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.assessmentStage')">{{ formatActual(metrics.stages?.assessmentMs) }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.markdownStage')">{{ formatActual(metrics.stages?.markdownMs) }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.contentCoverage')">{{ formatPercent(metrics.markdownQuality?.contentCoverage) }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.numericCoverage')">{{ formatPercent(metrics.markdownQuality?.numericCoverage) }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.structureScore')">{{ metrics.markdownQuality?.structureScore ?? '-' }}/30</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.semanticRetries')">{{ metrics.semanticRetries ?? 0 }}</ElDescriptionsItem>
-        <ElDescriptionsItem :label="$t('page.manage.parse.sourceFallbacks')">{{ metrics.sourceFallbacks ?? 0 }}</ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.ocrPreprocessing')">
+          {{ formatMetricList(metrics.ocrPreprocessing) }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.downloadStage')">
+          {{ formatActual(metrics.stages?.downloadMs) }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.extractionStage')">
+          {{ formatActual(metrics.stages?.extractionMs) }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.assessmentStage')">
+          {{ formatActual(metrics.stages?.assessmentMs) }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.markdownStage')">
+          {{ formatActual(metrics.stages?.markdownMs) }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.contentCoverage')">
+          {{ formatPercent(metrics.markdownQuality?.contentCoverage) }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.numericCoverage')">
+          {{ formatPercent(metrics.markdownQuality?.numericCoverage) }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.structureScore')">
+          {{ metrics.markdownQuality?.structureScore ?? '-' }}/30
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.semanticRetries')">
+          {{ metrics.semanticRetries ?? 0 }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem :label="$t('page.manage.parse.sourceFallbacks')">
+          {{ metrics.sourceFallbacks ?? 0 }}
+        </ElDescriptionsItem>
       </ElDescriptions>
       <ElTable v-if="metrics.llmCalls?.length" :data="metrics.llmCalls" border class="mt-4" max-height="300">
         <ElTableColumn prop="taskType" :label="$t('page.manage.parse.taskType')" min-width="150" />
@@ -417,8 +562,18 @@ onUnmounted(stopPolling);
         <ElTableColumn prop="inputChars" :label="$t('page.manage.parse.inputChars')" width="100" align="right" />
         <ElTableColumn prop="outputChars" :label="$t('page.manage.parse.outputChars')" width="100" align="right" />
         <ElTableColumn prop="promptTokens" :label="$t('page.manage.parse.promptTokens')" width="110" align="right" />
-        <ElTableColumn prop="completionTokens" :label="$t('page.manage.parse.completionTokens')" width="120" align="right" />
-        <ElTableColumn prop="reasoningTokens" :label="$t('page.manage.parse.reasoningTokens')" width="120" align="right" />
+        <ElTableColumn
+          prop="completionTokens"
+          :label="$t('page.manage.parse.completionTokens')"
+          width="120"
+          align="right"
+        />
+        <ElTableColumn
+          prop="reasoningTokens"
+          :label="$t('page.manage.parse.reasoningTokens')"
+          width="120"
+          align="right"
+        />
         <ElTableColumn prop="retryCount" :label="$t('page.manage.parse.retryCount')" width="90" align="right" />
         <ElTableColumn prop="fallbackProvider" :label="$t('page.manage.parse.fallbackProvider')" min-width="120" />
         <ElTableColumn :label="$t('page.manage.parse.duration')" width="100" align="right">

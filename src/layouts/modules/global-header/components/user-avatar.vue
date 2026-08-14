@@ -2,11 +2,11 @@
 import { computed, reactive, ref } from 'vue';
 import type { VNode } from 'vue';
 import type { FormInstance, FormRules } from 'element-plus';
+import { fetchChangeCurrentPassword, fetchLogout } from '@/service/api';
 import { useAuthStore } from '@/store/modules/auth';
 import { useRouterPush } from '@/hooks/common/router';
 import { useSvgIcon } from '@/hooks/common/icon';
 import { useFormRules } from '@/hooks/common/form';
-import { fetchChangeCurrentPassword, fetchLogout } from '@/service/api';
 import { localStg } from '@/utils/storage';
 import { $t } from '@/locales';
 

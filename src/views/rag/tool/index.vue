@@ -216,7 +216,10 @@ function loadParamSchemaEditor(value?: string) {
   if (!value?.trim()) return;
   try {
     const schema = parseJsonObject(value) || {};
-    if (schema?.type && schema.type !== 'object' || schema?.properties && (typeof schema.properties !== 'object' || Array.isArray(schema.properties))) {
+    if (
+      (schema?.type && schema.type !== 'object') ||
+      (schema?.properties && (typeof schema.properties !== 'object' || Array.isArray(schema.properties)))
+    ) {
       paramSchemaMode.value = 'json';
       return;
     }
@@ -308,7 +311,14 @@ function loadResponseRuleEditor(value?: string) {
   if (!value?.trim()) return;
   try {
     const rule = parseJsonObject(value) || {};
-    const extra = omitKeys(rule, ['httpSuccessStatuses', 'successPath', 'successOperator', 'successValues', 'messagePath', 'dataPath']);
+    const extra = omitKeys(rule, [
+      'httpSuccessStatuses',
+      'successPath',
+      'successOperator',
+      'successValues',
+      'messagePath',
+      'dataPath'
+    ]);
     responseRuleExtra.value = extra;
     responseRuleForm.value = {
       httpSuccessStatuses: Array.isArray(rule?.httpSuccessStatuses) ? rule.httpSuccessStatuses.map(String) : [],
@@ -366,7 +376,9 @@ function serializeParamSchema() {
     if (row.description.trim()) property.description = row.description.trim();
     if (row.location !== 'auto') property['x-in'] = row.location;
     if (row.httpName.trim()) property['x-http-name'] = row.httpName.trim();
-    const enumValues = row.enumValues.map((value: string) => parseEditorValue(value)).filter((value: any) => value !== '');
+    const enumValues = row.enumValues
+      .map((value: string) => parseEditorValue(value))
+      .filter((value: any) => value !== '');
     if (enumValues.length) property.enum = enumValues;
     if (row.hasDefault) property.default = parseEditorValue(row.defaultValue);
     if (typeof row.minimum === 'number') property.minimum = row.minimum;
@@ -454,8 +466,7 @@ function serializeResponseMapping() {
 function buildStructuredFields() {
   return {
     paramSchema: paramSchemaMode.value === 'form' ? serializeParamSchema() : form.value.paramSchema,
-    requestTemplate:
-      requestTemplateMode.value === 'json' ? form.value.requestTemplate : serializeRequestTemplate(),
+    requestTemplate: requestTemplateMode.value === 'json' ? form.value.requestTemplate : serializeRequestTemplate(),
     responseRule: responseRuleMode.value === 'form' ? serializeResponseRule() : form.value.responseRule,
     responseMapping: responseMappingMode.value === 'form' ? serializeResponseMapping() : form.value.responseMapping
   };
@@ -1012,40 +1023,40 @@ const responseDisplay = computed(() => {
         <ElButton type="primary" @click="openCreate">+ {{ t('rag.common.create') }}</ElButton>
       </div>
       <ElTable v-loading="loading" :data="list" stripe border class="w-full" :empty-text="t('rag.tool.emptyHint')">
-          <ElTableColumn prop="name" :label="t('rag.tool.name')" min-width="150" />
-          <ElTableColumn prop="code" :label="t('rag.tool.code')" min-width="120" />
-          <ElTableColumn prop="httpMethod" :label="t('rag.tool.method')" width="70" />
-          <ElTableColumn :label="t('rag.tool.operationType')" width="90">
-            <template #default="{ row }">{{ operationTypeLabel(row.operationType) }}</template>
-          </ElTableColumn>
-          <ElTableColumn :label="t('rag.tool.authType')" width="100">
-            <template #default="{ row }">{{ authTypeLabel(row.authType) }}</template>
-          </ElTableColumn>
-          <ElTableColumn :label="t('rag.tool.visibility')" width="110">
-            <template #default="{ row }">{{ visibilityLabel(row.visibility) }}</template>
-          </ElTableColumn>
-          <ElTableColumn :label="t('rag.tool.urlTemplate')" min-width="200">
-            <template #default="{ row }">
-              <span class="tool-url-cell" :title="row.urlTemplate">{{ row.urlTemplate }}</span>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn prop="timeout" :label="t('rag.tool.timeout')" width="80" />
-          <ElTableColumn :label="t('rag.common.status')" width="70">
-            <template #default="{ row }">
-              <ElTag :type="row.status === 1 ? 'success' : 'danger'" size="small">
-                {{ row.status === 1 ? t('common.on') : t('common.off') }}
-              </ElTag>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn :label="t('rag.common.action')" width="170" fixed="right" align="center">
-            <template #default="{ row }">
-              <ElButton size="small" link type="primary" @click="openToolTest(row)">
-                {{ t('rag.tool.startTest') }}
-              </ElButton>
-              <ElButton size="small" link @click="openEdit(row)">{{ t('rag.common.edit') }}</ElButton>
-              <ElButton size="small" link type="danger" @click="deleteItem(row)">{{ t('rag.common.delete') }}</ElButton>
-            </template>
-          </ElTableColumn>
+        <ElTableColumn prop="name" :label="t('rag.tool.name')" min-width="150" />
+        <ElTableColumn prop="code" :label="t('rag.tool.code')" min-width="120" />
+        <ElTableColumn prop="httpMethod" :label="t('rag.tool.method')" width="70" />
+        <ElTableColumn :label="t('rag.tool.operationType')" width="90">
+          <template #default="{ row }">{{ operationTypeLabel(row.operationType) }}</template>
+        </ElTableColumn>
+        <ElTableColumn :label="t('rag.tool.authType')" width="100">
+          <template #default="{ row }">{{ authTypeLabel(row.authType) }}</template>
+        </ElTableColumn>
+        <ElTableColumn :label="t('rag.tool.visibility')" width="110">
+          <template #default="{ row }">{{ visibilityLabel(row.visibility) }}</template>
+        </ElTableColumn>
+        <ElTableColumn :label="t('rag.tool.urlTemplate')" min-width="200">
+          <template #default="{ row }">
+            <span class="tool-url-cell" :title="row.urlTemplate">{{ row.urlTemplate }}</span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="timeout" :label="t('rag.tool.timeout')" width="80" />
+        <ElTableColumn :label="t('rag.common.status')" width="70">
+          <template #default="{ row }">
+            <ElTag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+              {{ row.status === 1 ? t('common.on') : t('common.off') }}
+            </ElTag>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn :label="t('rag.common.action')" width="170" fixed="right" align="center">
+          <template #default="{ row }">
+            <ElButton size="small" link type="primary" @click="openToolTest(row)">
+              {{ t('rag.tool.startTest') }}
+            </ElButton>
+            <ElButton size="small" link @click="openEdit(row)">{{ t('rag.common.edit') }}</ElButton>
+            <ElButton size="small" link type="danger" @click="deleteItem(row)">{{ t('rag.common.delete') }}</ElButton>
+          </template>
+        </ElTableColumn>
       </ElTable>
       <div class="mt-4 flex justify-end">
         <ElPagination
@@ -1274,7 +1285,13 @@ const responseDisplay = computed(() => {
                     ]"
                     @change="switchParamSchemaMode"
                   />
-                  <ElButton v-if="paramSchemaMode === 'form'" size="small" type="primary" plain @click="paramRows.push(createParamRow())">
+                  <ElButton
+                    v-if="paramSchemaMode === 'form'"
+                    size="small"
+                    type="primary"
+                    plain
+                    @click="paramRows.push(createParamRow())"
+                  >
                     <SvgIcon icon="mdi:plus" />
                     {{ t('rag.tool.addParameter') }}
                   </ElButton>
@@ -1297,7 +1314,10 @@ const responseDisplay = computed(() => {
                     </ElTableColumn>
                     <ElTableColumn :label="t('rag.tool.parameterDescription')" min-width="210">
                       <template #default="{ row }">
-                        <ElInput v-model="row.description" :placeholder="t('rag.tool.parameterDescriptionPlaceholder')" />
+                        <ElInput
+                          v-model="row.description"
+                          :placeholder="t('rag.tool.parameterDescriptionPlaceholder')"
+                        />
                       </template>
                     </ElTableColumn>
                     <ElTableColumn :label="t('rag.tool.parameterType')" width="138">
@@ -1329,7 +1349,12 @@ const responseDisplay = computed(() => {
                     </ElTableColumn>
                     <ElTableColumn :label="t('rag.common.action')" width="100" fixed="right" align="center">
                       <template #default="{ row, $index }">
-                        <ElPopover placement="left" :title="t('rag.tool.parameterAdvanced')" :width="420" trigger="click">
+                        <ElPopover
+                          placement="left"
+                          :title="t('rag.tool.parameterAdvanced')"
+                          :width="420"
+                          trigger="click"
+                        >
                           <template #reference>
                             <ElButton
                               link
@@ -1343,7 +1368,10 @@ const responseDisplay = computed(() => {
                           </template>
                           <ElForm label-position="top" class="tool-popover-form">
                             <ElFormItem :label="t('rag.tool.parameterDefault')">
-                              <ElInput v-model="row.defaultValue" :placeholder="t('rag.tool.parameterDefaultPlaceholder')">
+                              <ElInput
+                                v-model="row.defaultValue"
+                                :placeholder="t('rag.tool.parameterDefaultPlaceholder')"
+                              >
                                 <template #prepend><ElSwitch v-model="row.hasDefault" /></template>
                               </ElInput>
                             </ElFormItem>
@@ -1471,7 +1499,9 @@ const responseDisplay = computed(() => {
                 <div v-else class="tool-builder-table-wrap">
                   <ElTable :data="requestTemplateRows" border class="tool-builder-table" row-key="key">
                     <ElTableColumn :label="t('rag.tool.requestField')" min-width="180">
-                      <template #default="{ row }"><ElInput v-model="row.name" :placeholder="t('rag.tool.requestFieldPlaceholder')" /></template>
+                      <template #default="{ row }">
+                        <ElInput v-model="row.name" :placeholder="t('rag.tool.requestFieldPlaceholder')" />
+                      </template>
                     </ElTableColumn>
                     <ElTableColumn :label="t('rag.tool.requestValueSource')" width="150">
                       <template #default="{ row }">
@@ -1491,15 +1521,33 @@ const responseDisplay = computed(() => {
                           allow-create
                           :placeholder="t('rag.tool.requestParameterPlaceholder')"
                         >
-                          <ElOption v-for="parameter in paramRows" :key="parameter.key" :label="parameter.name" :value="parameter.name" />
+                          <ElOption
+                            v-for="parameter in paramRows"
+                            :key="parameter.key"
+                            :label="parameter.name"
+                            :value="parameter.name"
+                          />
                         </ElSelect>
-                        <ElInput v-else v-model="row.fixedValue" :placeholder="t('rag.tool.requestFixedValuePlaceholder')" />
+                        <ElInput
+                          v-else
+                          v-model="row.fixedValue"
+                          :placeholder="t('rag.tool.requestFixedValuePlaceholder')"
+                        />
                       </template>
                     </ElTableColumn>
-                    <ElTableColumn v-if="requestTemplateRows.some(row => row.source === 'fixed')" :label="t('rag.tool.requestFixedType')" width="140">
+                    <ElTableColumn
+                      v-if="requestTemplateRows.some(row => row.source === 'fixed')"
+                      :label="t('rag.tool.requestFixedType')"
+                      width="140"
+                    >
                       <template #default="{ row }">
                         <ElSelect v-if="row.source === 'fixed'" v-model="row.fixedType" class="w-full">
-                          <ElOption v-for="type in requestFixedTypeOptions" :key="type.value" :label="type.label" :value="type.value" />
+                          <ElOption
+                            v-for="type in requestFixedTypeOptions"
+                            :key="type.value"
+                            :label="type.label"
+                            :value="type.value"
+                          />
                         </ElSelect>
                       </template>
                     </ElTableColumn>
@@ -1566,7 +1614,12 @@ const responseDisplay = computed(() => {
                         default-first-option
                         :placeholder="t('rag.tool.responseHttpStatusesPlaceholder')"
                       >
-                        <ElOption v-for="status in ['200', '201', '202', '204']" :key="status" :label="status" :value="status" />
+                        <ElOption
+                          v-for="status in ['200', '201', '202', '204']"
+                          :key="status"
+                          :label="status"
+                          :value="status"
+                        />
                       </ElSelect>
                     </ElFormItem>
                     <ElFormItem :label="t('rag.tool.responseBusinessCheck')">
@@ -1582,10 +1635,18 @@ const responseDisplay = computed(() => {
                     </ElFormItem>
                     <ElFormItem :label="t('rag.tool.responseStatusOperator')">
                       <ElSelect v-model="responseRuleForm.successOperator" class="w-full">
-                        <ElOption v-for="operator in responseOperatorOptions" :key="operator.value" :label="operator.label" :value="operator.value" />
+                        <ElOption
+                          v-for="operator in responseOperatorOptions"
+                          :key="operator.value"
+                          :label="operator.label"
+                          :value="operator.value"
+                        />
                       </ElSelect>
                     </ElFormItem>
-                    <ElFormItem v-if="['equals', 'in'].includes(responseRuleForm.successOperator)" :label="t('rag.tool.responseExpectedValues')">
+                    <ElFormItem
+                      v-if="['equals', 'in'].includes(responseRuleForm.successOperator)"
+                      :label="t('rag.tool.responseExpectedValues')"
+                    >
                       <ElSelect
                         v-model="responseRuleForm.successValues"
                         class="w-full"
@@ -1660,10 +1721,14 @@ const responseDisplay = computed(() => {
                 <div v-else class="tool-builder-table-wrap">
                   <ElTable :data="responseMappingRows" border class="tool-builder-table" row-key="key">
                     <ElTableColumn :label="t('rag.tool.responseMappingField')" min-width="220">
-                      <template #default="{ row }"><ElInput v-model="row.name" :placeholder="t('rag.tool.responseMappingFieldPlaceholder')" /></template>
+                      <template #default="{ row }">
+                        <ElInput v-model="row.name" :placeholder="t('rag.tool.responseMappingFieldPlaceholder')" />
+                      </template>
                     </ElTableColumn>
                     <ElTableColumn :label="t('rag.tool.responseMappingPath')" min-width="320">
-                      <template #default="{ row }"><ElInput v-model="row.path" placeholder="id or customer.id" /></template>
+                      <template #default="{ row }">
+                        <ElInput v-model="row.path" placeholder="id or customer.id" />
+                      </template>
                     </ElTableColumn>
                     <ElTableColumn :label="t('rag.common.action')" width="72" fixed="right" align="center">
                       <template #default="{ $index }">

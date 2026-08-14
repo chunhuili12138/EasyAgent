@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { $t } from '@/locales';
 import { useAuthStore } from '@/store/modules/auth';
+import { $t } from '@/locales';
 
 const props = defineProps<{ message?: string }>();
 const emit = defineEmits<{ (e: 'retry'): void }>();

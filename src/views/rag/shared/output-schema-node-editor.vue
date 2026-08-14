@@ -86,29 +86,60 @@ function addProperty() {
 
     <div v-if="['string', 'integer', 'number'].includes(node.type)" class="schema-node__rules">
       <ElFormItem :label="$t('rag.skill.outputSchemaEnum')">
-        <ElSelect v-model="node.enumValues" multiple filterable allow-create default-first-option class="w-full" :placeholder="$t('rag.skill.outputSchemaEnumHint')" />
+        <ElSelect
+          v-model="node.enumValues"
+          multiple
+          filterable
+          allow-create
+          default-first-option
+          class="w-full"
+          :placeholder="$t('rag.skill.outputSchemaEnumHint')"
+        />
       </ElFormItem>
       <template v-if="node.type === 'string'">
-        <ElFormItem :label="$t('rag.skill.outputSchemaFormat')"><ElInput v-model="node.format" placeholder="date-time" /></ElFormItem>
-        <ElFormItem :label="$t('rag.skill.outputSchemaPattern')"><ElInput v-model="node.pattern" placeholder="^SO[0-9]{12}$" /></ElFormItem>
-        <ElFormItem :label="$t('rag.skill.outputSchemaMinLength')"><ElInputNumber v-model="node.minLength" :min="0" class="w-full" /></ElFormItem>
-        <ElFormItem :label="$t('rag.skill.outputSchemaMaxLength')"><ElInputNumber v-model="node.maxLength" :min="0" class="w-full" /></ElFormItem>
+        <ElFormItem :label="$t('rag.skill.outputSchemaFormat')">
+          <ElInput v-model="node.format" placeholder="date-time" />
+        </ElFormItem>
+        <ElFormItem :label="$t('rag.skill.outputSchemaPattern')">
+          <ElInput v-model="node.pattern" placeholder="^SO[0-9]{12}$" />
+        </ElFormItem>
+        <ElFormItem :label="$t('rag.skill.outputSchemaMinLength')">
+          <ElInputNumber v-model="node.minLength" :min="0" class="w-full" />
+        </ElFormItem>
+        <ElFormItem :label="$t('rag.skill.outputSchemaMaxLength')">
+          <ElInputNumber v-model="node.maxLength" :min="0" class="w-full" />
+        </ElFormItem>
       </template>
       <template v-else>
-        <ElFormItem :label="$t('rag.skill.outputSchemaMinimum')"><ElInputNumber v-model="node.minimum" class="w-full" /></ElFormItem>
-        <ElFormItem :label="$t('rag.skill.outputSchemaMaximum')"><ElInputNumber v-model="node.maximum" class="w-full" /></ElFormItem>
+        <ElFormItem :label="$t('rag.skill.outputSchemaMinimum')">
+          <ElInputNumber v-model="node.minimum" class="w-full" />
+        </ElFormItem>
+        <ElFormItem :label="$t('rag.skill.outputSchemaMaximum')">
+          <ElInputNumber v-model="node.maximum" class="w-full" />
+        </ElFormItem>
       </template>
     </div>
 
     <template v-if="node.type === 'object'">
       <div class="schema-node__children-head">
         <span>{{ $t('rag.skill.outputSchemaChildFields') }}</span>
-        <ElCheckbox :model-value="node.additionalProperties === true" @update:model-value="node.additionalProperties = $event">{{ $t('rag.skill.outputSchemaAdditionalProperties') }}</ElCheckbox>
+        <ElCheckbox
+          :model-value="node.additionalProperties === true"
+          @update:model-value="node.additionalProperties = $event"
+        >
+          {{ $t('rag.skill.outputSchemaAdditionalProperties') }}
+        </ElCheckbox>
         <ElButton size="small" plain type="primary" :disabled="depth >= maxDepth" @click="addProperty">
-          <SvgIcon icon="mdi:plus" class="mr-1" />{{ $t('rag.skill.outputSchemaAddChildField') }}
+          <SvgIcon icon="mdi:plus" class="mr-1" />
+          {{ $t('rag.skill.outputSchemaAddChildField') }}
         </ElButton>
       </div>
-      <ElAlert v-if="depth >= maxDepth" type="info" :closable="false" :title="$t('rag.skill.outputSchemaMaxDepthHint', { count: maxDepth })" />
+      <ElAlert
+        v-if="depth >= maxDepth"
+        type="info"
+        :closable="false"
+        :title="$t('rag.skill.outputSchemaMaxDepthHint', { count: maxDepth })"
+      />
       <OutputSchemaNodeEditor
         v-for="(child, index) in node.properties"
         :key="child.key"
@@ -121,23 +152,75 @@ function addProperty() {
 
     <template v-if="node.type === 'array'">
       <div class="schema-node__rules">
-        <ElFormItem :label="$t('rag.skill.outputSchemaMinItems')"><ElInputNumber v-model="node.minItems" :min="0" class="w-full" /></ElFormItem>
-        <ElFormItem :label="$t('rag.skill.outputSchemaMaxItems')"><ElInputNumber v-model="node.maxItems" :min="0" class="w-full" /></ElFormItem>
-        <ElFormItem :label="$t('rag.skill.outputSchemaUniqueItems')"><ElCheckbox v-model="node.uniqueItems" /></ElFormItem>
+        <ElFormItem :label="$t('rag.skill.outputSchemaMinItems')">
+          <ElInputNumber v-model="node.minItems" :min="0" class="w-full" />
+        </ElFormItem>
+        <ElFormItem :label="$t('rag.skill.outputSchemaMaxItems')">
+          <ElInputNumber v-model="node.maxItems" :min="0" class="w-full" />
+        </ElFormItem>
+        <ElFormItem :label="$t('rag.skill.outputSchemaUniqueItems')">
+          <ElCheckbox v-model="node.uniqueItems" />
+        </ElFormItem>
       </div>
-      <div class="schema-node__item"><span>{{ $t('rag.skill.outputSchemaArrayItems') }}</span></div>
-      <OutputSchemaNodeEditor v-if="node.items" :model-value="node.items" :show-name="false" :depth="depth + 1" :max-depth="maxDepth" />
+      <div class="schema-node__item">
+        <span>{{ $t('rag.skill.outputSchemaArrayItems') }}</span>
+      </div>
+      <OutputSchemaNodeEditor
+        v-if="node.items"
+        :model-value="node.items"
+        :show-name="false"
+        :depth="depth + 1"
+        :max-depth="maxDepth"
+      />
     </template>
   </div>
 </template>
 
 <style scoped>
-.schema-node { padding: 12px; border: 1px solid var(--el-border-color-lighter); border-radius: 6px; }
-.schema-node--nested { margin-top: 10px; background: var(--el-fill-color-lighter); }
-.schema-node__grid, .schema-node__rules { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 12px; align-items: end; }
-.schema-node__grid :deep(.el-form-item), .schema-node__rules :deep(.el-form-item) { margin-bottom: 0; }
-.schema-node__children-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 12px; font-size: 13px; font-weight: 500; }
-.schema-node__children-head .el-button { margin-left: auto; }
-.schema-node__item { margin-top: 12px; font-size: 13px; font-weight: 500; }
-@media (max-width: 640px) { .schema-node__grid, .schema-node__rules { grid-template-columns: 1fr; } .schema-node__children-head .el-button { margin-left: 0; } }
+.schema-node {
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+}
+.schema-node--nested {
+  margin-top: 10px;
+  background: var(--el-fill-color-lighter);
+}
+.schema-node__grid,
+.schema-node__rules {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 12px;
+  align-items: end;
+}
+.schema-node__grid :deep(.el-form-item),
+.schema-node__rules :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+.schema-node__children-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.schema-node__children-head .el-button {
+  margin-left: auto;
+}
+.schema-node__item {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+@media (max-width: 640px) {
+  .schema-node__grid,
+  .schema-node__rules {
+    grid-template-columns: 1fr;
+  }
+  .schema-node__children-head .el-button {
+    margin-left: 0;
+  }
+}
 </style>

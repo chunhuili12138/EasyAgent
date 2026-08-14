@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
 import { fetchCreateMenu, fetchDeleteMenu, fetchGetMenuTree, fetchUpdateMenu } from '@/service/api/system-manage';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'SystemMenu' });
 
@@ -120,7 +120,7 @@ onMounted(getTree);
 </script>
 
 <template>
-  <div class="h-full page-container">
+  <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElButton type="primary" @click="handleAdd(0)">{{ $t('page.manage.menu.addMenu') }}</ElButton>
@@ -140,13 +140,19 @@ onMounted(getTree);
         <ElTableColumn prop="status" :label="$t('page.manage.menu.menuStatus')" min-width="100" align="center">
           <template #default="{ row }">
             <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === '1' || row.status === 1 ? $t('page.manage.common.status.enable') : $t('page.manage.common.status.disable') }}
+              {{
+                row.status === '1' || row.status === 1
+                  ? $t('page.manage.common.status.enable')
+                  : $t('page.manage.common.status.disable')
+              }}
             </ElTag>
           </template>
         </ElTableColumn>
         <ElTableColumn :label="$t('common.action')" min-width="250" fixed="right">
           <template #default="{ row }">
-            <ElButton type="primary" link size="small" @click="handleAdd(row.id)">{{ $t('page.manage.menu.addChild') }}</ElButton>
+            <ElButton type="primary" link size="small" @click="handleAdd(row.id)">
+              {{ $t('page.manage.menu.addChild') }}
+            </ElButton>
             <ElButton type="primary" link size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</ElButton>
             <ElButton type="danger" link size="small" @click="handleDelete(row)">{{ $t('common.delete') }}</ElButton>
           </template>
@@ -170,7 +176,11 @@ onMounted(getTree);
             style="width: 100%"
           />
         </ElFormItem>
-        <ElFormItem :label="$t('page.manage.menu.menuName')" prop="name" :rules="[{ required: true, message: $t('page.manage.menu.form.menuName') }]">
+        <ElFormItem
+          :label="$t('page.manage.menu.menuName')"
+          prop="name"
+          :rules="[{ required: true, message: $t('page.manage.menu.form.menuName') }]"
+        >
           <ElInput v-model="formData.name" :placeholder="$t('page.manage.menu.form.menuName')" />
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.menu.icon')" prop="icon">

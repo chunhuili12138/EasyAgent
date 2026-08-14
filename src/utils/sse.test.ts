@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createSseParser, type SseEvent } from './sse';
+import { type SseEvent, createSseParser } from './sse';
 
 test('parses Spring SseEmitter events without spaces after colons', () => {
   const events: SseEvent[] = [];

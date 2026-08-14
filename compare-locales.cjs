@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 function flattenKeys(obj, prefix = '') {
   const keys = [];
@@ -24,7 +24,7 @@ if (!zhCNMatch) {
   console.error('Could not find zh-CN locale object');
   process.exit(1);
 }
-const zhCNObj = eval('(' + zhCNMatch[1] + ')');
+const zhCNObj = eval(`(${zhCNMatch[1]})`);
 const zhCNKeys = flattenKeys(zhCNObj);
 
 // Read and parse en-us.ts
@@ -35,7 +35,7 @@ if (!enUSMatch) {
   console.error('Could not find en-US locale object');
   process.exit(1);
 }
-const enUSObj = eval('(' + enUSMatch[1] + ')');
+const enUSObj = eval(`(${enUSMatch[1]})`);
 const enUSKeys = flattenKeys(enUSObj);
 
 console.log('=== ZH-CN Keys Count:', zhCNKeys.length);

@@ -245,12 +245,7 @@ onMounted(() => {
         />
       </ElSelect>
       <ElSelect v-model="query.status" clearable :placeholder="t('automation.common.allStatus')">
-        <ElOption
-          v-for="value in statusOptions"
-          :key="value"
-          :label="automationStatusLabel(value)"
-          :value="value"
-        />
+        <ElOption v-for="value in statusOptions" :key="value" :label="automationStatusLabel(value)" :value="value" />
       </ElSelect>
       <ElButton type="primary" @click="search">{{ t('automation.common.search') }}</ElButton>
       <ElButton @click="reset">{{ t('automation.common.reset') }}</ElButton>
@@ -369,12 +364,7 @@ onMounted(() => {
           :label="t('automation.operations.trigger')"
           width="100"
         />
-        <ElTableColumn
-          v-if="direction === 'INBOX'"
-          prop="runId"
-          :label="t('automation.common.runId')"
-          width="100"
-        />
+        <ElTableColumn v-if="direction === 'INBOX'" prop="runId" :label="t('automation.common.runId')" width="100" />
         <ElTableColumn
           prop="payloadHash"
           :label="t('automation.common.payloadHash')"
@@ -396,9 +386,7 @@ onMounted(() => {
         </ElTableColumn>
         <ElTableColumn
           :label="
-            direction === 'INBOX'
-              ? t('automation.operations.processedAt')
-              : t('automation.operations.publishedAt')
+            direction === 'INBOX' ? t('automation.operations.processedAt') : t('automation.operations.publishedAt')
           "
           width="180"
         >

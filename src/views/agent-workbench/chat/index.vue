@@ -1,38 +1,38 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import DOMPurify from 'dompurify';
-import { $t } from '@/locales';
+import {
+  type ChatMode,
+  type SessionAttachment,
+  createChatStreamUrl,
+  fetchCancelChatExecution,
+  fetchCancelClarification,
+  fetchCreateSession,
+  fetchDeleteSession,
+  fetchDeleteSessionAttachment,
+  fetchHitlConfirm,
+  fetchPendingClarification,
+  fetchPendingHitl,
+  fetchRetrySessionAttachment,
+  fetchSessionAttachments,
+  fetchSessionMessages,
+  fetchSessions,
+  fetchSubmitFeedback,
+  fetchUpdateSession,
+  fetchUploadSessionAttachment
+} from '@/service/api/rag';
 import { getToken } from '@/store/modules/auth/shared';
 import { createSseParser } from '@/utils/sse';
 import {
+  type ChatCitation,
   formatCitationAnchor,
   groupCitations,
   normalizeAssistantContent,
   normalizeCitations,
-  parseAssistantMarkdown,
-  type ChatCitation
+  parseAssistantMarkdown
 } from '@/utils/chat-display';
-import {
-  fetchSessions,
-  fetchCreateSession,
-  fetchUpdateSession,
-  fetchDeleteSession,
-  fetchSessionMessages,
-  fetchSubmitFeedback,
-  fetchPendingHitl,
-  fetchHitlConfirm,
-  fetchPendingClarification,
-  fetchCancelClarification,
-  fetchCancelChatExecution,
-  fetchSessionAttachments,
-  fetchUploadSessionAttachment,
-  fetchDeleteSessionAttachment,
-  fetchRetrySessionAttachment,
-  type SessionAttachment,
-  type ChatMode,
-  createChatStreamUrl
-} from '@/service/api/rag';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'RagChat' });
 
@@ -47,7 +47,14 @@ interface Message {
   streaming?: boolean;
   generationStopped?: boolean;
   status?: string;
-  hitlCard?: { summary: string; riskLevel: string; actionType: string; toolCode: string; toolName?: string; details?: any };
+  hitlCard?: {
+    summary: string;
+    riskLevel: string;
+    actionType: string;
+    toolCode: string;
+    toolName?: string;
+    details?: any;
+  };
   hitlResolved?: boolean;
   hitlDetached?: boolean;
   clarificationPlanId?: number;
@@ -159,9 +166,13 @@ onUnmounted(() => {
   if (attachmentPollTimer) window.clearTimeout(attachmentPollTimer);
 });
 
-watch(() => messages.value.length, () => {
-  nextTick(() => scrollToBottom());
-}, { flush: 'post' });
+watch(
+  () => messages.value.length,
+  () => {
+    nextTick(() => scrollToBottom());
+  },
+  { flush: 'post' }
+);
 
 watch(chatMode, value => localStorage.setItem(CHAT_MODE_STORAGE_KEY, value));
 
@@ -326,7 +337,9 @@ function attachmentPanelSummary() {
     ready ? $t('rag.chat.attachmentSummaryReady', { count: ready }) : '',
     processing ? $t('rag.chat.attachmentSummaryProcessing', { count: processing }) : '',
     failed ? $t('rag.chat.attachmentSummaryFailed', { count: failed }) : ''
-  ].filter(Boolean).join(' · ');
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 function hasPendingAttachments() {
@@ -381,14 +394,7 @@ async function sendMessage(overrideText?: string, overrideMode?: ChatMode) {
   currentExecutionId.value = executionId;
 
   try {
-    await streamChat(
-      sessionId,
-      text,
-      assistantMsg,
-      clarificationPlanId,
-      executionId,
-      overrideMode ?? chatMode.value
-    );
+    await streamChat(sessionId, text, assistantMsg, clarificationPlanId, executionId, overrideMode ?? chatMode.value);
     if (clarificationPlanId && pendingClarificationPlanId.value === clarificationPlanId) {
       pendingClarificationPlanId.value = null;
       const card = messages.value.find(item => item.clarificationPlanId === clarificationPlanId);
@@ -427,7 +433,7 @@ async function streamChat(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${getToken()}`
+      Authorization: `Bearer ${getToken()}`
     },
     body: JSON.stringify({ executionId, sessionId, message: msg, clarificationPlanId, mode }),
     signal: controller.signal
@@ -633,7 +639,11 @@ async function handleHitlAction(msg: Message, confirmed: boolean) {
   try {
     await fetchHitlConfirm(sessionId, { confirmed });
     msg.hitlResolved = true;
-    const resultMsg: Message = { role: 'system', content: confirmed ? $t('rag.audit.confirmed') : $t('rag.audit.cancelled'), streaming: false };
+    const resultMsg: Message = {
+      role: 'system',
+      content: confirmed ? $t('rag.audit.confirmed') : $t('rag.audit.cancelled'),
+      streaming: false
+    };
     messages.value.push(resultMsg);
     if (confirmed && msg.hitlDetached) {
       const knownIds = new Set(messages.value.map(item => item.id).filter((id): id is number => id !== undefined));
@@ -649,9 +659,7 @@ async function waitForResumedResult(sessionId: number, knownIds: Set<number>) {
     await new Promise(resolve => window.setTimeout(resolve, 1000));
     const response = await fetchSessionMessages(sessionId, { page: 1, size: 100 });
     const records = response.data?.records || [];
-    const hasNewAssistant = records.some((item: any) =>
-      item.role === 'assistant' && item.id && !knownIds.has(item.id)
-    );
+    const hasNewAssistant = records.some((item: any) => item.role === 'assistant' && item.id && !knownIds.has(item.id));
     if (hasNewAssistant) {
       if (currentSession.value?.id === sessionId) await loadMessages(sessionId);
       await loadSessions();
@@ -659,8 +667,11 @@ async function waitForResumedResult(sessionId: number, knownIds: Set<number>) {
     }
     try {
       const pending = await fetchPendingHitl(sessionId);
-      if (pending.data?.hasPending && currentSession.value?.id === sessionId
-          && !messages.value.some(item => item.role === 'hitl' && !item.hitlResolved)) {
+      if (
+        pending.data?.hasPending &&
+        currentSession.value?.id === sessionId &&
+        !messages.value.some(item => item.role === 'hitl' && !item.hitlResolved)
+      ) {
         messages.value.push({
           role: 'hitl',
           content: '',
@@ -731,29 +742,40 @@ function renderContent(content: string) {
 </script>
 
 <template>
-  <div class="chat-shell h-full min-h-0 flex overflow-hidden relative">
+  <div class="chat-shell relative h-full min-h-0 flex overflow-hidden">
     <!-- Left: Session List -->
-    <div v-if="showSidebar" class="session-sidebar w-280px h-full min-h-0 border-r flex-shrink-0 flex flex-col bg-white">
-      <div class="p-3 border-b">
-        <ElInput v-model="searchKeyword" :placeholder="$t('common.search')" size="small" clearable @clear="loadSessions" @keyup.enter="loadSessions">
+    <div
+      v-if="showSidebar"
+      class="session-sidebar h-full min-h-0 w-280px flex flex-col flex-shrink-0 border-r bg-white"
+    >
+      <div class="border-b p-3">
+        <ElInput
+          v-model="searchKeyword"
+          :placeholder="$t('common.search')"
+          size="small"
+          clearable
+          @clear="loadSessions"
+          @keyup.enter="loadSessions"
+        >
           <template #prefix><SvgIcon icon="mdi:magnify" class="text-gray-400" /></template>
         </ElInput>
       </div>
-      <div class="p-2 border-b">
+      <div class="border-b p-2">
         <ElButton size="small" class="w-full" @click="createSession()">
-          <SvgIcon icon="mdi:plus" class="mr-1" />{{ $t('rag.chat.newSession') }}
+          <SvgIcon icon="mdi:plus" class="mr-1" />
+          {{ $t('rag.chat.newSession') }}
         </ElButton>
       </div>
       <div class="flex-1 overflow-y-auto">
         <div
           v-for="s in sessions"
           :key="s.id"
-          class="px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors"
+          class="cursor-pointer px-3 py-2.5 transition-colors hover:bg-gray-50"
           :class="{ 'bg-blue-50 border-l-3 border-l-blue-500': currentSession?.id === s.id }"
           @click="selectSession(s)"
         >
           <div class="flex items-center justify-between">
-            <span class="text-sm font-medium truncate flex-1">{{ s.title }}</span>
+            <span class="flex-1 truncate text-sm font-medium">{{ s.title }}</span>
             <ElPopconfirm :title="$t('page.manage.process.deleteConfirm')" @confirm="deleteSession(s)">
               <template #reference>
                 <span class="ml-1 inline-flex text-xs text-gray-400 hover:text-red-500">
@@ -762,7 +784,7 @@ function renderContent(content: string) {
               </template>
             </ElPopconfirm>
           </div>
-          <div class="text-xs text-gray-400 mt-0.5">
+          <div class="mt-0.5 text-xs text-gray-400">
             {{ $t('rag.chat.messageCount', { count: s.messageCount || 0 }) }}
           </div>
         </div>
@@ -771,31 +793,37 @@ function renderContent(content: string) {
     </div>
 
     <!-- Center: Chat -->
-    <div class="flex-1 min-h-0 flex flex-col min-w-0 overflow-hidden">
+    <div class="min-h-0 min-w-0 flex flex-col flex-1 overflow-hidden">
       <!-- Header -->
-      <div class="px-4 py-2.5 border-b flex items-center justify-between bg-white flex-shrink-0">
+      <div class="flex flex-shrink-0 items-center justify-between border-b bg-white px-4 py-2.5">
         <div class="flex items-center gap-2">
           <ElButton size="small" text @click="showSidebar = !showSidebar">
             <SvgIcon :icon="showSidebar ? 'mdi:menu-open' : 'mdi:menu'" class="text-lg" />
           </ElButton>
-          <span class="font-medium text-sm truncate max-w-300px">{{ currentSession?.title || $t('rag.chat.selectSession') }}</span>
+          <span class="max-w-300px truncate text-sm font-medium">
+            {{ currentSession?.title || $t('rag.chat.selectSession') }}
+          </span>
         </div>
         <div class="flex items-center gap-2">
           <ElButton v-if="currentSession" size="small" text @click="togglePin(currentSession)">
-            <SvgIcon :icon="currentSession.isPinned ? 'mdi:pin' : 'mdi:pin-outline'" class="text-base" :class="{ 'text-blue-500': currentSession.isPinned }" />
+            <SvgIcon
+              :icon="currentSession.isPinned ? 'mdi:pin' : 'mdi:pin-outline'"
+              class="text-base"
+              :class="{ 'text-blue-500': currentSession.isPinned }"
+            />
           </ElButton>
         </div>
       </div>
 
       <!-- Messages -->
-      <div ref="messageContainer" class="flex-1 min-h-0 overflow-y-auto px-4 py-4 bg-gray-50">
+      <div ref="messageContainer" class="min-h-0 flex-1 overflow-y-auto bg-gray-50 px-4 py-4">
         <ElEmpty v-if="!messages.length" :description="$t('rag.chat.noMessages')" :image-size="80" class="mt-20" />
 
         <div v-for="(msg, idx) in messages" :key="idx" class="mb-4">
           <!-- User message -->
           <div v-if="msg.role === 'user'" class="flex justify-end">
             <div class="max-w-75% flex flex-col items-end gap-1">
-              <div class="bg-blue-500 text-white rounded-lg px-4 py-2.5 text-sm shadow-sm">
+              <div class="rounded-lg bg-blue-500 px-4 py-2.5 text-sm text-white shadow-sm">
                 {{ msg.content }}
               </div>
               <time v-if="formatTime(msg.createdAt)" class="px-1 text-xs text-gray-400" :datetime="msg.createdAt">
@@ -806,15 +834,22 @@ function renderContent(content: string) {
 
           <!-- AI message -->
           <div v-else-if="msg.role === 'assistant'" class="min-w-0 flex gap-3">
-            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">AI</div>
-            <div class="min-w-0 max-w-85%">
-              <div class="bg-white rounded-lg px-4 py-2.5 shadow-sm border overflow-hidden">
+            <div
+              class="mt-1 h-8 w-8 flex flex-shrink-0 items-center justify-center rounded-full from-blue-400 to-purple-500 bg-gradient-to-br text-xs text-white font-bold"
+            >
+              AI
+            </div>
+            <div class="max-w-85% min-w-0">
+              <div class="overflow-hidden border rounded-lg bg-white px-4 py-2.5 shadow-sm">
                 <div v-if="msg.streaming && msg.status" class="flex items-center gap-2 text-sm text-gray-500">
                   <SvgIcon icon="mdi:loading" class="animate-spin text-base text-blue-500" />
                   <span>{{ msg.status }}</span>
                 </div>
-                <div v-if="msg.content" class="rag-markdown text-sm break-words" v-html="renderContent(msg.content)" />
-                <div v-if="msg.streaming && msg.content" class="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-0.5 align-middle" />
+                <div v-if="msg.content" class="rag-markdown break-words text-sm" v-html="renderContent(msg.content)" />
+                <div
+                  v-if="msg.streaming && msg.content"
+                  class="ml-0.5 inline-block h-4 w-2 animate-pulse bg-blue-500 align-middle"
+                />
                 <div
                   v-if="msg.generationStopped"
                   class="generation-stopped-notice"
@@ -835,7 +870,8 @@ function renderContent(content: string) {
                   :disabled="sending"
                   @click="answerGenerally(msg)"
                 >
-                  <SvgIcon icon="mdi:chat-outline" class="mr-1" />{{ $t('rag.chat.answerGenerally') }}
+                  <SvgIcon icon="mdi:chat-outline" class="mr-1" />
+                  {{ $t('rag.chat.answerGenerally') }}
                 </ElButton>
                 <ElButton
                   v-if="msg.answerOptions.includes('rephrase')"
@@ -843,11 +879,12 @@ function renderContent(content: string) {
                   plain
                   @click="rephraseQuestion(msg)"
                 >
-                  <SvgIcon icon="mdi:pencil-outline" class="mr-1" />{{ $t('rag.chat.rephrase') }}
+                  <SvgIcon icon="mdi:pencil-outline" class="mr-1" />
+                  {{ $t('rag.chat.rephrase') }}
                 </ElButton>
               </div>
               <!-- Citations -->
-              <div v-if="msg.citations?.length" class="flex flex-wrap gap-1.5 mt-2">
+              <div v-if="msg.citations?.length" class="mt-2 flex flex-wrap gap-1.5">
                 <ElPopover
                   v-for="(group, ri) in groupCitations(msg.citations)"
                   :key="group.key"
@@ -861,27 +898,29 @@ function renderContent(content: string) {
                       <span v-if="group.items.length > 1" class="ml-1">({{ group.items.length }})</span>
                     </ElTag>
                   </template>
-                  <div class="text-sm max-h-72 overflow-y-auto">
-                    <div class="font-medium mb-2">{{ group.fileName || $t('rag.chat.source') }}</div>
+                  <div class="max-h-72 overflow-y-auto text-sm">
+                    <div class="mb-2 font-medium">{{ group.fileName || $t('rag.chat.source') }}</div>
                     <div
                       v-for="(ref, chunkIndex) in group.items"
                       :key="String(ref.chunkId ?? chunkIndex)"
-                      class="py-2 border-t first:border-t-0 first:pt-0"
+                      class="border-t py-2 first:border-t-0 first:pt-0"
                     >
                       <div class="flex items-start justify-between gap-3 text-gray-500">
                         <span>{{ formatCitationAnchor(ref.anchor) || $t('rag.chat.source') }}</span>
-                        <code class="flex-shrink-0 text-xs">{{ $t('rag.chat.chunk') }} {{ ref.chunkId ?? chunkIndex + 1 }}</code>
+                        <code class="flex-shrink-0 text-xs">
+                          {{ $t('rag.chat.chunk') }} {{ ref.chunkId ?? chunkIndex + 1 }}
+                        </code>
                       </div>
                       <div v-if="ref.snippet" class="mt-2">
-                        <div class="text-xs font-medium text-gray-500 mb-1">{{ $t('rag.chat.evidence') }}</div>
-                        <div class="text-gray-700 whitespace-pre-wrap leading-6">{{ ref.snippet }}</div>
+                        <div class="mb-1 text-xs text-gray-500 font-medium">{{ $t('rag.chat.evidence') }}</div>
+                        <div class="whitespace-pre-wrap text-gray-700 leading-6">{{ ref.snippet }}</div>
                       </div>
                     </div>
                   </div>
                 </ElPopover>
               </div>
               <!-- Feedback -->
-              <div class="flex items-center gap-2 mt-2">
+              <div class="mt-2 flex items-center gap-2">
                 <template v-if="msg.content">
                   <ElButton
                     size="small"
@@ -919,7 +958,11 @@ function renderContent(content: string) {
                   <ElTag v-if="msg.answerMode" size="small" effect="plain">
                     {{ answerModeLabel(msg.answerMode) }}
                   </ElTag>
-                  <time v-if="formatTime(msg.createdAt)" class="whitespace-nowrap text-xs text-gray-400" :datetime="msg.createdAt">
+                  <time
+                    v-if="formatTime(msg.createdAt)"
+                    class="whitespace-nowrap text-xs text-gray-400"
+                    :datetime="msg.createdAt"
+                  >
                     {{ formatTime(msg.createdAt) }}
                   </time>
                 </div>
@@ -929,13 +972,16 @@ function renderContent(content: string) {
 
           <!-- HITL Card -->
           <div v-else-if="msg.role === 'hitl' && !msg.hitlResolved" class="flex justify-center">
-            <div class="bg-white border rounded-xl px-5 py-3 shadow-sm max-w-md w-full">
-              <div class="flex items-center gap-2 mb-3">
-                <div class="w-3 h-3 rounded-full" :style="{ background: riskColor(msg.hitlCard?.riskLevel || 'medium') }" />
+            <div class="max-w-md w-full border rounded-xl bg-white px-5 py-3 shadow-sm">
+              <div class="mb-3 flex items-center gap-2">
+                <div
+                  class="h-3 w-3 rounded-full"
+                  :style="{ background: riskColor(msg.hitlCard?.riskLevel || 'medium') }"
+                />
                 <span class="text-sm font-medium">操作确认</span>
               </div>
-              <div class="text-sm text-gray-700 mb-1">{{ msg.hitlCard?.summary }}</div>
-              <div class="text-xs text-gray-400 mb-3">
+              <div class="mb-1 text-sm text-gray-700">{{ msg.hitlCard?.summary }}</div>
+              <div class="mb-3 text-xs text-gray-400">
                 {{ msg.hitlCard?.toolName || msg.hitlCard?.toolCode }} · {{ msg.hitlCard?.actionType }}
                 <span v-if="msg.hitlCard?.details?.presentation?.impactCount > 1">
                   · 影响 {{ msg.hitlCard?.details?.presentation?.impactCount }} 项
@@ -945,7 +991,8 @@ function renderContent(content: string) {
                 <div v-for="item in hitlDetailEntries(msg)" :key="item.key" class="hitl-detail-row">
                   <dt>{{ item.label }}</dt>
                   <dd :title="item.value">
-                    {{ item.value }}<small v-if="item.source"> · {{ item.source }}</small>
+                    {{ item.value }}
+                    <small v-if="item.source">· {{ item.source }}</small>
                   </dd>
                 </div>
               </dl>
@@ -958,17 +1005,17 @@ function renderContent(content: string) {
 
           <div v-else-if="msg.role === 'clarification' && !msg.clarificationResolved" class="flex justify-center">
             <div class="clarification-card">
-              <div class="flex items-center gap-2 mb-2">
+              <div class="mb-2 flex items-center gap-2">
                 <SvgIcon icon="mdi:comment-question-outline" class="text-lg text-primary" />
                 <span class="text-sm font-medium">需要补充信息</span>
               </div>
-              <div class="text-xs text-gray-500 mb-3">请在下方输入框回答，系统会从中断处继续规划。</div>
+              <div class="mb-3 text-xs text-gray-500">请在下方输入框回答，系统会从中断处继续规划。</div>
               <ol class="clarification-questions">
                 <li v-for="(question, questionIndex) in msg.clarificationQuestions" :key="questionIndex">
                   {{ question }}
                 </li>
               </ol>
-              <div class="flex justify-end mt-3">
+              <div class="mt-3 flex justify-end">
                 <ElButton size="small" @click="cancelClarification(msg)">取消任务</ElButton>
               </div>
             </div>
@@ -976,7 +1023,7 @@ function renderContent(content: string) {
 
           <!-- System message -->
           <div v-else-if="msg.role === 'system'" class="flex justify-center">
-            <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{{ msg.content }}</span>
+            <span class="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-400">{{ msg.content }}</span>
           </div>
         </div>
       </div>
@@ -984,7 +1031,7 @@ function renderContent(content: string) {
       <ElDialog v-model="feedbackDialogVisible" :title="$t('rag.chat.feedbackTitle')" width="420px">
         <div class="mb-4">
           <div class="mb-2 text-sm text-gray-600">{{ $t('rag.chat.feedbackType') }}</div>
-          <ElRadioGroup v-model="feedbackType" class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+          <ElRadioGroup v-model="feedbackType" class="grid grid-cols-1 w-full gap-2 sm:grid-cols-2">
             <ElRadio
               v-for="option in feedbackTypeOptions"
               :key="option.value"
@@ -1014,8 +1061,8 @@ function renderContent(content: string) {
       </ElDialog>
 
       <!-- Input -->
-      <div class="px-4 py-3 border-t bg-white flex-shrink-0">
-        <div class="max-w-4xl mx-auto">
+      <div class="flex-shrink-0 border-t bg-white px-4 py-3">
+        <div class="mx-auto max-w-4xl">
           <div v-if="attachments.length" class="attachment-panel mb-2">
             <button
               type="button"
@@ -1039,7 +1086,7 @@ function renderContent(content: string) {
                 class="attachment-row"
                 :class="{ 'is-failed': attachment.status === 'failed' }"
               >
-                <SvgIcon icon="mdi:file-document-outline" class="text-lg flex-shrink-0" />
+                <SvgIcon icon="mdi:file-document-outline" class="flex-shrink-0 text-lg" />
                 <div class="attachment-file-info">
                   <div class="attachment-file-name" :title="attachment.fileName">{{ attachment.fileName }}</div>
                   <div class="attachment-file-meta">
@@ -1065,14 +1112,18 @@ function renderContent(content: string) {
                   size="small"
                   :title="$t('rag.chat.retryAttachment')"
                   @click.stop="retryAttachment(attachment)"
-                ><SvgIcon icon="mdi:refresh" /></ElButton>
+                >
+                  <SvgIcon icon="mdi:refresh" />
+                </ElButton>
                 <ElButton
                   text
                   circle
                   size="small"
                   :title="$t('rag.chat.removeAttachment')"
                   @click.stop="removeAttachment(attachment)"
-                ><SvgIcon icon="mdi:delete-outline" /></ElButton>
+                >
+                  <SvgIcon icon="mdi:delete-outline" />
+                </ElButton>
               </div>
             </div>
           </div>
@@ -1091,9 +1142,9 @@ function renderContent(content: string) {
               :rows="1"
               :autosize="{ minRows: 1, maxRows: 5 }"
               :placeholder="$t('rag.chat.inputPlaceholder')"
-              @keydown="handleKeydown"
               :disabled="sending || hasPendingAttachments()"
               class="chat-composer"
+              @keydown="handleKeydown"
             />
             <div class="composer-footer">
               <div class="composer-tools">
@@ -1103,7 +1154,9 @@ function renderContent(content: string) {
                   :loading="uploadingAttachment"
                   :title="$t('rag.chat.addAttachment')"
                   @click="openAttachmentPicker"
-                ><SvgIcon icon="mdi:paperclip" class="text-base" /></ElButton>
+                >
+                  <SvgIcon icon="mdi:paperclip" class="text-base" />
+                </ElButton>
                 <div class="chat-mode-control" role="group" :aria-label="$t('rag.chat.answerMode')">
                   <button
                     v-for="option in chatModeOptions"
@@ -1113,14 +1166,24 @@ function renderContent(content: string) {
                     :class="{ active: chatMode === option.value }"
                     :title="option.title"
                     @click="chatMode = option.value as ChatMode"
-                  >{{ option.label }}</button>
+                  >
+                    {{ option.label }}
+                  </button>
                 </div>
               </div>
               <ElButton v-if="sending" type="danger" size="small" @click="stopGeneration">
-                <SvgIcon icon="mdi:stop" class="mr-1" />{{ $t('rag.chat.stop') }}
+                <SvgIcon icon="mdi:stop" class="mr-1" />
+                {{ $t('rag.chat.stop') }}
               </ElButton>
-              <ElButton v-else type="primary" size="small" @click="sendMessage()" :disabled="!inputText.trim() || hasPendingAttachments()">
-                <SvgIcon icon="mdi:send" class="mr-1" />{{ $t('rag.chat.send') }}
+              <ElButton
+                v-else
+                type="primary"
+                size="small"
+                :disabled="!inputText.trim() || hasPendingAttachments()"
+                @click="sendMessage()"
+              >
+                <SvgIcon icon="mdi:send" class="mr-1" />
+                {{ $t('rag.chat.send') }}
               </ElButton>
             </div>
           </div>
@@ -1130,7 +1193,6 @@ function renderContent(content: string) {
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -1558,6 +1620,5 @@ function renderContent(content: string) {
     width: min(280px, calc(100% - 48px));
     box-shadow: var(--el-box-shadow-light);
   }
-
 }
 </style>

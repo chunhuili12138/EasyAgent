@@ -1,6 +1,6 @@
-import { request } from '../request';
 import { putFileDirectly } from '@/utils/direct-upload';
 import { getServiceBaseURL } from '@/utils/service';
+import { request } from '../request';
 
 const pendingAttachmentCompletions = new Map<string, string>();
 

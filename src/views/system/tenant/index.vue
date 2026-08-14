@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
 import {
   fetchCreateTenant,
   fetchDeleteTenant,
   fetchGetTenantList,
   fetchUpdateTenant
 } from '@/service/api/system-manage';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'SystemTenant' });
 
@@ -113,11 +113,21 @@ onMounted(getList);
 </script>
 
 <template>
-  <div class="h-full page-container">
+  <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
-        <ElInput v-model="queryParams.name" :placeholder="$t('page.manage.tenant.name')" clearable style="width: 180px" />
-        <ElInput v-model="queryParams.code" :placeholder="$t('page.manage.tenant.code')" clearable style="width: 180px" />
+        <ElInput
+          v-model="queryParams.name"
+          :placeholder="$t('page.manage.tenant.name')"
+          clearable
+          style="width: 180px"
+        />
+        <ElInput
+          v-model="queryParams.code"
+          :placeholder="$t('page.manage.tenant.code')"
+          clearable
+          style="width: 180px"
+        />
         <ElButton type="primary" @click="handleSearch">{{ $t('common.search') }}</ElButton>
         <ElButton @click="handleReset">{{ $t('common.reset') }}</ElButton>
       </div>
@@ -128,11 +138,20 @@ onMounted(getList);
         <ElTableColumn prop="name" :label="$t('page.manage.tenant.name')" min-width="160" align="left" />
         <ElTableColumn prop="code" :label="$t('page.manage.tenant.code')" min-width="120" align="left" />
         <ElTableColumn prop="contactName" :label="$t('page.manage.tenant.contact')" min-width="120" align="left" />
-        <ElTableColumn prop="contactPhone" :label="$t('page.manage.tenant.contactPhone')" min-width="140" align="left" />
+        <ElTableColumn
+          prop="contactPhone"
+          :label="$t('page.manage.tenant.contactPhone')"
+          min-width="140"
+          align="left"
+        />
         <ElTableColumn prop="status" :label="$t('common.status')" min-width="100" align="center">
           <template #default="{ row }">
             <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === '1' || row.status === 1 ? $t('page.manage.common.status.enable') : $t('page.manage.common.status.disable') }}
+              {{
+                row.status === '1' || row.status === 1
+                  ? $t('page.manage.common.status.enable')
+                  : $t('page.manage.common.status.disable')
+              }}
             </ElTag>
           </template>
         </ElTableColumn>
@@ -158,10 +177,18 @@ onMounted(getList);
     </ElCard>
     <ElDialog v-model="dialogVisible" :title="dialogTitle" width="500px">
       <ElForm ref="formRef" :model="formData" label-width="120px">
-        <ElFormItem :label="$t('page.manage.tenant.name')" prop="name" :rules="[{ required: true, message: $t('page.manage.tenant.form.name') }]">
+        <ElFormItem
+          :label="$t('page.manage.tenant.name')"
+          prop="name"
+          :rules="[{ required: true, message: $t('page.manage.tenant.form.name') }]"
+        >
           <ElInput v-model="formData.name" :placeholder="$t('page.manage.tenant.form.name')" />
         </ElFormItem>
-        <ElFormItem :label="$t('page.manage.tenant.code')" prop="code" :rules="[{ required: true, message: $t('page.manage.tenant.form.code') }]">
+        <ElFormItem
+          :label="$t('page.manage.tenant.code')"
+          prop="code"
+          :rules="[{ required: true, message: $t('page.manage.tenant.form.code') }]"
+        >
           <ElInput v-model="formData.code" :placeholder="$t('page.manage.tenant.form.code')" />
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.tenant.form.contactName')" prop="contactName">

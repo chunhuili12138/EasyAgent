@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import { fetchGetTenantUsageList, fetchGetTenantUsageTrend, fetchUpdateTenantQuota } from '@/service/api/system-manage';
 import { $t } from '@/locales';
-import {
-  fetchGetTenantUsageList,
-  fetchGetTenantUsageTrend,
-  fetchUpdateTenantQuota
-} from '@/service/api/system-manage';
 
 defineOptions({ name: 'SystemTenantUsage' });
 
@@ -17,13 +13,18 @@ const quotaVisible = ref(false);
 const trendVisible = ref(false);
 const editing = ref<Api.SystemManage.TenantUsage | null>(null);
 const trend = ref<Api.SystemManage.TenantUsageTrend[]>([]);
-const form = reactive({ documentLimitMb: 100, dailyTokenLimit: 5_000_000, monthlyTokenLimit: 100_000_000, rateLimitQps: 10 });
+const form = reactive({
+  documentLimitMb: 100,
+  dailyTokenLimit: 5_000_000,
+  monthlyTokenLimit: 100_000_000,
+  rateLimitQps: 10
+});
 
 const filteredRows = computed(() => {
   const value = keyword.value.trim().toLowerCase();
   if (!value) return rows.value;
-  return rows.value.filter(item =>
-    item.tenantName.toLowerCase().includes(value) || item.tenantCode.toLowerCase().includes(value)
+  return rows.value.filter(
+    item => item.tenantName.toLowerCase().includes(value) || item.tenantCode.toLowerCase().includes(value)
   );
 });
 const summary = computed(() => ({
@@ -104,12 +105,24 @@ onMounted(load);
 </script>
 
 <template>
-  <div class="h-full page-container">
-    <div class="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <div class="metric"><span>{{ $t('page.manage.tenantUsage.tenants') }}</span><strong>{{ summary.tenants }}</strong></div>
-      <div class="metric"><span>{{ $t('page.manage.tenantUsage.documentTotal') }}</span><strong>{{ formatBytes(summary.documents) }}</strong></div>
-      <div class="metric"><span>{{ $t('page.manage.tenantUsage.monthTokens') }}</span><strong>{{ formatNumber(summary.monthTokens) }}</strong></div>
-      <div class="metric"><span>{{ $t('page.manage.tenantUsage.alertTenants') }}</span><strong>{{ summary.alerts }}</strong></div>
+  <div class="page-container h-full">
+    <div class="grid mb-4 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="metric">
+        <span>{{ $t('page.manage.tenantUsage.tenants') }}</span>
+        <strong>{{ summary.tenants }}</strong>
+      </div>
+      <div class="metric">
+        <span>{{ $t('page.manage.tenantUsage.documentTotal') }}</span>
+        <strong>{{ formatBytes(summary.documents) }}</strong>
+      </div>
+      <div class="metric">
+        <span>{{ $t('page.manage.tenantUsage.monthTokens') }}</span>
+        <strong>{{ formatNumber(summary.monthTokens) }}</strong>
+      </div>
+      <div class="metric">
+        <span>{{ $t('page.manage.tenantUsage.alertTenants') }}</span>
+        <strong>{{ summary.alerts }}</strong>
+      </div>
     </div>
 
     <ElCard shadow="never">
@@ -129,29 +142,51 @@ onMounted(load);
         </ElTableColumn>
         <ElTableColumn :label="$t('page.manage.tenantUsage.documentSpace')" min-width="220">
           <template #default="{ row }">
-            <div class="mb-1 text-xs">{{ formatBytes(row.documentUsedBytes) }} / {{ formatBytes(row.documentLimitBytes) }}</div>
-            <ElProgress :percentage="ratio(row.documentUsedBytes, row.documentLimitBytes)" :status="progressStatus(row.documentUsedBytes, row.documentLimitBytes)" :stroke-width="8" />
+            <div class="mb-1 text-xs">
+              {{ formatBytes(row.documentUsedBytes) }} / {{ formatBytes(row.documentLimitBytes) }}
+            </div>
+            <ElProgress
+              :percentage="ratio(row.documentUsedBytes, row.documentLimitBytes)"
+              :status="progressStatus(row.documentUsedBytes, row.documentLimitBytes)"
+              :stroke-width="8"
+            />
           </template>
         </ElTableColumn>
         <ElTableColumn :label="$t('page.manage.tenantUsage.todayTokens')" min-width="220">
           <template #default="{ row }">
-            <div class="mb-1 text-xs">{{ formatNumber(row.todayTokens) }} / {{ formatNumber(row.dailyTokenLimit) }}</div>
-            <ElProgress :percentage="ratio(row.todayTokens, row.dailyTokenLimit)" :status="progressStatus(row.todayTokens, row.dailyTokenLimit)" :stroke-width="8" />
+            <div class="mb-1 text-xs">
+              {{ formatNumber(row.todayTokens) }} / {{ formatNumber(row.dailyTokenLimit) }}
+            </div>
+            <ElProgress
+              :percentage="ratio(row.todayTokens, row.dailyTokenLimit)"
+              :status="progressStatus(row.todayTokens, row.dailyTokenLimit)"
+              :stroke-width="8"
+            />
           </template>
         </ElTableColumn>
         <ElTableColumn :label="$t('page.manage.tenantUsage.monthTokens')" min-width="220">
           <template #default="{ row }">
-            <div class="mb-1 text-xs">{{ formatNumber(row.monthTokens) }} / {{ formatNumber(row.monthlyTokenLimit) }}</div>
-            <ElProgress :percentage="ratio(row.monthTokens, row.monthlyTokenLimit)" :status="progressStatus(row.monthTokens, row.monthlyTokenLimit)" :stroke-width="8" />
+            <div class="mb-1 text-xs">
+              {{ formatNumber(row.monthTokens) }} / {{ formatNumber(row.monthlyTokenLimit) }}
+            </div>
+            <ElProgress
+              :percentage="ratio(row.monthTokens, row.monthlyTokenLimit)"
+              :status="progressStatus(row.monthTokens, row.monthlyTokenLimit)"
+              :stroke-width="8"
+            />
           </template>
         </ElTableColumn>
         <ElTableColumn prop="rateLimitQps" :label="$t('page.manage.tenantUsage.qps')" width="80" align="center" />
         <ElTableColumn :label="$t('page.manage.tenantUsage.status')" width="110" align="center">
-          <template #default="{ row }"><ElTag :type="warningType(row.warningLevel)">{{ warningLabel(row.warningLevel) }}</ElTag></template>
+          <template #default="{ row }">
+            <ElTag :type="warningType(row.warningLevel)">{{ warningLabel(row.warningLevel) }}</ElTag>
+          </template>
         </ElTableColumn>
         <ElTableColumn label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <ElButton type="primary" link @click="openQuota(row)">{{ $t('page.manage.tenantUsage.configure') }}</ElButton>
+            <ElButton type="primary" link @click="openQuota(row)">
+              {{ $t('page.manage.tenantUsage.configure') }}
+            </ElButton>
             <ElButton link @click="openTrend(row)">{{ $t('page.manage.tenantUsage.trend') }}</ElButton>
           </template>
         </ElTableColumn>
@@ -169,17 +204,32 @@ onMounted(load);
           <ElInputNumber v-model="form.documentLimitMb" :min="0" :precision="0" :step="100" class="w-full" />
           <span class="ml-2">MB</span>
         </ElFormItem>
-        <ElFormItem :label="$t('page.manage.tenantUsage.dailyLimit')"><ElInputNumber v-model="form.dailyTokenLimit" :min="0" :step="100000" class="w-full" /></ElFormItem>
-        <ElFormItem :label="$t('page.manage.tenantUsage.monthlyLimit')"><ElInputNumber v-model="form.monthlyTokenLimit" :min="0" :step="1000000" class="w-full" /></ElFormItem>
-        <ElFormItem :label="$t('page.manage.tenantUsage.qpsLimit')"><ElInputNumber v-model="form.rateLimitQps" :min="1" :max="10000" class="w-full" /></ElFormItem>
+        <ElFormItem :label="$t('page.manage.tenantUsage.dailyLimit')">
+          <ElInputNumber v-model="form.dailyTokenLimit" :min="0" :step="100000" class="w-full" />
+        </ElFormItem>
+        <ElFormItem :label="$t('page.manage.tenantUsage.monthlyLimit')">
+          <ElInputNumber v-model="form.monthlyTokenLimit" :min="0" :step="1000000" class="w-full" />
+        </ElFormItem>
+        <ElFormItem :label="$t('page.manage.tenantUsage.qpsLimit')">
+          <ElInputNumber v-model="form.rateLimitQps" :min="1" :max="10000" class="w-full" />
+        </ElFormItem>
       </ElForm>
-      <template #footer><ElButton @click="quotaVisible = false">{{ $t('common.cancel') }}</ElButton><ElButton type="primary" @click="saveQuota">{{ $t('common.save') }}</ElButton></template>
+      <template #footer>
+        <ElButton @click="quotaVisible = false">{{ $t('common.cancel') }}</ElButton>
+        <ElButton type="primary" @click="saveQuota">{{ $t('common.save') }}</ElButton>
+      </template>
     </ElDialog>
 
-    <ElDrawer v-model="trendVisible" :title="`${$t('page.manage.tenantUsage.trendTitle')} - ${editing?.tenantName || ''}`" size="560px">
+    <ElDrawer
+      v-model="trendVisible"
+      :title="`${$t('page.manage.tenantUsage.trendTitle')} - ${editing?.tenantName || ''}`"
+      size="560px"
+    >
       <ElTable :data="trend" border>
         <ElTableColumn prop="statDate" :label="$t('page.manage.tenantUsage.date')" min-width="120" />
-        <ElTableColumn label="Token" min-width="140"><template #default="{ row }">{{ formatNumber(row.tokens) }}</template></ElTableColumn>
+        <ElTableColumn label="Token" min-width="140">
+          <template #default="{ row }">{{ formatNumber(row.tokens) }}</template>
+        </ElTableColumn>
         <ElTableColumn prop="requests" :label="$t('page.manage.tenantUsage.requests')" min-width="100" />
       </ElTable>
       <ElEmpty v-if="trend.length === 0" :description="$t('page.manage.tenantUsage.noTrend')" />
@@ -198,6 +248,14 @@ onMounted(load);
   background: var(--el-bg-color);
   padding: 14px 18px;
 }
-.metric span { color: var(--el-text-color-secondary); font-size: 13px; }
-.metric strong { margin-top: 6px; color: var(--el-text-color-primary); font-size: 24px; line-height: 1.2; }
+.metric span {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+.metric strong {
+  margin-top: 6px;
+  color: var(--el-text-color-primary);
+  font-size: 24px;
+  line-height: 1.2;
+}
 </style>

@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Parse locale file to extract the object
 function parseLocaleFile(filePath) {
@@ -10,7 +10,7 @@ function parseLocaleFile(filePath) {
     throw new Error(`Could not parse locale file: ${filePath}`);
   }
   // Use eval to parse the object (safe since we control the file)
-  const obj = eval('(' + match[1] + ')');
+  const obj = eval(`(${match[1]})`);
   return obj;
 }
 
@@ -40,7 +40,8 @@ console.log('zh-CN keys:', zhCNKeys.length);
 console.log('en-US keys:', enUSKeys.length);
 
 // Load used keys
-const usedKeys = fs.readFileSync(path.join(__dirname, 'used-keys.txt'), 'utf8')
+const usedKeys = fs
+  .readFileSync(path.join(__dirname, 'used-keys.txt'), 'utf8')
   .split('\n')
   .filter(Boolean)
   .map(k => k.trim());

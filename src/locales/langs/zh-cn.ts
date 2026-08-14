@@ -1332,7 +1332,8 @@ const local = {
       apiToolQuery: '查询型工具',
       apiToolAction: '操作型工具',
       apiParameterLoading: '正在读取所选工具的参数 Schema…',
-      apiParameterSchemaUnavailable: '该工具未提供可读取的参数 Schema，已保留自由参数模式；请按工具配置和测试结果填写。',
+      apiParameterSchemaUnavailable:
+        '该工具未提供可读取的参数 Schema，已保留自由参数模式；请按工具配置和测试结果填写。',
       apiParameterSummary: '工具声明 {count} 个参数，其中 {required} 个必填。',
       apiParameterSelect: '选择工具参数',
       apiParameterSelectHint: '先从所选工具的参数 Schema 中选择参数。',
@@ -1343,7 +1344,8 @@ const local = {
       apiParameterTypeInvalid: '固定值与工具参数声明的类型不一致。',
       apiParameterEnumInvalid: '固定值不在工具参数允许的枚举范围内。',
       apiParameterRangeInvalid: '固定值不在工具参数允许的数值范围内。',
-      builtinArgumentsHint: '参数名由所选内置工具提供；可保留上游变量引用或填写固定值。日期计算的 add 与 difference 使用不同的日期字段。',
+      builtinArgumentsHint:
+        '参数名由所选内置工具提供；可保留上游变量引用或填写固定值。日期计算的 add 与 difference 使用不同的日期字段。',
       paramValue: '固定值或上游步骤字段引用',
       addParameter: '添加参数',
       paramLiteral: '固定值',
@@ -1366,7 +1368,8 @@ const local = {
       insertOutput: '插入上游结果：',
       temperature: '生成随机性',
       foreachConfig: '批量循环配置',
-      foreachFormHint: '普通循环建议使用表单：列表来源必须是一个上游引用；item_path 只选择数组容器字段。复杂循环配置请使用高级 JSON。',
+      foreachFormHint:
+        '普通循环建议使用表单：列表来源必须是一个上游引用；item_path 只选择数组容器字段。复杂循环配置请使用高级 JSON。',
       foreachItems: '列表来源',
       foreachItemPath: '数组路径（可选）',
       foreachMaxItems: '最大处理数量',
@@ -1376,7 +1379,8 @@ const local = {
       foreachBodyTool: '循环体工具',
       foreachItemsRequired: '请填写循环列表来源',
       transformConfig: '确定性数据转换配置',
-      transformFormHint: '普通输入绑定和操作可使用表单；每个操作的其余字段仍以 JSON 对象维护，复杂配置可切换高级 JSON。',
+      transformFormHint:
+        '普通输入绑定和操作可使用表单；每个操作的其余字段仍以 JSON 对象维护，复杂配置可切换高级 JSON。',
       transformInputs: '输入绑定',
       transformOperationsTitle: '转换操作',
       stepSummaryDependencies: '{count} 个依赖',
@@ -1392,8 +1396,10 @@ const local = {
       stepStatusAdvancedJson: '高级 JSON',
       stepStatusActionRisk: '操作风险 / HITL',
       outputSchema: '输出 Schema',
-      outputSchemaHint: '可选。默认用表单维护常见输出合同，保存时自动生成 JSON Schema；复杂结构可切换到高级 JSON。配置后步骤成功结果必须满足该合同，否则步骤失败；LLM 配置后必须返回合法 JSON。',
-      transformOutputSchemaHint: '可选。为转换结果声明下游合同；普通嵌套对象和数组可用表单维护，组合或条件规则使用高级 JSON。',
+      outputSchemaHint:
+        '可选。默认用表单维护常见输出合同，保存时自动生成 JSON Schema；复杂结构可切换到高级 JSON。配置后步骤成功结果必须满足该合同，否则步骤失败；LLM 配置后必须返回合法 JSON。',
+      transformOutputSchemaHint:
+        '可选。为转换结果声明下游合同；普通嵌套对象和数组可用表单维护，组合或条件规则使用高级 JSON。',
       outputSchemaPreview: '查看生成的 JSON Schema',
       outputSchemaFormSummary: '根类型：{type}；字段：{fields}；必填：{required}。',
       outputSchemaAdvancedSummary: '高级 JSON 合同。',
@@ -1403,7 +1409,8 @@ const local = {
       schemaJson: '高级 JSON',
       outputSchemaEnabled: '启用输出 Schema 校验',
       outputSchemaDisabledHint: '未启用输出 Schema。启用后再选择输出根类型并维护字段；保存时才会写入步骤配置。',
-      outputSchemaAdvancedHint: '当前配置使用高级 JSON。包含引用、组合、条件或其他复杂 Schema 规则时，请保持此模式，表单不会覆盖原配置。',
+      outputSchemaAdvancedHint:
+        '当前配置使用高级 JSON。包含引用、组合、条件或其他复杂 Schema 规则时，请保持此模式，表单不会覆盖原配置。',
       outputSchemaRootType: '根类型',
       outputSchemaTitle: '标题',
       outputSchemaTitlePlaceholder: '例如 RefundDecision',
@@ -1413,7 +1420,8 @@ const local = {
       outputSchemaAdditionalProperties: '允许未声明字段',
       outputSchemaArrayItemType: '数组元素类型',
       outputSchemaFieldsTitle: '对象字段',
-      outputSchemaFieldsHint: '字段名会直接成为下游引用路径；勾选必填会自动生成 required。对象和数组子结构可继续展开配置。',
+      outputSchemaFieldsHint:
+        '字段名会直接成为下游引用路径；勾选必填会自动生成 required。对象和数组子结构可继续展开配置。',
       outputSchemaNestedFieldsHint: '字段路径会直接成为下游引用路径；对象与数组可继续展开，最多 5 层。',
       outputSchemaAddField: '添加字段',
       outputSchemaFieldsEmpty: '尚未配置字段。对象输出至少应声明下游会使用的字段。',
@@ -1460,6 +1468,7 @@ const local = {
       regenerateYaml: '根据表单重新生成',
       firstUseGuide:
         '首次配置建议按顺序完成：1. 配数据源/Schema 或工具，2. 用测试按钮验证，3. 用模板创建 Skill，4. API、内置工具、Transform 和批量循环优先使用表单；引用、组合、条件规则、超过 5 层、整体 JSON 或无法无损还原的历史配置再切换高级 JSON，5. 用输出 Schema 表单声明下游字段，6. 试运行执行链，7. 到对话页完整验证。',
+      firstUseGuideTitle: '配置引导',
       emptyHint: '暂无 Skill，请先配置数据源、Schema 或 API 工具，再按业务场景新建并试运行 Skill',
       quickDatasource: '数据源',
       quickTool: '工具',
@@ -1639,8 +1648,7 @@ const local = {
           positiveExamplesMultiline:
             '帮我查一下这笔订单是否符合退款条件\n请核对订单并创建退款申请\n这笔订单有质量问题，帮我走退款流程',
           negativeExamples: '只告诉我优惠券规则，不要执行发放',
-          negativeExamplesMultiline:
-            '只说明退款政策，不要查询我的订单\n帮我查询物流进度\n我想修改收货地址，不需要退款',
+          negativeExamplesMultiline: '只说明退款政策，不要查询我的订单\n帮我查询物流进度\n我想修改收货地址，不需要退款',
           stepDescription: '查询当前可用且金额为 100 元的无门槛优惠券',
           ragQuery: '优惠券发放资格、限制和审批规则',
           queryHint: '查询仍有效的 100 元无门槛优惠券，返回优惠券 ID、名称和有效期'
@@ -1804,7 +1812,8 @@ const local = {
         bindingRules: {
           dependency: '每个 source 必须加入依赖步骤；来源未执行、失败或被跳过时，绑定无法解析。',
           safePath: '路径不支持过滤表达式、函数、递归查找或脚本；需要过滤、聚合或重命名时先使用 Transform。',
-          toolSchema: '绑定后的最终参数必须通过目标 API 工具的 JSON Schema；参数 Schema 的 default 会由工具执行器补齐未提供的参数。',
+          toolSchema:
+            '绑定后的最终参数必须通过目标 API 工具的 JSON Schema；参数 Schema 的 default 会由工具执行器补齐未提供的参数。',
           transport:
             'Skill 不配置 HTTP 位置。工具执行器按参数 Schema 的 x-in/in 与 x-http-name/httpName 构造请求；旧的双花括号 param URL 模板继续兼容且不会重复追加。'
         },
@@ -1824,19 +1833,22 @@ const local = {
         outputSchemaRules: {
           primaryData: 'Schema 校验步骤的主数据本身，不会自动为结果增加 data、result 或其他包装层，也不会重命名字段。',
           requiredProperties: 'required 只表示字段必须出现；字段类型、枚举、长度和范围仍需在 properties 中单独定义。',
-          defaultValue: 'Skill 输出 Schema 中的 default 只是注解，不会自动补值；需要生成默认值应使用 Transform 的 default 操作或在 LLM Prompt 中明确要求。',
+          defaultValue:
+            'Skill 输出 Schema 中的 default 只是注解，不会自动补值；需要生成默认值应使用 Transform 的 default 操作或在 LLM Prompt 中明确要求。',
           stableNames: '字段名区分大小写，并会被下游绑定直接引用；发布后应保持稳定。',
           validJson: '只能填写合法 JSON 对象，不能包含注释、尾随逗号、单引号或 JavaScript 表达式。'
         },
         foreachFields: {
-          items: '使用双花括号引用一个上游步骤，例如双花括号内填写 query_orders；来源必须加入依赖并输出数组或包含数组的对象。',
+          items:
+            '使用双花括号引用一个上游步骤，例如双花括号内填写 query_orders；来源必须加入依赖并输出数组或包含数组的对象。',
           itemPath: '当上游输出是对象时，指定其中数组字段路径，例如 records 或 data.records；直接输出数组时省略。',
           maxItems: '本次最多处理的项目数，范围 1 至 200；实际数组超过此值会失败。',
           maxAttempts: '每项最大尝试次数，范围 1 至 3；非幂等操作 API 不会自动重试。',
           continueOnError: 'true 表示记录单项失败并继续，false 表示遇到首个失败立即停止。',
           bodyType: '循环体只支持 api 或 builtin，不能嵌套 foreach、调用 LLM 或使用 web_search。',
           toolCode: '循环内要调用的已配置 API 工具编码或内置工具编码。',
-          bodyParams: 'API 使用 params，内置工具使用 arguments；可在双花括号内引用 item、item.field 和从 0 开始的 index。',
+          bodyParams:
+            'API 使用 params，内置工具使用 arguments；可在双花括号内引用 item、item.field 和从 0 开始的 index。',
           outputSchema: '可选，用 Draft 7 校验整个批量结果对象，而不是单项工具返回值。'
         },
         foreachRules: {
@@ -1848,16 +1860,19 @@ const local = {
         transformFields: {
           inputs: '为一个或多个上游输入命名。inputs 是“名称: 绑定对象”，input 可直接写单个绑定；每个来源都要加入依赖。',
           sourcePath: 'source 指定上游步骤；path 从它的主数据读取结构，使用受限 JSONPath。',
-          bindingPolicies: '绑定同样支持 one/many、on_empty、on_multiple、default、max_items 和 overflow，含义与 API 参数绑定一致。',
+          bindingPolicies:
+            '绑定同样支持 one/many、on_empty、on_multiple、default、max_items 和 overflow，含义与 API 参数绑定一致。',
           operations: '按数组顺序执行 1 至 20 个确定性操作，每个元素必须是包含 op 的 JSON 对象。',
           op: '支持 select、filter、project、rename、distinct、sort、slice、limit、aggregate、object、merge、default、cast。',
-          operationFields: '不同 op 使用不同字段：path 选路径，fields 做投影/重命名/组装，value 提供过滤值、默认值或合并对象。',
+          operationFields:
+            '不同 op 使用不同字段：path 选路径，fields 做投影/重命名/组装，value 提供过滤值、默认值或合并对象。',
           outputSchema: '可选但强烈建议，为转换后的最终对象或数组声明 Draft 7 合同，校验失败会阻止下游。'
         },
         transformRules: {
           dependency: '所有 input/inputs 的 source 都必须加入当前步骤依赖。',
           path: '路径只支持 $、点字段、数字下标和数组通配符；不支持脚本、函数、递归路径或过滤表达式。',
-          operations: 'filter 的 operator 仅支持 equals、not_equals、in、contains、exists、gt、gte、lt、lte；sort 仅支持 asc/desc。',
+          operations:
+            'filter 的 operator 仅支持 equals、not_equals、in、contains、exists、gt、gte、lt、lte；sort 仅支持 asc/desc。',
           limits: '最多 20 个操作、200 项、1 MB JSON 和 32 层嵌套；每个中间结果都会检查限制。'
         },
         promptTitle: 'Prompt 模板',
@@ -1980,7 +1995,8 @@ const local = {
       addResponseMapping: '添加映射',
       paramSchemaBuilderHint: '按行定义模型可使用的逻辑参数，保存时自动生成 JSON Schema。',
       requestHeadersHint: '静态请求头使用键值 JSON；动态请求头建议在参数 Schema 中设置位置为 Header。',
-      requestTemplateBuilderHint: '普通请求体由参数 Schema 自动组装；表单适合一级字段，嵌套对象、数组或复杂值请切换到高级 JSON。',
+      requestTemplateBuilderHint:
+        '普通请求体由参数 Schema 自动组装；表单适合一级字段，嵌套对象、数组或复杂值请切换到高级 JSON。',
       requestTemplateAuto: '自动组装',
       requestTemplateAutoHint: '当前不使用请求模板，Body 参数会根据参数位置自动生成；嵌套对象和数组请使用高级 JSON。',
       requestTemplateEmptyHint: '还没有请求字段，点击右上角添加字段。',
@@ -2303,14 +2319,16 @@ const local = {
         step6:
           '先保存 Schema，再从列表点击“测试 Schema”；使用当前账号有权访问的正常业务问题检查生成 SQL 和结果，ACL 隔离需再用无权限账号从会话或 Skill 验证。',
         rule1: '领域编码在同一数据源内唯一，表/视图名称必须真实存在且只授予只读权限。',
-        rule2: '字段元数据、查询示例、允许函数和敏感字段会在保存时自动生成 JSON 数组；字段元数据为空时不形成字段白名单。',
+        rule2:
+          '字段元数据、查询示例、允许函数和敏感字段会在保存时自动生成 JSON 数组；字段元数据为空时不形成字段白名单。',
         rule3: '密级与 ACL 是同一访问概念，不存在角色授权主体；仅支持公开、部门、岗位、用户四种模式。',
         rule4: '模型生成的 SQL 仍会经过语法解析、只读校验、Schema 范围、行数和超时限制。',
         effect1: '启用后，只有满足该 ACL 的当前用户才会在 NL2SQL Prompt 中看到此 Schema。',
         effect2: '关闭或删除后，依赖此 Schema 的自然语言查询将无法使用其结构，已有审计记录不会被删除。',
         descriptionTitle: '业务描述',
         descriptionRule1: '说明数据范围、统计口径、单位、状态枚举、时间字段含义和不适用场景；不要只重复领域名称。',
-        descriptionRule2: '模型会直接读取此内容选择 Schema 和生成 SQL，描述错误会造成口径错误，但不会绕过后端字段和函数校验。',
+        descriptionRule2:
+          '模型会直接读取此内容选择 Schema 和生成 SQL，描述错误会造成口径错误，但不会绕过后端字段和函数校验。',
         columnsTitle: '字段元数据',
         columnsDescription:
           '通过表单逐项填写真实字段名、数据库类型和清晰业务说明。数据类型可从预置列表筛选选择，也可输入数据库特有类型和精度；三项均必填且字段名不能重复。说明应补充单位、枚举、时间含义、可否聚合及关联键；非空时未列出的字段会被拦截并禁止 SELECT *，空列表则不会限制字段。',
@@ -2339,7 +2357,8 @@ const local = {
         functionsTitle: '允许函数',
         functionsDescription:
           '选择或输入允许模型在该 Schema 中使用的 SQL 函数名。系统保存为字符串数组并按函数名校验；常用安全只读函数仍受平台内置规则控制。',
-        functionsRule1: '使用数据库实际支持的函数名并保持大写便于审查；MySQL 的 DATE_FORMAT 与 PostgreSQL 的 DATE_TRUNC 不能混用。',
+        functionsRule1:
+          '使用数据库实际支持的函数名并保持大写便于审查；MySQL 的 DATE_FORMAT 与 PostgreSQL 的 DATE_TRUNC 不能混用。',
         functionsRule2: '空数组表示不启用额外函数白名单，并非禁止所有函数；需要严格限制时只保留业务确实需要的函数。',
         sensitiveTitle: '敏感字段',
         sensitiveDescription:
@@ -2365,15 +2384,20 @@ const local = {
         note3:
           '工具必须先保存再测试。先做 Dry-run；真实请求不经过 HITL，操作接口只能使用测试环境、幂等参数或可回滚数据。',
         step1: '填写稳定名称、唯一编码和能力描述，明确调用条件、必需信息、返回内容及不能完成的事项。',
-        step2: '填写接口基础 URL、HTTP 方法、超时与重试次数；仅 path 参数在 URL 中保留双花括号包裹的同名参数占位符，并根据实际业务影响选择“查询”或“操作”。',
+        step2:
+          '填写接口基础 URL、HTTP 方法、超时与重试次数；仅 path 参数在 URL 中保留双花括号包裹的同名参数占位符，并根据实际业务影响选择“查询”或“操作”。',
         step3: '选择认证类型并在结构化表单填写凭据；仅在外部服务能够验证平台签名上下文时启用用户身份传递。',
-        step4: '在参数 Schema 表格中逐行配置参数名、说明、类型、HTTP 位置、外部名称和必填项；类型可选择或输入，默认值、枚举和范围在高级属性中配置，保存时自动生成 JSON Schema。复杂或需要迁移的配置再切换到高级 JSON。',
-        step5: '按需配置固定请求头；请求模板默认自动组装。需要固定字段或特殊组合时，在表格中选择参数引用或固定值；嵌套对象、数组和复杂 JSON 使用高级 JSON。',
-        step6: '在成功响应规则表单中配置状态码、业务状态判断、数据路径和消息路径；全部留空时默认 HTTP 2xx。再在响应映射表格中逐行配置平台字段名和响应路径；设置 dataPath 后路径从提取节点开始。',
+        step4:
+          '在参数 Schema 表格中逐行配置参数名、说明、类型、HTTP 位置、外部名称和必填项；类型可选择或输入，默认值、枚举和范围在高级属性中配置，保存时自动生成 JSON Schema。复杂或需要迁移的配置再切换到高级 JSON。',
+        step5:
+          '按需配置固定请求头；请求模板默认自动组装。需要固定字段或特殊组合时，在表格中选择参数引用或固定值；嵌套对象、数组和复杂 JSON 使用高级 JSON。',
+        step6:
+          '在成功响应规则表单中配置状态码、业务状态判断、数据路径和消息路径；全部留空时默认 HTTP 2xx。再在响应映射表格中逐行配置平台字段名和响应路径；设置 dataPath 后路径从提取节点开始。',
         step7:
           '设置公开或单个授权部门、岗位、用户范围，保存后先 Dry-run，再通过真实会话验证选择、追问、HITL 和结果展示。',
         rule1: '工具编码在租户内唯一且保持稳定；描述不能声称接口不具备的查询或操作能力。',
-        rule2: '参数 Schema、请求模板、成功规则和响应映射默认由表单维护并在保存时自动生成合法 JSON；请求头仍使用 JSON 编辑器。复杂配置可使用高级 JSON，认证凭据通过结构化表单维护。',
+        rule2:
+          '参数 Schema、请求模板、成功规则和响应映射默认由表单维护并在保存时自动生成合法 JSON；请求头仍使用 JSON 编辑器。复杂配置可使用高级 JSON，认证凭据通过结构化表单维护。',
         rule3: '查询工具不得改变外部状态；无法确定是否有副作用时按“操作”处理。',
         rule4: '仅幂等方法执行自动重试；POST 即使配置重试次数也不会重试。',
         effect1: '启用后，Agent 仅向满足租户与 ACL 的用户注入该工具定义，并可根据描述和参数 Schema 规划调用。',
@@ -2392,7 +2416,8 @@ const local = {
         requestTitle: '请求模板',
         requestDescription:
           '请求模板默认自动组装普通请求体，无需手写 JSON。需要固定字段或特殊组合时，在表格中逐行选择参数引用或固定值；嵌套对象、数组和复杂 JSON 使用高级 JSON。模板变量必须来自参数 Schema；参数 Schema 中显式标记为 body 的字段会参与对象模板组装。',
-        requestExample: '基础 URL 使用 /orders/ 后跟双花括号 orderNo；status 和 page 自动进入 query，requestId 进入 header，reason 以 operation_reason 进入 body',
+        requestExample:
+          '基础 URL 使用 /orders/ 后跟双花括号 orderNo；status 和 page 自动进入 query，requestId 进入 header，reason 以 operation_reason 进入 body',
         responseTitle: '成功规则与响应映射',
         responseDescription:
           '成功规则默认通过表单配置 HTTP 状态、业务状态判断、数据路径和消息路径；全部留空时 HTTP 2xx 即成功。响应映射通过表格逐行维护平台字段名和路径，路径相对于 dataPath 提取后的节点；任一路径不存在会判定失败。复杂配置可切换到高级 JSON。',
@@ -2623,6 +2648,7 @@ const local = {
       required: '请选择工作流并填写名称',
       updated: '触发器已更新',
       created: '触发器已创建',
+      createdDisabledHint: '触发器默认禁用，请先启用后再调用。',
       enabled: '触发器已启用',
       disabled: '触发器已停用',
       rotateConfirm: '轮换后旧密钥立即失效，确认继续？',

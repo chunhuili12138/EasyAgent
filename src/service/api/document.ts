@@ -21,7 +21,13 @@ export interface FileUploadResult {
   duplicate: boolean;
 }
 
-export function fetchGetFilePage(params?: { fileName?: string; fileType?: string; status?: string; current?: number; size?: number }) {
+export function fetchGetFilePage(params?: {
+  fileName?: string;
+  fileType?: string;
+  status?: string;
+  current?: number;
+  size?: number;
+}) {
   return request<{ records: any[]; total: number }>({
     url: '/document/file/page',
     method: 'get',
@@ -68,11 +74,17 @@ export function fetchGetFileAcl(fileId: number) {
   });
 }
 
-export function fetchUpdateFileAcl(fileId: number, data: { aclMode: string; aclList: Array<{ subjectType: string; subjectId: number }> }) {
+export function fetchUpdateFileAcl(
+  fileId: number,
+  data: { aclMode: string; aclList: Array<{ subjectType: string; subjectId: number }> }
+) {
   return request({ url: `/document/files/${fileId}/acl`, method: 'put', data });
 }
 
-export function fetchBatchUpdateFileAcl(fileIds: number[], data: { aclMode: string; aclList: Array<{ subjectType: string; subjectId: number }> }) {
+export function fetchBatchUpdateFileAcl(
+  fileIds: number[],
+  data: { aclMode: string; aclList: Array<{ subjectType: string; subjectId: number }> }
+) {
   return request({ url: '/document/files/batch-acl', method: 'post', data: { fileIds, ...data } });
 }
 
@@ -108,7 +120,13 @@ export function fetchDeleteBatch(id: number) {
   return request({ url: `/document/batch/${id}`, method: 'delete' });
 }
 
-export function fetchGetParsePage(params?: { fileName?: string; status?: string; processStatus?: string; current?: number; size?: number }) {
+export function fetchGetParsePage(params?: {
+  fileName?: string;
+  status?: string;
+  processStatus?: string;
+  current?: number;
+  size?: number;
+}) {
   return request<{ records: any[]; total: number }>({
     url: '/document/parse/page',
     method: 'get',
@@ -141,7 +159,10 @@ export function fetchDeleteParse(id: number) {
 }
 
 export function fetchParseCheck(fileIds: number[]) {
-  return request<{ direct: Array<{ id: number; fileName: string; status: string }>; needConfirm: Array<{ id: number; fileName: string; status: string; hasProcess: boolean; hasChunks: boolean }> }>({
+  return request<{
+    direct: Array<{ id: number; fileName: string; status: string }>;
+    needConfirm: Array<{ id: number; fileName: string; status: string; hasProcess: boolean; hasChunks: boolean }>;
+  }>({
     url: '/document/file/parse-check',
     method: 'get',
     params: { fileIds: fileIds.join(',') }
@@ -192,7 +213,15 @@ export function fetchUnindexFile(fileId: number) {
   return request({ url: `/document/process/file/${fileId}/unindex`, method: 'post' });
 }
 
-export function fetchGetEsDataPage(params?: { keyword?: string; department?: string; securityLevel?: string; year?: string; docType?: string; current?: number; size?: number }) {
+export function fetchGetEsDataPage(params?: {
+  keyword?: string;
+  department?: string;
+  securityLevel?: string;
+  year?: string;
+  docType?: string;
+  current?: number;
+  size?: number;
+}) {
   return request<any>({ url: '/document/kb/data/page', method: 'get', params });
 }
 

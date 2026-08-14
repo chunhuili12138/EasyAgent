@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
 import {
   fetchCreatePost,
   fetchDeletePost,
@@ -9,6 +8,7 @@ import {
   fetchGetPostList,
   fetchUpdatePost
 } from '@/service/api/system-manage';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'SystemPost' });
 
@@ -132,7 +132,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full page-container">
+  <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElTreeSelect
@@ -147,8 +147,18 @@ onMounted(() => {
           style="width: 200px"
           @change="handleDepartmentChange"
         />
-        <ElInput v-model="queryParams.name" :placeholder="$t('page.manage.post.form.name')" clearable style="width: 180px" />
-        <ElInput v-model="queryParams.code" :placeholder="$t('page.manage.post.form.code')" clearable style="width: 180px" />
+        <ElInput
+          v-model="queryParams.name"
+          :placeholder="$t('page.manage.post.form.name')"
+          clearable
+          style="width: 180px"
+        />
+        <ElInput
+          v-model="queryParams.code"
+          :placeholder="$t('page.manage.post.form.code')"
+          clearable
+          style="width: 180px"
+        />
         <ElButton type="primary" @click="handleSearch">{{ $t('common.search') }}</ElButton>
         <ElButton @click="handleReset">{{ $t('common.reset') }}</ElButton>
       </div>
@@ -163,7 +173,11 @@ onMounted(() => {
         <ElTableColumn prop="status" :label="$t('common.status')" min-width="100" align="center">
           <template #default="{ row }">
             <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === '1' || row.status === 1 ? $t('page.manage.common.status.enable') : $t('page.manage.common.status.disable') }}
+              {{
+                row.status === '1' || row.status === 1
+                  ? $t('page.manage.common.status.enable')
+                  : $t('page.manage.common.status.disable')
+              }}
             </ElTag>
           </template>
         </ElTableColumn>
@@ -188,9 +202,13 @@ onMounted(() => {
         />
       </div>
     </ElCard>
-      <ElDialog v-model="dialogVisible" :title="dialogTitle" width="500px">
+    <ElDialog v-model="dialogVisible" :title="dialogTitle" width="500px">
       <ElForm ref="formRef" :model="formData" label-width="100px">
-        <ElFormItem :label="$t('page.manage.post.department')" prop="departmentId" :rules="[{ required: true, message: $t('page.manage.post.selectDepartment') }]">
+        <ElFormItem
+          :label="$t('page.manage.post.department')"
+          prop="departmentId"
+          :rules="[{ required: true, message: $t('page.manage.post.selectDepartment') }]"
+        >
           <ElTreeSelect
             v-model="formData.departmentId"
             :data="departmentTree"
@@ -203,10 +221,18 @@ onMounted(() => {
             style="width: 100%"
           />
         </ElFormItem>
-        <ElFormItem :label="$t('page.manage.post.name')" prop="name" :rules="[{ required: true, message: $t('page.manage.post.form.name') }]">
+        <ElFormItem
+          :label="$t('page.manage.post.name')"
+          prop="name"
+          :rules="[{ required: true, message: $t('page.manage.post.form.name') }]"
+        >
           <ElInput v-model="formData.name" :placeholder="$t('page.manage.post.form.name')" />
         </ElFormItem>
-        <ElFormItem :label="$t('page.manage.post.code')" prop="code" :rules="[{ required: true, message: $t('page.manage.post.form.code') }]">
+        <ElFormItem
+          :label="$t('page.manage.post.code')"
+          prop="code"
+          :rules="[{ required: true, message: $t('page.manage.post.form.code') }]"
+        >
           <ElInput v-model="formData.code" :placeholder="$t('page.manage.post.form.code')" />
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.post.sort')" prop="sort">

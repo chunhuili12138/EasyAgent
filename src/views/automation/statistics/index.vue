@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
 import {
   type AutomationReconcileResult,
   type AutomationRuntimeMetrics,
   fetchAutomationMetrics,
   fetchReconcileAutomationRuns
 } from '@/service/api/automation';
+import { $t } from '@/locales';
 import AutomationConfigHelp from '../components/automation-config-help.vue';
 import AutomationLoadError from '../components/automation-load-error.vue';
 import { automationStatusLabel } from '../automation-enum-label';
@@ -64,14 +64,10 @@ async function loadData() {
 
 async function reconcile() {
   try {
-    await ElMessageBox.confirm(
-      t('automation.statistics.reconcileConfirm'),
-      t('automation.statistics.reconcile'),
-      {
-        type: 'warning',
-        confirmButtonText: t('automation.statistics.startReconcile')
-      }
-    );
+    await ElMessageBox.confirm(t('automation.statistics.reconcileConfirm'), t('automation.statistics.reconcile'), {
+      type: 'warning',
+      confirmButtonText: t('automation.statistics.startReconcile')
+    });
   } catch {
     return;
   }
@@ -84,9 +80,11 @@ async function reconcile() {
       return;
     }
     reconcileResult.value = data;
-    ElMessage.success(data.repaired
-      ? t('automation.statistics.repaired', { count: data.repaired })
-      : t('automation.statistics.noRepair'));
+    ElMessage.success(
+      data.repaired
+        ? t('automation.statistics.repaired', { count: data.repaired })
+        : t('automation.statistics.noRepair')
+    );
     await loadData();
   } finally {
     reconciling.value = false;
@@ -121,8 +119,12 @@ onMounted(loadData);
           <SvgIcon icon="mdi:database-sync-outline" />
           {{ t('automation.statistics.reconcile') }}
         </ElButton>
-        <ElButton circle :title="t('automation.common.configurationHelp')" @click="helpVisible = true"><SvgIcon icon="mdi:help-circle-outline" /></ElButton>
-        <ElButton circle :title="t('automation.common.refresh')" @click="loadData"><SvgIcon icon="mdi:refresh" /></ElButton>
+        <ElButton circle :title="t('automation.common.configurationHelp')" @click="helpVisible = true">
+          <SvgIcon icon="mdi:help-circle-outline" />
+        </ElButton>
+        <ElButton circle :title="t('automation.common.refresh')" @click="loadData">
+          <SvgIcon icon="mdi:refresh" />
+        </ElButton>
       </div>
     </header>
     <AutomationLoadError v-if="loadError" :message="loadError" @retry="loadData" />
@@ -211,7 +213,13 @@ onMounted(loadData);
           <span>{{ t('automation.statistics.autoReconcile') }}</span>
         </header>
         <div v-if="reconcileError" class="reconcile-content">
-          <ElAlert type="error" :closable="false" :title="t('automation.statistics.reconcileIncomplete')" :description="reconcileError" show-icon />
+          <ElAlert
+            type="error"
+            :closable="false"
+            :title="t('automation.statistics.reconcileIncomplete')"
+            :description="reconcileError"
+            show-icon
+          />
         </div>
         <div v-else-if="reconcileResult" class="reconcile-content">
           <div class="reconcile-counts">

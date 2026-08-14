@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
-import { useFormRules } from '@/hooks/common/form';
-import { useAuthStore } from '@/store/modules/auth';
 import {
   fetchCreateUser,
   fetchDeleteUser,
+  fetchGetAllPosts,
   fetchGetAllRoles,
   fetchGetAllTenants,
-  fetchGetAllPosts,
   fetchGetDepartmentTree,
   fetchGetUserList,
+  fetchGetUserOrganization,
   fetchGetUserRoles,
   fetchGetUserTenants,
-  fetchGetUserOrganization,
   fetchResetPassword,
   fetchUpdateUser
 } from '@/service/api/system-manage';
+import { useAuthStore } from '@/store/modules/auth';
+import { useFormRules } from '@/hooks/common/form';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'SystemUser' });
 
@@ -253,10 +253,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full page-container">
+  <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
-        <ElInput v-model="queryParams.keyword" :placeholder="$t('page.manage.user.userPhone') + '/' + $t('page.manage.user.nickName')" clearable style="width: 180px" />
+        <ElInput
+          v-model="queryParams.keyword"
+          :placeholder="$t('page.manage.user.userPhone') + '/' + $t('page.manage.user.nickName')"
+          clearable
+          style="width: 180px"
+        />
         <ElButton type="primary" @click="handleSearch">{{ $t('common.search') }}</ElButton>
         <ElButton @click="handleReset">{{ $t('common.reset') }}</ElButton>
       </div>
@@ -276,7 +281,11 @@ onMounted(() => {
         <ElTableColumn prop="status" :label="$t('page.manage.user.userStatus')" min-width="100" align="center">
           <template #default="{ row }">
             <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === '1' || row.status === 1 ? $t('page.manage.common.status.enable') : $t('page.manage.common.status.disable') }}
+              {{
+                row.status === '1' || row.status === 1
+                  ? $t('page.manage.common.status.enable')
+                  : $t('page.manage.common.status.disable')
+              }}
             </ElTag>
           </template>
         </ElTableColumn>
@@ -285,7 +294,9 @@ onMounted(() => {
         <ElTableColumn :label="$t('common.action')" min-width="200" fixed="right">
           <template #default="{ row }">
             <ElButton type="primary" link size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</ElButton>
-            <ElButton type="warning" link size="small" @click="handleOpenResetPwd(row)">{{ $t('page.manage.user.resetPwd') }}</ElButton>
+            <ElButton type="warning" link size="small" @click="handleOpenResetPwd(row)">
+              {{ $t('page.manage.user.resetPwd') }}
+            </ElButton>
             <ElButton type="danger" link size="small" @click="handleDelete(row)">{{ $t('common.delete') }}</ElButton>
           </template>
         </ElTableColumn>
@@ -305,8 +316,16 @@ onMounted(() => {
 
     <ElDialog v-model="dialogVisible" :title="dialogTitle" width="600px">
       <ElForm ref="formRef" :model="formData" label-width="100px">
-        <ElFormItem :label="$t('page.manage.user.userPhone')" prop="phone" :rules="[{ required: true, message: $t('page.manage.user.form.userPhone') }]">
-          <ElInput v-model="formData.phone" :placeholder="$t('page.manage.user.form.userPhone')" :disabled="!isCreate" />
+        <ElFormItem
+          :label="$t('page.manage.user.userPhone')"
+          prop="phone"
+          :rules="[{ required: true, message: $t('page.manage.user.form.userPhone') }]"
+        >
+          <ElInput
+            v-model="formData.phone"
+            :placeholder="$t('page.manage.user.form.userPhone')"
+            :disabled="!isCreate"
+          />
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.user.nickName')" prop="nickname">
           <ElInput v-model="formData.nickname" :placeholder="$t('page.manage.user.form.nickName')" />
@@ -321,7 +340,13 @@ onMounted(() => {
           <ElSwitch v-model="formData.status" active-value="1" inactive-value="0" />
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.tenant.title')">
-          <ElSelect v-model="formData.selectedTenantIds" multiple filterable :placeholder="$t('page.manage.tenant.form.name')" style="width: 100%">
+          <ElSelect
+            v-model="formData.selectedTenantIds"
+            multiple
+            filterable
+            :placeholder="$t('page.manage.tenant.form.name')"
+            style="width: 100%"
+          >
             <ElOption
               v-for="tenant in allTenants"
               :key="tenant.id"
@@ -332,7 +357,13 @@ onMounted(() => {
           </ElSelect>
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.user.userRole')" required>
-          <ElSelect v-model="formData.selectedRoleIds" multiple filterable :placeholder="$t('page.manage.user.form.userRole')" style="width: 100%">
+          <ElSelect
+            v-model="formData.selectedRoleIds"
+            multiple
+            filterable
+            :placeholder="$t('page.manage.user.form.userRole')"
+            style="width: 100%"
+          >
             <ElOption v-for="role in allRoles" :key="role.id" :label="role.name" :value="role.id" />
           </ElSelect>
         </ElFormItem>
@@ -372,7 +403,12 @@ onMounted(() => {
     <ElDialog v-model="resetPwdVisible" :title="$t('page.manage.user.resetPwdTitle')" width="400px">
       <ElForm ref="resetPwdFormRef" :model="resetPwdData" label-width="100px">
         <ElFormItem :label="$t('form.pwd.required')" prop="newPassword" :rules="formRules.pwd">
-          <ElInput v-model="resetPwdData.newPassword" type="password" show-password :placeholder="$t('form.pwd.required')" />
+          <ElInput
+            v-model="resetPwdData.newPassword"
+            type="password"
+            show-password
+            :placeholder="$t('form.pwd.required')"
+          />
         </ElFormItem>
       </ElForm>
       <template #footer>

@@ -2,7 +2,6 @@
 import { nextTick, onMounted, reactive, ref } from 'vue';
 import type { ElTree } from 'element-plus';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
 import {
   fetchAssignRoleMenus,
   fetchCreateRole,
@@ -12,6 +11,7 @@ import {
   fetchGetRoleMenus,
   fetchUpdateRole
 } from '@/service/api/system-manage';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'SystemRole' });
 
@@ -144,11 +144,21 @@ onMounted(getList);
 </script>
 
 <template>
-  <div class="h-full page-container">
+  <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
-        <ElInput v-model="queryParams.name" :placeholder="$t('page.manage.role.roleName')" clearable style="width: 180px" />
-        <ElInput v-model="queryParams.code" :placeholder="$t('page.manage.role.roleCode')" clearable style="width: 180px" />
+        <ElInput
+          v-model="queryParams.name"
+          :placeholder="$t('page.manage.role.roleName')"
+          clearable
+          style="width: 180px"
+        />
+        <ElInput
+          v-model="queryParams.code"
+          :placeholder="$t('page.manage.role.roleCode')"
+          clearable
+          style="width: 180px"
+        />
         <ElButton type="primary" @click="handleSearch">{{ $t('common.search') }}</ElButton>
         <ElButton @click="handleReset">{{ $t('common.reset') }}</ElButton>
       </div>
@@ -161,14 +171,20 @@ onMounted(getList);
         <ElTableColumn prop="status" :label="$t('page.manage.role.roleStatus')" min-width="100" align="center">
           <template #default="{ row }">
             <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === '1' || row.status === 1 ? $t('page.manage.common.status.enable') : $t('page.manage.common.status.disable') }}
+              {{
+                row.status === '1' || row.status === 1
+                  ? $t('page.manage.common.status.enable')
+                  : $t('page.manage.common.status.disable')
+              }}
             </ElTag>
           </template>
         </ElTableColumn>
         <ElTableColumn prop="createdAt" :label="$t('common.createTime')" min-width="180" align="left" />
         <ElTableColumn :label="$t('common.action')" min-width="150" fixed="right">
           <template #default="{ row }">
-            <ElButton type="warning" link size="small" @click="handleOpenMenuDialog(row)">{{ $t('page.manage.role.menuPermission') }}</ElButton>
+            <ElButton type="warning" link size="small" @click="handleOpenMenuDialog(row)">
+              {{ $t('page.manage.role.menuPermission') }}
+            </ElButton>
             <ElButton type="primary" link size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</ElButton>
             <ElButton type="danger" link size="small" @click="handleDelete(row)">{{ $t('common.delete') }}</ElButton>
           </template>
@@ -189,10 +205,18 @@ onMounted(getList);
 
     <ElDialog v-model="dialogVisible" :title="dialogTitle" width="500px">
       <ElForm ref="formRef" :model="formData" label-width="100px">
-        <ElFormItem :label="$t('page.manage.role.roleName')" prop="name" :rules="[{ required: true, message: $t('page.manage.role.form.roleName') }]">
+        <ElFormItem
+          :label="$t('page.manage.role.roleName')"
+          prop="name"
+          :rules="[{ required: true, message: $t('page.manage.role.form.roleName') }]"
+        >
           <ElInput v-model="formData.name" :placeholder="$t('page.manage.role.form.roleName')" />
         </ElFormItem>
-        <ElFormItem :label="$t('page.manage.role.roleCode')" prop="code" :rules="[{ required: true, message: $t('page.manage.role.form.roleCode') }]">
+        <ElFormItem
+          :label="$t('page.manage.role.roleCode')"
+          prop="code"
+          :rules="[{ required: true, message: $t('page.manage.role.form.roleCode') }]"
+        >
           <ElInput v-model="formData.code" :placeholder="$t('page.manage.role.form.roleCode')" />
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.role.roleStatus')" prop="status">

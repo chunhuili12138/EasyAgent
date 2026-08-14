@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
 import {
   fetchCreateDictData,
   fetchCreateDictType,
@@ -12,6 +11,7 @@ import {
   fetchUpdateDictData,
   fetchUpdateDictType
 } from '@/service/api/system-manage';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'SystemDict' });
 
@@ -215,99 +215,128 @@ onMounted(getDictTypes);
 <template>
   <div class="h-full flex gap-4">
     <div class="flex-panel">
-    <ElCard>
-      <div class="mb-4 flex flex-wrap items-center gap-4">
-        <ElInput v-model="typeQuery.keyword" :placeholder="$t('page.manage.dict.form.name')" clearable style="width: 180px" />
-        <ElButton type="primary" @click="handleTypeSearch">{{ $t('common.search') }}</ElButton>
-        <ElButton @click="handleTypeReset">{{ $t('common.reset') }}</ElButton>
-      </div>
-      <div class="mb-4 flex flex-wrap items-center gap-4">
-        <ElButton type="primary" @click="handleTypeAdd">{{ $t('page.manage.dict.addType') }}</ElButton>
-      </div>
-      <ElTable
-        v-loading="loading"
-        :data="dictTypeList"
-        border
-        stripe
-        style="width: 100%"
-        highlight-current-row
-        @row-click="handleSelectType"
-      >
-        <ElTableColumn prop="name" :label="$t('page.manage.dict.name')" min-width="140" align="left" />
-        <ElTableColumn prop="code" :label="$t('page.manage.dict.code')" min-width="150" align="left" />
-        <ElTableColumn prop="status" :label="$t('common.status')" min-width="80" align="center">
-          <template #default="{ row }">
-            <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === '1' || row.status === 1 ? $t('page.manage.common.status.enable') : $t('page.manage.common.status.disable') }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="createdAt" :label="$t('common.createTime')" min-width="160" align="left" />
-        <ElTableColumn :label="$t('common.action')" min-width="140" fixed="right">
-          <template #default="{ row }">
-            <ElButton type="primary" link size="small" @click.stop="handleTypeEdit(row)">{{ $t('common.edit') }}</ElButton>
-            <ElButton type="danger" link size="small" @click.stop="handleTypeDelete(row)">{{ $t('common.delete') }}</ElButton>
-          </template>
-        </ElTableColumn>
-      </ElTable>
-      <div class="mt-4 flex justify-end">
-        <ElPagination
-          v-model:current-page="typeQuery.current"
-          v-model:page-size="typeQuery.size"
-          :page-sizes="[5, 10, 20]"
-          :total="dictTypeTotal"
-          layout="total, sizes, prev, pager, next, jumper"
-          small
-          @current-change="handleTypePageChange"
-          @size-change="handleTypeSizeChange"
-        />
-      </div>
-    </ElCard>
+      <ElCard>
+        <div class="mb-4 flex flex-wrap items-center gap-4">
+          <ElInput
+            v-model="typeQuery.keyword"
+            :placeholder="$t('page.manage.dict.form.name')"
+            clearable
+            style="width: 180px"
+          />
+          <ElButton type="primary" @click="handleTypeSearch">{{ $t('common.search') }}</ElButton>
+          <ElButton @click="handleTypeReset">{{ $t('common.reset') }}</ElButton>
+        </div>
+        <div class="mb-4 flex flex-wrap items-center gap-4">
+          <ElButton type="primary" @click="handleTypeAdd">{{ $t('page.manage.dict.addType') }}</ElButton>
+        </div>
+        <ElTable
+          v-loading="loading"
+          :data="dictTypeList"
+          border
+          stripe
+          style="width: 100%"
+          highlight-current-row
+          @row-click="handleSelectType"
+        >
+          <ElTableColumn prop="name" :label="$t('page.manage.dict.name')" min-width="140" align="left" />
+          <ElTableColumn prop="code" :label="$t('page.manage.dict.code')" min-width="150" align="left" />
+          <ElTableColumn prop="status" :label="$t('common.status')" min-width="80" align="center">
+            <template #default="{ row }">
+              <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
+                {{
+                  row.status === '1' || row.status === 1
+                    ? $t('page.manage.common.status.enable')
+                    : $t('page.manage.common.status.disable')
+                }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="createdAt" :label="$t('common.createTime')" min-width="160" align="left" />
+          <ElTableColumn :label="$t('common.action')" min-width="140" fixed="right">
+            <template #default="{ row }">
+              <ElButton type="primary" link size="small" @click.stop="handleTypeEdit(row)">
+                {{ $t('common.edit') }}
+              </ElButton>
+              <ElButton type="danger" link size="small" @click.stop="handleTypeDelete(row)">
+                {{ $t('common.delete') }}
+              </ElButton>
+            </template>
+          </ElTableColumn>
+        </ElTable>
+        <div class="mt-4 flex justify-end">
+          <ElPagination
+            v-model:current-page="typeQuery.current"
+            v-model:page-size="typeQuery.size"
+            :page-sizes="[5, 10, 20]"
+            :total="dictTypeTotal"
+            layout="total, sizes, prev, pager, next, jumper"
+            small
+            @current-change="handleTypePageChange"
+            @size-change="handleTypeSizeChange"
+          />
+        </div>
+      </ElCard>
     </div>
     <div class="flex-panel">
-    <ElCard>
-      <div class="mb-4 flex flex-wrap items-center gap-4">
-        <ElButton type="primary" :disabled="!selectedType" @click="handleDataAdd">{{ $t('page.manage.dict.addData') }}</ElButton>
-      </div>
-      <ElTable v-loading="dataLoading" :data="dictDataList" border stripe style="width: 100%">
-        <ElTableColumn prop="label" :label="$t('page.manage.dict.label')" min-width="140" align="left" />
-        <ElTableColumn prop="value" :label="$t('page.manage.dict.value')" min-width="150" align="left" />
-        <ElTableColumn prop="sort" :label="$t('page.manage.dict.sort')" min-width="60" align="center" />
-        <ElTableColumn prop="status" :label="$t('common.status')" min-width="80" align="center">
-          <template #default="{ row }">
-            <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === '1' || row.status === 1 ? $t('page.manage.common.status.enable') : $t('page.manage.common.status.disable') }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="createdAt" :label="$t('common.createTime')" min-width="150" align="left" />
-        <ElTableColumn :label="$t('common.action')" min-width="140" fixed="right">
-          <template #default="{ row }">
-            <ElButton type="primary" link size="small" @click="handleDataEdit(row)">{{ $t('common.edit') }}</ElButton>
-            <ElButton type="danger" link size="small" @click="handleDataDelete(row)">{{ $t('common.delete') }}</ElButton>
-          </template>
-        </ElTableColumn>
-      </ElTable>
-      <div class="mt-4 flex justify-end">
-        <ElPagination
-          v-model:current-page="dataQuery.current"
-          v-model:page-size="dataQuery.size"
-          :page-sizes="[5, 10, 20]"
-          :total="dictDataTotal"
-          layout="total, sizes, prev, pager, next, jumper"
-          small
-          @current-change="handleDataPageChange"
-          @size-change="handleDataSizeChange"
-        />
-      </div>
-    </ElCard>
+      <ElCard>
+        <div class="mb-4 flex flex-wrap items-center gap-4">
+          <ElButton type="primary" :disabled="!selectedType" @click="handleDataAdd">
+            {{ $t('page.manage.dict.addData') }}
+          </ElButton>
+        </div>
+        <ElTable v-loading="dataLoading" :data="dictDataList" border stripe style="width: 100%">
+          <ElTableColumn prop="label" :label="$t('page.manage.dict.label')" min-width="140" align="left" />
+          <ElTableColumn prop="value" :label="$t('page.manage.dict.value')" min-width="150" align="left" />
+          <ElTableColumn prop="sort" :label="$t('page.manage.dict.sort')" min-width="60" align="center" />
+          <ElTableColumn prop="status" :label="$t('common.status')" min-width="80" align="center">
+            <template #default="{ row }">
+              <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
+                {{
+                  row.status === '1' || row.status === 1
+                    ? $t('page.manage.common.status.enable')
+                    : $t('page.manage.common.status.disable')
+                }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="createdAt" :label="$t('common.createTime')" min-width="150" align="left" />
+          <ElTableColumn :label="$t('common.action')" min-width="140" fixed="right">
+            <template #default="{ row }">
+              <ElButton type="primary" link size="small" @click="handleDataEdit(row)">{{ $t('common.edit') }}</ElButton>
+              <ElButton type="danger" link size="small" @click="handleDataDelete(row)">
+                {{ $t('common.delete') }}
+              </ElButton>
+            </template>
+          </ElTableColumn>
+        </ElTable>
+        <div class="mt-4 flex justify-end">
+          <ElPagination
+            v-model:current-page="dataQuery.current"
+            v-model:page-size="dataQuery.size"
+            :page-sizes="[5, 10, 20]"
+            :total="dictDataTotal"
+            layout="total, sizes, prev, pager, next, jumper"
+            small
+            @current-change="handleDataPageChange"
+            @size-change="handleDataSizeChange"
+          />
+        </div>
+      </ElCard>
     </div>
     <ElDialog v-model="typeDialogVisible" :title="typeDialogTitle" width="500px">
       <ElForm ref="typeFormRef" :model="typeForm" label-width="100px">
-        <ElFormItem :label="$t('page.manage.dict.name')" prop="name" :rules="[{ required: true, message: $t('page.manage.dict.form.name') }]">
+        <ElFormItem
+          :label="$t('page.manage.dict.name')"
+          prop="name"
+          :rules="[{ required: true, message: $t('page.manage.dict.form.name') }]"
+        >
           <ElInput v-model="typeForm.name" :placeholder="$t('page.manage.dict.form.name')" />
         </ElFormItem>
-        <ElFormItem :label="$t('page.manage.dict.code')" prop="code" :rules="[{ required: true, message: $t('page.manage.dict.form.code') }]">
+        <ElFormItem
+          :label="$t('page.manage.dict.code')"
+          prop="code"
+          :rules="[{ required: true, message: $t('page.manage.dict.form.code') }]"
+        >
           <ElInput v-model="typeForm.code" :placeholder="$t('page.manage.dict.form.code')" />
         </ElFormItem>
         <ElFormItem :label="$t('common.status')" prop="status">
@@ -321,10 +350,18 @@ onMounted(getDictTypes);
     </ElDialog>
     <ElDialog v-model="dataDialogVisible" :title="dataDialogTitle" width="500px">
       <ElForm ref="dataFormRef" :model="dataForm" label-width="100px">
-        <ElFormItem :label="$t('page.manage.dict.label')" prop="label" :rules="[{ required: true, message: $t('page.manage.dict.form.label') }]">
+        <ElFormItem
+          :label="$t('page.manage.dict.label')"
+          prop="label"
+          :rules="[{ required: true, message: $t('page.manage.dict.form.label') }]"
+        >
           <ElInput v-model="dataForm.label" :placeholder="$t('page.manage.dict.form.label')" />
         </ElFormItem>
-        <ElFormItem :label="$t('page.manage.dict.value')" prop="value" :rules="[{ required: true, message: $t('page.manage.dict.form.value') }]">
+        <ElFormItem
+          :label="$t('page.manage.dict.value')"
+          prop="value"
+          :rules="[{ required: true, message: $t('page.manage.dict.form.value') }]"
+        >
           <ElInput v-model="dataForm.value" :placeholder="$t('page.manage.dict.form.value')" />
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.dict.sort')" prop="sort">

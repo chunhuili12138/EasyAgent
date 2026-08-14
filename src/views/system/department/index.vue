@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { $t } from '@/locales';
 import {
   fetchCreateDepartment,
   fetchDeleteDepartment,
   fetchGetDepartmentTree,
   fetchUpdateDepartment
 } from '@/service/api/system-manage';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'SystemDepartment' });
 
@@ -36,7 +36,14 @@ function handleAdd(parentId?: number) {
   isCreate.value = true;
   dialogTitle.value = $t('page.manage.department.addDepartment');
   editingId.value = null;
-  formData.value = { parentId: parentId && parentId > 0 ? parentId : null, name: '', leader: '', phone: '', sort: 1, status: '1' };
+  formData.value = {
+    parentId: parentId && parentId > 0 ? parentId : null,
+    name: '',
+    leader: '',
+    phone: '',
+    sort: 1,
+    status: '1'
+  };
   dialogVisible.value = true;
 }
 
@@ -92,7 +99,7 @@ onMounted(getTree);
 </script>
 
 <template>
-  <div class="h-full page-container">
+  <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElButton type="primary" @click="handleAdd(0)">{{ $t('page.manage.department.addDepartment') }}</ElButton>
@@ -105,7 +112,11 @@ onMounted(getTree);
         <ElTableColumn prop="status" :label="$t('common.status')" min-width="100" align="center">
           <template #default="{ row }">
             <ElTag :type="row.status === '1' || row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === '1' || row.status === 1 ? $t('page.manage.common.status.enable') : $t('page.manage.common.status.disable') }}
+              {{
+                row.status === '1' || row.status === 1
+                  ? $t('page.manage.common.status.enable')
+                  : $t('page.manage.common.status.disable')
+              }}
             </ElTag>
           </template>
         </ElTableColumn>
@@ -113,7 +124,9 @@ onMounted(getTree);
         <ElTableColumn prop="createdAt" :label="$t('common.createTime')" min-width="180" />
         <ElTableColumn :label="$t('common.action')" min-width="180" fixed="right">
           <template #default="{ row }">
-            <ElButton type="primary" link size="small" @click="handleAdd(row.id)">{{ $t('page.manage.department.addChild') }}</ElButton>
+            <ElButton type="primary" link size="small" @click="handleAdd(row.id)">
+              {{ $t('page.manage.department.addChild') }}
+            </ElButton>
             <ElButton type="primary" link size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</ElButton>
             <ElButton type="danger" link size="small" @click="handleDelete(row)">{{ $t('common.delete') }}</ElButton>
           </template>
@@ -132,7 +145,11 @@ onMounted(getTree);
             style="width: 100%"
           />
         </ElFormItem>
-        <ElFormItem :label="$t('page.manage.department.name')" prop="name" :rules="[{ required: true, message: $t('page.manage.department.form.name') }]">
+        <ElFormItem
+          :label="$t('page.manage.department.name')"
+          prop="name"
+          :rules="[{ required: true, message: $t('page.manage.department.form.name') }]"
+        >
           <ElInput v-model="formData.name" :placeholder="$t('page.manage.department.form.name')" />
         </ElFormItem>
         <ElFormItem :label="$t('page.manage.department.leader')" prop="leader">

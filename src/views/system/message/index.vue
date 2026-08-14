@@ -78,7 +78,13 @@ function handleSizeChange(size: number) {
 onMounted(getList);
 
 function getTypeTagType(type: string) {
-  const map: Record<string, string> = { system: 'info', alert: 'warning', operation: 'success', doc_parse: 'primary', doc_process: 'success' };
+  const map: Record<string, string> = {
+    system: 'info',
+    alert: 'warning',
+    operation: 'success',
+    doc_parse: 'primary',
+    doc_process: 'success'
+  };
   return (map[type] || 'info') as any;
 }
 
@@ -95,14 +101,29 @@ function getTypeLabel(type: string) {
 </script>
 
 <template>
-  <div class="h-full page-container">
+  <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
-        <ElInput v-model="queryParams.keyword" :placeholder="$t('page.manage.message.title')" clearable style="width: 180px" />
-        <ElSelect v-model="queryParams.type" :placeholder="$t('page.manage.message.type')" clearable style="width: 120px">
+        <ElInput
+          v-model="queryParams.keyword"
+          :placeholder="$t('page.manage.message.title')"
+          clearable
+          style="width: 180px"
+        />
+        <ElSelect
+          v-model="queryParams.type"
+          :placeholder="$t('page.manage.message.type')"
+          clearable
+          style="width: 120px"
+        >
           <ElOption v-for="opt in typeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
         </ElSelect>
-        <ElSelect v-model="queryParams.isRead" :placeholder="$t('page.manage.message.readStatus')" clearable style="width: 140px">
+        <ElSelect
+          v-model="queryParams.isRead"
+          :placeholder="$t('page.manage.message.readStatus')"
+          clearable
+          style="width: 140px"
+        >
           <ElOption :label="$t('page.manage.message.all')" value="" />
           <ElOption :label="$t('page.manage.message.read')" value="1" />
           <ElOption :label="$t('page.manage.message.unread')" value="0" />
@@ -114,8 +135,20 @@ function getTypeLabel(type: string) {
         <ElButton type="primary" @click="handleReadAll">{{ $t('page.manage.message.markAllRead') }}</ElButton>
       </div>
       <ElTable v-loading="loading" :data="dataList" border stripe style="width: 100%">
-        <ElTableColumn prop="title" :label="$t('page.manage.message.title')" min-width="200" show-overflow-tooltip align="left" />
-        <ElTableColumn prop="content" :label="$t('page.manage.log.response')" min-width="300" show-overflow-tooltip align="left" />
+        <ElTableColumn
+          prop="title"
+          :label="$t('page.manage.message.title')"
+          min-width="200"
+          show-overflow-tooltip
+          align="left"
+        />
+        <ElTableColumn
+          prop="content"
+          :label="$t('page.manage.log.response')"
+          min-width="300"
+          show-overflow-tooltip
+          align="left"
+        />
         <ElTableColumn prop="type" :label="$t('page.manage.message.type')" min-width="100" align="center">
           <template #default="{ row }">
             <ElTag :type="getTypeTagType(row.type)">
@@ -126,7 +159,11 @@ function getTypeLabel(type: string) {
         <ElTableColumn prop="isRead" :label="$t('page.manage.message.readStatus')" min-width="100" align="center">
           <template #default="{ row }">
             <ElTag :type="row.isRead === '1' || row.isRead === 1 ? 'info' : 'danger'">
-              {{ row.isRead === '1' || row.isRead === 1 ? $t('page.manage.message.read') : $t('page.manage.message.unread') }}
+              {{
+                row.isRead === '1' || row.isRead === 1
+                  ? $t('page.manage.message.read')
+                  : $t('page.manage.message.unread')
+              }}
             </ElTag>
           </template>
         </ElTableColumn>

@@ -273,6 +273,9 @@ async function submit() {
   editorVisible.value = false;
   if ('secret' in response.data) showSecret(response.data);
   ElMessage.success(editingId.value ? t('automation.trigger.updated') : t('automation.trigger.created'));
+  if (!editingId.value && (activeType.value === 'WEBHOOK' || activeType.value === 'APPROVAL')) {
+    ElMessage.warning(t('automation.trigger.createdDisabledHint'));
+  }
   loadData();
 }
 async function toggle(row: AutomationTrigger) {

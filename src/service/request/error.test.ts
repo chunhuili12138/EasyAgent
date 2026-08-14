@@ -22,13 +22,7 @@ test('uses an HTTP error response message for notifications and flat request cal
     headers: {},
     config: { headers: new AxiosHeaders() }
   };
-  const error = new AxiosError(
-    'Request failed with status code 400',
-    'ERR_BAD_REQUEST',
-    response.config,
-    {},
-    response
-  );
+  const error = new AxiosError('Request failed with status code 400', 'ERR_BAD_REQUEST', response.config, {}, response);
 
   assert.deepEqual(normalizeRequestError(error), {
     code: '400',

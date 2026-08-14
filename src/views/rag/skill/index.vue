@@ -162,6 +162,7 @@ const page = ref(1);
 const size = ref(20);
 const loading = ref(false);
 const keyword = ref('');
+const firstUseGuideVisible = ref(false);
 const dialogVisible = ref(false);
 const form = ref<any>({});
 const steps = ref<SkillStepForm[]>([]);
@@ -361,17 +362,57 @@ const outputSchemaExample = JSON.stringify(
   2
 );
 const outputSchemaParameters = computed(() => [
-  { name: '$schema', description: $t('rag.skill.help.outputSchemaFields.schema'), example: 'http://json-schema.org/draft-07/schema#' },
-  { name: 'title / description', description: $t('rag.skill.help.outputSchemaFields.metadata'), example: 'RefundDecision' },
+  {
+    name: '$schema',
+    description: $t('rag.skill.help.outputSchemaFields.schema'),
+    example: 'http://json-schema.org/draft-07/schema#'
+  },
+  {
+    name: 'title / description',
+    description: $t('rag.skill.help.outputSchemaFields.metadata'),
+    example: 'RefundDecision'
+  },
   { name: 'type', description: $t('rag.skill.help.outputSchemaFields.type'), example: 'object', required: true },
-  { name: 'properties', description: $t('rag.skill.help.outputSchemaFields.properties'), example: '{"orderNo":{"type":"string"}}' },
-  { name: 'required', description: $t('rag.skill.help.outputSchemaFields.required'), example: '["orderNo","refundAmount"]' },
-  { name: 'additionalProperties', description: $t('rag.skill.help.outputSchemaFields.additionalProperties'), example: 'false' },
-  { name: 'enum / const', description: $t('rag.skill.help.outputSchemaFields.enumConst'), example: '["normal","urgent"]' },
-  { name: 'format / pattern', description: $t('rag.skill.help.outputSchemaFields.formatPattern'), example: 'date-time / ^SO[0-9]{12}$' },
-  { name: 'minLength / maxLength', description: $t('rag.skill.help.outputSchemaFields.stringRange'), example: '5 / 200' },
-  { name: 'minimum / maximum / multipleOf', description: $t('rag.skill.help.outputSchemaFields.numberRange'), example: '0.01 / 50000 / 0.01' },
-  { name: 'items / minItems / maxItems / uniqueItems', description: $t('rag.skill.help.outputSchemaFields.arrayRules'), example: '{"type":"string"} / 1 / 5 / true' }
+  {
+    name: 'properties',
+    description: $t('rag.skill.help.outputSchemaFields.properties'),
+    example: '{"orderNo":{"type":"string"}}'
+  },
+  {
+    name: 'required',
+    description: $t('rag.skill.help.outputSchemaFields.required'),
+    example: '["orderNo","refundAmount"]'
+  },
+  {
+    name: 'additionalProperties',
+    description: $t('rag.skill.help.outputSchemaFields.additionalProperties'),
+    example: 'false'
+  },
+  {
+    name: 'enum / const',
+    description: $t('rag.skill.help.outputSchemaFields.enumConst'),
+    example: '["normal","urgent"]'
+  },
+  {
+    name: 'format / pattern',
+    description: $t('rag.skill.help.outputSchemaFields.formatPattern'),
+    example: 'date-time / ^SO[0-9]{12}$'
+  },
+  {
+    name: 'minLength / maxLength',
+    description: $t('rag.skill.help.outputSchemaFields.stringRange'),
+    example: '5 / 200'
+  },
+  {
+    name: 'minimum / maximum / multipleOf',
+    description: $t('rag.skill.help.outputSchemaFields.numberRange'),
+    example: '0.01 / 50000 / 0.01'
+  },
+  {
+    name: 'items / minItems / maxItems / uniqueItems',
+    description: $t('rag.skill.help.outputSchemaFields.arrayRules'),
+    example: '{"type":"string"} / 1 / 5 / true'
+  }
 ]);
 const outputSchemaRules = computed(() => [
   $t('rag.skill.help.outputSchemaRules.primaryData'),
@@ -381,8 +422,17 @@ const outputSchemaRules = computed(() => [
   $t('rag.skill.help.outputSchemaRules.validJson')
 ]);
 const apiBindingParameters = computed(() => [
-  { name: $t('rag.skill.paramName'), description: $t('rag.skill.help.bindingFields.paramName'), example: 'orderNo', required: true },
-  { name: $t('rag.skill.paramLiteral'), description: $t('rag.skill.help.bindingFields.literal'), example: 'agent_chat' },
+  {
+    name: $t('rag.skill.paramName'),
+    description: $t('rag.skill.help.bindingFields.paramName'),
+    example: 'orderNo',
+    required: true
+  },
+  {
+    name: $t('rag.skill.paramLiteral'),
+    description: $t('rag.skill.help.bindingFields.literal'),
+    example: 'agent_chat'
+  },
   { name: 'source', description: $t('rag.skill.help.bindingFields.source'), example: 'query_orders', required: true },
   { name: 'path', description: $t('rag.skill.help.bindingFields.path'), example: '$[0].orderNo' },
   { name: 'cardinality', description: $t('rag.skill.help.bindingFields.cardinality'), example: 'one | many' },
@@ -398,19 +448,59 @@ const foreachParameters = computed(() => [
   { name: 'max_items', description: $t('rag.skill.help.foreachFields.maxItems'), example: '50' },
   { name: 'max_attempts', description: $t('rag.skill.help.foreachFields.maxAttempts'), example: '1' },
   { name: 'continue_on_error', description: $t('rag.skill.help.foreachFields.continueOnError'), example: 'true' },
-  { name: 'body.type', description: $t('rag.skill.help.foreachFields.bodyType'), example: 'api | builtin', required: true },
-  { name: 'body.config.tool_code', description: $t('rag.skill.help.foreachFields.toolCode'), example: 'create_follow_up_task', required: true },
-  { name: 'body.config.params / arguments', description: $t('rag.skill.help.foreachFields.bodyParams'), example: '{{item.orderNo}} / {{index}}' },
+  {
+    name: 'body.type',
+    description: $t('rag.skill.help.foreachFields.bodyType'),
+    example: 'api | builtin',
+    required: true
+  },
+  {
+    name: 'body.config.tool_code',
+    description: $t('rag.skill.help.foreachFields.toolCode'),
+    example: 'create_follow_up_task',
+    required: true
+  },
+  {
+    name: 'body.config.params / arguments',
+    description: $t('rag.skill.help.foreachFields.bodyParams'),
+    example: '{{item.orderNo}} / {{index}}'
+  },
   { name: 'output_schema', description: $t('rag.skill.help.foreachFields.outputSchema'), example: '{"type":"object"}' }
 ]);
 const transformParameters = computed(() => [
-  { name: 'inputs / input', description: $t('rag.skill.help.transformFields.inputs'), example: 'orders -> query_orders / $ / many', required: true },
-  { name: 'source / path', description: $t('rag.skill.help.transformFields.sourcePath'), example: 'query_orders / $[*]' },
-  { name: 'cardinality / failure policies', description: $t('rag.skill.help.transformFields.bindingPolicies'), example: 'many / fail / 200 / fail' },
-  { name: 'operations', description: $t('rag.skill.help.transformFields.operations'), example: '[{"op":"select","path":"$.orders"}]', required: true },
+  {
+    name: 'inputs / input',
+    description: $t('rag.skill.help.transformFields.inputs'),
+    example: 'orders -> query_orders / $ / many',
+    required: true
+  },
+  {
+    name: 'source / path',
+    description: $t('rag.skill.help.transformFields.sourcePath'),
+    example: 'query_orders / $[*]'
+  },
+  {
+    name: 'cardinality / failure policies',
+    description: $t('rag.skill.help.transformFields.bindingPolicies'),
+    example: 'many / fail / 200 / fail'
+  },
+  {
+    name: 'operations',
+    description: $t('rag.skill.help.transformFields.operations'),
+    example: '[{"op":"select","path":"$.orders"}]',
+    required: true
+  },
   { name: 'op', description: $t('rag.skill.help.transformFields.op'), example: 'filter | project | aggregate' },
-  { name: 'path / fields / value', description: $t('rag.skill.help.transformFields.operationFields'), example: '$.status / {"orderNo":"$.orderNo"} / paid' },
-  { name: 'output_schema', description: $t('rag.skill.help.transformFields.outputSchema'), example: '{"type":"array","items":{"type":"object"}}' }
+  {
+    name: 'path / fields / value',
+    description: $t('rag.skill.help.transformFields.operationFields'),
+    example: '$.status / {"orderNo":"$.orderNo"} / paid'
+  },
+  {
+    name: 'output_schema',
+    description: $t('rag.skill.help.transformFields.outputSchema'),
+    example: '{"type":"array","items":{"type":"object"}}'
+  }
 ]);
 const transformOperationOptions = [
   { value: 'select', label: 'rag.skill.transformOperations.select' },
@@ -813,10 +903,9 @@ function onApiToolChange(step: SkillStepForm) {
 
 function apiParameterOptions(step: SkillStepForm): Array<[string, ApiParameterSchema]> {
   const configured = new Set(step.params.map(row => row.key).filter(Boolean));
-  return Object.entries(toolParametersFor(step.toolCode)).filter(([name]) => !configured.has(name)) as Array<[
-    string,
-    ApiParameterSchema
-  ]>;
+  return Object.entries(toolParametersFor(step.toolCode)).filter(([name]) => !configured.has(name)) as Array<
+    [string, ApiParameterSchema]
+  >;
 }
 
 function apiParameterMeta(step: SkillStepForm, name: string): ApiParameterSchema | undefined {
@@ -836,7 +925,8 @@ function apiParameterHint(step: SkillStepForm, row: ParamRow) {
   const required = toolRequiredParametersFor(step.toolCode).includes(row.key)
     ? t('rag.skill.apiParameterRequired')
     : t('rag.skill.apiParameterOptional');
-  const enumHint = Array.isArray(parameter.enum) && parameter.enum.length ? ` ${parameter.enum.map(String).join(' / ')}` : '';
+  const enumHint =
+    Array.isArray(parameter.enum) && parameter.enum.length ? ` ${parameter.enum.map(String).join(' / ')}` : '';
   return `${parameter.type || 'any'} | ${required}${parameter.description ? ` | ${parameter.description}` : ''}${enumHint}`;
 }
 
@@ -856,14 +946,21 @@ function apiLiteralValidation(step: SkillStepForm, row: ParamRow) {
   const type = parameter.type;
   if (type === 'string' && typeof parsed !== 'string') return t('rag.skill.apiParameterTypeInvalid');
   if (type === 'boolean' && typeof parsed !== 'boolean') return t('rag.skill.apiParameterTypeInvalid');
-  if (type === 'integer' && (!Number.isInteger(parsed) || typeof parsed !== 'number')) return t('rag.skill.apiParameterTypeInvalid');
-  if (type === 'number' && (typeof parsed !== 'number' || Number.isNaN(parsed))) return t('rag.skill.apiParameterTypeInvalid');
+  if (type === 'integer' && (!Number.isInteger(parsed) || typeof parsed !== 'number'))
+    return t('rag.skill.apiParameterTypeInvalid');
+  if (type === 'number' && (typeof parsed !== 'number' || Number.isNaN(parsed)))
+    return t('rag.skill.apiParameterTypeInvalid');
   if (type === 'array' && !Array.isArray(parsed)) return t('rag.skill.apiParameterTypeInvalid');
-  if (type === 'object' && (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))) return t('rag.skill.apiParameterTypeInvalid');
+  if (type === 'object' && (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)))
+    return t('rag.skill.apiParameterTypeInvalid');
   if (parameter.enum?.length && !parameter.enum.some(value => JSON.stringify(value) === JSON.stringify(parsed))) {
     return t('rag.skill.apiParameterEnumInvalid');
   }
-  if (typeof parsed === 'number' && (parameter.minimum !== undefined && parsed < parameter.minimum || parameter.maximum !== undefined && parsed > parameter.maximum)) {
+  if (
+    typeof parsed === 'number' &&
+    ((parameter.minimum !== undefined && parsed < parameter.minimum) ||
+      (parameter.maximum !== undefined && parsed > parameter.maximum))
+  ) {
     return t('rag.skill.apiParameterRangeInvalid');
   }
   return null;
@@ -1245,7 +1342,14 @@ function createTransformOperation(value?: Partial<TransformOperationForm>): Tran
 }
 
 function createTransformForm(): TransformForm {
-  return { inputs: [], operations: [], preserved: {}, outputSchemaMode: 'form', outputSchemaForm: createOutputSchemaForm(), outputSchema: '' };
+  return {
+    inputs: [],
+    operations: [],
+    preserved: {},
+    outputSchemaMode: 'form',
+    outputSchemaForm: createOutputSchemaForm(),
+    outputSchema: ''
+  };
 }
 
 function rowsFromBindings(value: unknown): ParamRow[] {
@@ -1263,7 +1367,11 @@ function rowsFromBindings(value: unknown): ParamRow[] {
         value: binding.default === undefined ? '' : JSON.stringify(binding.default)
       };
     }
-    return { ...createBindingRow(key, ''), mode: 'literal', value: typeof raw === 'string' ? raw : JSON.stringify(raw) };
+    return {
+      ...createBindingRow(key, ''),
+      mode: 'literal',
+      value: typeof raw === 'string' ? raw : JSON.stringify(raw)
+    };
   });
 }
 
@@ -1271,11 +1379,18 @@ function foreachFormFromJson(value: string): { mode: StepConfigMode; form: Forea
   const form = createForeachForm();
   try {
     const config = JSON.parse(value || '{}');
-    if (!config || typeof config !== 'object' || Array.isArray(config) || !config.body || typeof config.body !== 'object') {
+    if (
+      !config ||
+      typeof config !== 'object' ||
+      Array.isArray(config) ||
+      !config.body ||
+      typeof config.body !== 'object'
+    ) {
       return { mode: 'json', form };
     }
     const body = config.body as Record<string, any>;
-    if (!['api', 'builtin'].includes(body.type) || !body.config || typeof body.config !== 'object') return { mode: 'json', form };
+    if (!['api', 'builtin'].includes(body.type) || !body.config || typeof body.config !== 'object')
+      return { mode: 'json', form };
     form.items = typeof config.items === 'string' ? config.items : '';
     form.itemPath = typeof config.item_path === 'string' ? config.item_path : '';
     form.maxItems = Number(config.max_items || 50);
@@ -1298,15 +1413,26 @@ function transformFormFromJson(value: string): { mode: StepConfigMode; form: Tra
   const form = createTransformForm();
   try {
     const config = JSON.parse(value || '{}');
-    if (!config || typeof config !== 'object' || Array.isArray(config) || (!config.inputs && !config.input) || !Array.isArray(config.operations)) {
+    if (
+      !config ||
+      typeof config !== 'object' ||
+      Array.isArray(config) ||
+      (!config.inputs && !config.input) ||
+      !Array.isArray(config.operations)
+    ) {
       return { mode: 'json', form };
     }
     const inputs = config.inputs || config.input;
     form.inputs = rowsFromBindings(inputs);
     form.operations = config.operations.map((raw: any) => {
-      if (!raw || typeof raw !== 'object' || Array.isArray(raw) || typeof raw.op !== 'string') throw new Error('invalid operation');
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw) || typeof raw.op !== 'string')
+        throw new Error('invalid operation');
       const { op, path = '', ...details } = raw;
-      return createTransformOperation({ op, path: typeof path === 'string' ? path : '', detailsJson: JSON.stringify(details, null, 2) });
+      return createTransformOperation({
+        op,
+        path: typeof path === 'string' ? path : '',
+        detailsJson: JSON.stringify(details, null, 2)
+      });
     });
     const outputSchema = config.output_schema ? JSON.stringify(config.output_schema, null, 2) : '';
     const parsedOutputSchema = outputSchemaFormFromJson(outputSchema);
@@ -1338,49 +1464,110 @@ function isOutputSchemaType(value: unknown, allowNull = true) {
 
 function isSimpleOutputSchemaProperty(property: unknown, advancedKeys: string[], depth = 1): boolean {
   const propertyKeys = [
-    'type', 'description', 'enum', 'format', 'pattern', 'minLength', 'maxLength', 'minimum', 'maximum',
-    'minItems', 'maxItems', 'uniqueItems', 'items', 'additionalProperties', 'properties', 'required'
+    'type',
+    'description',
+    'enum',
+    'format',
+    'pattern',
+    'minLength',
+    'maxLength',
+    'minimum',
+    'maximum',
+    'minItems',
+    'maxItems',
+    'uniqueItems',
+    'items',
+    'additionalProperties',
+    'properties',
+    'required'
   ];
   if (!isPlainRecord(property) || !hasOnlyKeys(property, propertyKeys) || depth > 5) return false;
   if (advancedKeys.some(key => Object.hasOwn(property, key)) || !isOutputSchemaType(property.type, false)) return false;
   if (property.description !== undefined && typeof property.description !== 'string') return false;
   if (property.enum !== undefined && !Array.isArray(property.enum)) return false;
-  if (!['minLength', 'maxLength', 'minimum', 'maximum', 'minItems', 'maxItems'].every(key => property[key] === undefined || typeof property[key] === 'number')) return false;
-  if (!['format', 'pattern'].every(key => property[key] === undefined || typeof property[key] === 'string')) return false;
+  if (
+    !['minLength', 'maxLength', 'minimum', 'maximum', 'minItems', 'maxItems'].every(
+      key => property[key] === undefined || typeof property[key] === 'number'
+    )
+  )
+    return false;
+  if (!['format', 'pattern'].every(key => property[key] === undefined || typeof property[key] === 'string'))
+    return false;
   if (property.uniqueItems !== undefined && typeof property.uniqueItems !== 'boolean') return false;
   if (property.type === 'array') return isSimpleOutputSchemaProperty(property.items, advancedKeys, depth + 1);
-  if (property.type !== 'object') return !['items', 'additionalProperties', 'properties', 'required'].some(key => Object.hasOwn(property, key));
+  if (property.type !== 'object')
+    return !['items', 'additionalProperties', 'properties', 'required'].some(key => Object.hasOwn(property, key));
   if (property.additionalProperties !== undefined && typeof property.additionalProperties !== 'boolean') return false;
   if (!isPlainRecord(property.properties)) return false;
-  if (property.required !== undefined && (!Array.isArray(property.required) || property.required.some((name: unknown) => typeof name !== 'string'))) return false;
-  return Object.values(property.properties).every(item => isSimpleOutputSchemaProperty(item, advancedKeys, depth + 1))
-    && (!Array.isArray(property.required) || property.required.every((name: string) => Object.hasOwn(property.properties, name)));
+  if (
+    property.required !== undefined &&
+    (!Array.isArray(property.required) || property.required.some((name: unknown) => typeof name !== 'string'))
+  )
+    return false;
+  return (
+    Object.values(property.properties).every(item => isSimpleOutputSchemaProperty(item, advancedKeys, depth + 1)) &&
+    (!Array.isArray(property.required) ||
+      property.required.every((name: string) => Object.hasOwn(property.properties, name)))
+  );
 }
 
 function isSimpleOutputSchema(schema: Record<string, any>) {
   const advancedKeys = [
-    '$ref', 'definitions', '$defs', 'oneOf', 'anyOf', 'allOf', 'not', 'if', 'then', 'else',
-    'patternProperties', 'dependentRequired', 'dependencies'
+    '$ref',
+    'definitions',
+    '$defs',
+    'oneOf',
+    'anyOf',
+    'allOf',
+    'not',
+    'if',
+    'then',
+    'else',
+    'patternProperties',
+    'dependentRequired',
+    'dependencies'
   ];
   if (advancedKeys.some(key => Object.hasOwn(schema, key))) return false;
   const rootType = String(schema.type || '');
   if (!isOutputSchemaType(rootType)) return false;
   if (schema.$schema !== undefined && schema.$schema !== 'http://json-schema.org/draft-07/schema#') return false;
-  if ((schema.title !== undefined && typeof schema.title !== 'string') || (schema.description !== undefined && typeof schema.description !== 'string')) {
+  if (
+    (schema.title !== undefined && typeof schema.title !== 'string') ||
+    (schema.description !== undefined && typeof schema.description !== 'string')
+  ) {
     return false;
   }
   if (rootType === 'array') {
-    return hasOnlyKeys(schema, ['$schema', 'type', 'title', 'description', 'items', 'minItems', 'maxItems', 'uniqueItems'])
-      && isSimpleOutputSchemaProperty(schema.items, advancedKeys);
+    return (
+      hasOnlyKeys(schema, [
+        '$schema',
+        'type',
+        'title',
+        'description',
+        'items',
+        'minItems',
+        'maxItems',
+        'uniqueItems'
+      ]) && isSimpleOutputSchemaProperty(schema.items, advancedKeys)
+    );
   }
   if (rootType !== 'object') return hasOnlyKeys(schema, ['$schema', 'type', 'title', 'description']);
-  if (!hasOnlyKeys(schema, ['$schema', 'type', 'title', 'description', 'additionalProperties', 'properties', 'required'])) return false;
+  if (
+    !hasOnlyKeys(schema, ['$schema', 'type', 'title', 'description', 'additionalProperties', 'properties', 'required'])
+  )
+    return false;
   if (schema.additionalProperties !== undefined && typeof schema.additionalProperties !== 'boolean') return false;
   if (!isPlainRecord(schema.properties)) return false;
-  if (schema.required !== undefined && (!Array.isArray(schema.required) || schema.required.some((name: unknown) => typeof name !== 'string')))
+  if (
+    schema.required !== undefined &&
+    (!Array.isArray(schema.required) || schema.required.some((name: unknown) => typeof name !== 'string'))
+  )
     return false;
-  if (!Object.values(schema.properties).every(property => isSimpleOutputSchemaProperty(property, advancedKeys))) return false;
-  return !Array.isArray(schema.required) || schema.required.every((name: string) => Object.hasOwn(schema.properties, name));
+  if (!Object.values(schema.properties).every(property => isSimpleOutputSchemaProperty(property, advancedKeys)))
+    return false;
+  return (
+    !Array.isArray(schema.required) || schema.required.every((name: string) => Object.hasOwn(schema.properties, name))
+  );
 }
 
 function outputSchemaFieldFromJson(name: string, property: Record<string, any>, required = false): OutputSchemaField {
@@ -1422,7 +1609,8 @@ function outputSchemaFormFromJson(value: string): { mode: OutputSchemaMode; form
     form.title = typeof schema.title === 'string' ? schema.title : '';
     form.description = typeof schema.description === 'string' ? schema.description : '';
     form.includeDraft7 = schema.$schema === 'http://json-schema.org/draft-07/schema#';
-    form.additionalProperties = typeof schema.additionalProperties === 'boolean' ? schema.additionalProperties : undefined;
+    form.additionalProperties =
+      typeof schema.additionalProperties === 'boolean' ? schema.additionalProperties : undefined;
     form.arrayItemType = typeof schema.items?.type === 'string' ? schema.items.type : 'object';
     if (schema.items) form.arrayItem = outputSchemaFieldFromJson('', schema.items);
     form.minItems = typeof schema.minItems === 'number' ? schema.minItems : undefined;
@@ -1463,13 +1651,13 @@ function outputSchemaPropertiesFromFields(fields: OutputSchemaField[]) {
   const required: string[] = [];
   const properties: Record<string, any> = {};
   for (const field of fields) {
-      const name = field.name.trim();
-      if (!name) throw new Error(t('rag.skill.outputSchemaFieldNameRequired'));
-      if (names.has(name)) throw new Error(t('rag.skill.outputSchemaFieldDuplicate'));
-      names.add(name);
-      const property = outputSchemaPropertyFromField(field);
-      if (field.required) required.push(name);
-      properties[name] = property;
+    const name = field.name.trim();
+    if (!name) throw new Error(t('rag.skill.outputSchemaFieldNameRequired'));
+    if (names.has(name)) throw new Error(t('rag.skill.outputSchemaFieldDuplicate'));
+    names.add(name);
+    const property = outputSchemaPropertyFromField(field);
+    if (field.required) required.push(name);
+    properties[name] = property;
   }
   return { properties, required };
 }
@@ -1507,9 +1695,7 @@ function syncOutputSchemaForm(step: SkillStepForm) {
 }
 
 function hasOutputSchema(step: SkillStepForm) {
-  return step.outputSchemaMode === 'form'
-    ? step.outputSchemaForm.enabled
-    : Boolean(step.outputSchema.trim());
+  return step.outputSchemaMode === 'form' ? step.outputSchemaForm.enabled : Boolean(step.outputSchema.trim());
 }
 
 function outputSchemaSummary(step: SkillStepForm) {
@@ -1550,7 +1736,8 @@ function switchOutputSchemaMode(step: SkillStepForm, mode: OutputSchemaMode) {
 }
 
 function transformOutputSchemaSummary(formValue: TransformForm) {
-  if (formValue.outputSchemaMode === 'json') return formValue.outputSchema.trim() ? t('rag.skill.outputSchemaAdvancedSummary') : '';
+  if (formValue.outputSchemaMode === 'json')
+    return formValue.outputSchema.trim() ? t('rag.skill.outputSchemaAdvancedSummary') : '';
   if (!formValue.outputSchemaForm.enabled) return '';
   return t('rag.skill.outputSchemaFormSummary', {
     type: formValue.outputSchemaForm.rootType,
@@ -1614,15 +1801,17 @@ function createStep(index: number): SkillStepForm {
 
 function fromDefinitionStep(raw: any): SkillStepForm {
   const config = raw.config || {};
-  const outputSchema = raw.type === 'transform' || raw.type === 'foreach' || !config.output_schema
-    ? ''
-    : JSON.stringify(config.output_schema, null, 2);
+  const outputSchema =
+    raw.type === 'transform' || raw.type === 'foreach' || !config.output_schema
+      ? ''
+      : JSON.stringify(config.output_schema, null, 2);
   const parsedOutputSchema = outputSchemaFormFromJson(outputSchema);
-  const parsedAdvancedConfig = raw.type === 'foreach'
-    ? foreachFormFromJson(JSON.stringify(config, null, 2))
-    : raw.type === 'transform'
-      ? transformFormFromJson(JSON.stringify(config, null, 2))
-      : { mode: 'form' as StepConfigMode, form: null };
+  const parsedAdvancedConfig =
+    raw.type === 'foreach'
+      ? foreachFormFromJson(JSON.stringify(config, null, 2))
+      : raw.type === 'transform'
+        ? transformFormFromJson(JSON.stringify(config, null, 2))
+        : { mode: 'form' as StepConfigMode, form: null };
   return {
     uid: nextStepUid(),
     id: raw.id || '',
@@ -1640,8 +1829,8 @@ function fromDefinitionStep(raw: any): SkillStepForm {
     arguments: rowsFromObject(config.arguments),
     rawConfig: JSON.stringify(config, null, 2),
     advancedConfigMode: parsedAdvancedConfig.mode,
-    foreachForm: raw.type === 'foreach' ? parsedAdvancedConfig.form as ForeachForm : createForeachForm(),
-    transformForm: raw.type === 'transform' ? parsedAdvancedConfig.form as TransformForm : createTransformForm(),
+    foreachForm: raw.type === 'foreach' ? (parsedAdvancedConfig.form as ForeachForm) : createForeachForm(),
+    transformForm: raw.type === 'transform' ? (parsedAdvancedConfig.form as TransformForm) : createTransformForm(),
     outputSchema,
     outputSchemaMode: parsedOutputSchema.mode,
     outputSchemaForm: parsedOutputSchema.form
@@ -1732,13 +1921,17 @@ function serializeTransformForm(formValue: TransformForm) {
   if (!formValue.operations.length) throw new Error(t('rag.skill.transformOperationsRequired'));
   const operations = formValue.operations.map(operation => {
     const details = JSON.parse(operation.detailsJson || '{}');
-    if (!details || typeof details !== 'object' || Array.isArray(details)) throw new Error(t('rag.skill.transformJsonInvalid'));
+    if (!details || typeof details !== 'object' || Array.isArray(details))
+      throw new Error(t('rag.skill.transformJsonInvalid'));
     return { ...details, op: operation.op, ...(operation.path.trim() ? { path: operation.path.trim() } : {}) };
   });
   const config: Record<string, any> = { ...formValue.preserved, inputs: rowsToObject(formValue.inputs), operations };
-  const outputSchema = formValue.outputSchemaMode === 'form'
-    ? formValue.outputSchemaForm.enabled ? serializeOutputSchema(formValue.outputSchemaForm) : ''
-    : formValue.outputSchema;
+  const outputSchema =
+    formValue.outputSchemaMode === 'form'
+      ? formValue.outputSchemaForm.enabled
+        ? serializeOutputSchema(formValue.outputSchemaForm)
+        : ''
+      : formValue.outputSchema;
   if (outputSchema.trim()) config.output_schema = JSON.parse(outputSchema);
   return JSON.stringify(config);
 }
@@ -1756,7 +1949,8 @@ function switchAdvancedConfigMode(step: SkillStepForm, mode: StepConfigMode) {
     return;
   }
   try {
-    step.rawConfig = step.type === 'foreach' ? serializeForeachForm(step.foreachForm) : serializeTransformForm(step.transformForm);
+    step.rawConfig =
+      step.type === 'foreach' ? serializeForeachForm(step.foreachForm) : serializeTransformForm(step.transformForm);
     step.advancedConfigMode = 'json';
   } catch (error: any) {
     ElMessage.warning(error.message);
@@ -1788,7 +1982,10 @@ function stepSummary(step: SkillStepForm) {
   if (step.type === 'builtin') labels.push(t('rag.skill.stepSummaryParameters', { count: step.arguments.length }));
   if (step.type === 'foreach') labels.push(t('rag.skill.stepSummaryLoop'));
   if (step.type === 'transform') labels.push(t('rag.skill.stepSummaryTransform'));
-  if (hasOutputSchema(step) || (step.type === 'transform' && Boolean(transformOutputSchemaSummary(step.transformForm)))) {
+  if (
+    hasOutputSchema(step) ||
+    (step.type === 'transform' && Boolean(transformOutputSchemaSummary(step.transformForm)))
+  ) {
     labels.push(t('rag.skill.stepSummaryOutputSchema'));
   }
   return labels;
@@ -1809,7 +2006,8 @@ function apiMissingRequiredParameters(step: SkillStepForm) {
 
 function stepUsesAdvancedJson(step: SkillStepForm) {
   if ((step.type === 'foreach' || step.type === 'transform') && step.advancedConfigMode === 'json') return true;
-  if (step.type === 'transform') return step.transformForm.outputSchemaMode === 'json' && Boolean(step.transformForm.outputSchema.trim());
+  if (step.type === 'transform')
+    return step.transformForm.outputSchemaMode === 'json' && Boolean(step.transformForm.outputSchema.trim());
   return step.outputSchemaMode === 'json' && Boolean(step.outputSchema.trim());
 }
 
@@ -1838,8 +2036,10 @@ function stepStatusTags(step: SkillStepForm): StepStatusTag[] {
   if (error && !unknown.length && !missing.length) {
     tags.push({ key: 'invalid', label: t('rag.skill.stepStatusNeedsFix', { reason: error }), type: 'danger' });
   }
-  if (stepUsesAdvancedJson(step)) tags.push({ key: 'advanced', label: t('rag.skill.stepStatusAdvancedJson'), type: 'info' });
-  if (stepHasActionRisk(step)) tags.push({ key: 'action', label: t('rag.skill.stepStatusActionRisk'), type: 'warning' });
+  if (stepUsesAdvancedJson(step))
+    tags.push({ key: 'advanced', label: t('rag.skill.stepStatusAdvancedJson'), type: 'info' });
+  if (stepHasActionRisk(step))
+    tags.push({ key: 'action', label: t('rag.skill.stepStatusActionRisk'), type: 'warning' });
   if (!error) tags.unshift({ key: 'complete', label: t('rag.skill.stepStatusComplete'), type: 'success' });
   return tags;
 }
@@ -2053,7 +2253,9 @@ function insertTransformOperation(step: SkillStepForm, operation: string) {
   if (step.advancedConfigMode === 'form') {
     const example = examples[operation];
     const { op, path = '', ...details } = example;
-    step.transformForm.operations.push(createTransformOperation({ op, path, detailsJson: JSON.stringify(details, null, 2) }));
+    step.transformForm.operations.push(
+      createTransformOperation({ op, path, detailsJson: JSON.stringify(details, null, 2) })
+    );
     return;
   }
   try {
@@ -2106,7 +2308,8 @@ function stepValidation(step: SkillStepForm, ids: string[]): string | null {
   if (step.type === 'api' && hasDuplicateKeys(step.params)) return $t('rag.skill.parameterKeyDuplicate');
   if (step.type === 'api' && step.toolCode && Object.keys(toolParametersFor(step.toolCode)).length) {
     const parameters = toolParametersFor(step.toolCode);
-    if (step.params.some(row => row.key.trim() && !parameters[row.key.trim()])) return $t('rag.skill.apiParameterUnknown');
+    if (step.params.some(row => row.key.trim() && !parameters[row.key.trim()]))
+      return $t('rag.skill.apiParameterUnknown');
     const configured = new Set(step.params.map(row => row.key.trim()));
     if (
       toolRequiredParametersFor(step.toolCode).some(
@@ -2124,7 +2327,9 @@ function stepValidation(step: SkillStepForm, ids: string[]): string | null {
   if (step.type === 'builtin' && hasDuplicateKeys(step.arguments)) return $t('rag.skill.parameterKeyDuplicate');
   if (step.type !== 'foreach' && step.type !== 'transform' && hasOutputSchema(step)) {
     try {
-      const schema = JSON.parse(step.outputSchemaMode === 'form' ? serializeOutputSchema(step.outputSchemaForm) : step.outputSchema);
+      const schema = JSON.parse(
+        step.outputSchemaMode === 'form' ? serializeOutputSchema(step.outputSchemaForm) : step.outputSchema
+      );
       if (!schema || typeof schema !== 'object' || Array.isArray(schema)) return $t('rag.skill.outputSchemaInvalid');
     } catch {
       return $t('rag.skill.outputSchemaInvalid');
@@ -2327,21 +2532,16 @@ function handleTabChange(name: string | number) {
 function goTo(path: string) {
   router.push(path);
 }
+
+function openGuideRoute(path: string) {
+  firstUseGuideVisible.value = false;
+  goTo(path);
+}
 </script>
 
 <template>
   <div class="page-container h-full">
     <ElCard class="w-full">
-      <ElAlert type="info" :closable="false" show-icon class="mb-4">
-        <template #title>
-          <div class="flex flex-wrap items-center gap-3">
-            <span>{{ t('rag.skill.firstUseGuide') }}</span>
-            <ElButton size="small" @click="goTo('/rag/datasource')">{{ t('rag.skill.quickDatasource') }}</ElButton>
-            <ElButton size="small" @click="goTo('/rag/tool')">{{ t('rag.skill.quickTool') }}</ElButton>
-            <ElButton size="small" type="primary" @click="goTo('/rag/chat')">{{ t('rag.skill.quickChat') }}</ElButton>
-          </div>
-        </template>
-      </ElAlert>
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElInput
           v-model="keyword"
@@ -2352,6 +2552,10 @@ function goTo(path: string) {
         />
         <ElButton type="primary" @click="loadData">{{ $t('rag.common.search') }}</ElButton>
         <ElButton @click="resetSearch">{{ $t('common.reset') }}</ElButton>
+        <ElButton class="ml-auto" @click="firstUseGuideVisible = true">
+          <SvgIcon icon="mdi:help-circle-outline" class="mr-1" />
+          {{ t('rag.skill.firstUseGuideTitle') }}
+        </ElButton>
       </div>
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElButton type="primary" @click="openCreate">+ {{ $t('rag.common.create') }}</ElButton>
@@ -2398,6 +2602,24 @@ function goTo(path: string) {
         />
       </div>
     </ElCard>
+
+    <ElDialog
+      v-model="firstUseGuideVisible"
+      :title="t('rag.skill.firstUseGuideTitle')"
+      width="min(680px, 95vw)"
+      align-center
+    >
+      <ElAlert type="info" :closable="false" show-icon>
+        <template #title>
+          <div class="whitespace-pre-wrap leading-6">{{ t('rag.skill.firstUseGuide') }}</div>
+        </template>
+      </ElAlert>
+      <div class="mt-4 flex flex-wrap justify-end gap-2">
+        <ElButton @click="openGuideRoute('/rag/datasource')">{{ t('rag.skill.quickDatasource') }}</ElButton>
+        <ElButton @click="openGuideRoute('/rag/tool')">{{ t('rag.skill.quickTool') }}</ElButton>
+        <ElButton type="primary" @click="openGuideRoute('/rag/chat')">{{ t('rag.skill.quickChat') }}</ElButton>
+      </div>
+    </ElDialog>
 
     <ElDialog
       v-model="dialogVisible"
@@ -2505,7 +2727,10 @@ function goTo(path: string) {
                   :title="$t('rag.skill.help.positiveExamplesTitle')"
                   :description="$t('rag.skill.help.fields.positiveExamples')"
                   :examples="[$t('rag.skill.help.fieldExamples.positiveExamplesMultiline')]"
-                  :rules="[$t('rag.skill.help.exampleRules.onePerLine'), $t('rag.skill.help.exampleRules.realUtterance')]"
+                  :rules="[
+                    $t('rag.skill.help.exampleRules.onePerLine'),
+                    $t('rag.skill.help.exampleRules.realUtterance')
+                  ]"
                 />
               </template>
               <ElInput
@@ -2523,7 +2748,10 @@ function goTo(path: string) {
                   :title="$t('rag.skill.help.negativeExamplesTitle')"
                   :description="$t('rag.skill.help.fields.negativeExamples')"
                   :examples="[$t('rag.skill.help.fieldExamples.negativeExamplesMultiline')]"
-                  :rules="[$t('rag.skill.help.exampleRules.onePerLine'), $t('rag.skill.help.exampleRules.negativePriority')]"
+                  :rules="[
+                    $t('rag.skill.help.exampleRules.onePerLine'),
+                    $t('rag.skill.help.exampleRules.negativePriority')
+                  ]"
                 />
               </template>
               <ElInput
@@ -2566,7 +2794,9 @@ function goTo(path: string) {
           </div>
           <div v-if="dependencyChainSummary().length" class="skill-dependency-chain">
             <span class="skill-dependency-chain__label">{{ $t('rag.skill.dependencyChain') }}</span>
-            <ElTag v-for="chain in dependencyChainSummary()" :key="chain" size="small" effect="plain">{{ chain }}</ElTag>
+            <ElTag v-for="chain in dependencyChainSummary()" :key="chain" size="small" effect="plain">
+              {{ chain }}
+            </ElTag>
           </div>
           <ElEmpty v-if="!steps.length" :description="$t('rag.skill.noSteps')">
             <ElButton type="primary" @click="addStep">{{ $t('rag.skill.addStep') }}</ElButton>
@@ -2575,14 +2805,22 @@ function goTo(path: string) {
             <div class="mb-4 flex items-center justify-between border-b pb-3">
               <div>
                 <div class="font-medium">
-                {{ $t('rag.skill.stepNumber', { number: index + 1 }) }} ·
-                {{ step.description || step.id }}
+                  {{ $t('rag.skill.stepNumber', { number: index + 1 }) }} ·
+                  {{ step.description || step.id }}
                 </div>
                 <div class="skill-step-summary">
                   <ElTag v-for="item in stepSummary(step)" :key="item" size="small" effect="plain">{{ item }}</ElTag>
                 </div>
                 <div class="skill-step-status">
-                  <ElTag v-for="item in stepStatusTags(step)" :key="item.key" size="small" :type="item.type" effect="light">{{ item.label }}</ElTag>
+                  <ElTag
+                    v-for="item in stepStatusTags(step)"
+                    :key="item.key"
+                    size="small"
+                    :type="item.type"
+                    effect="light"
+                  >
+                    {{ item.label }}
+                  </ElTag>
                 </div>
               </div>
               <div class="flex items-center gap-1">
@@ -2755,9 +2993,23 @@ function goTo(path: string) {
                     :title="$t('rag.skill.apiParameterSchemaUnavailable')"
                   />
                   <div v-else-if="step.toolCode" class="skill-api-parameters__summary">
-                    <span>{{ $t('rag.skill.apiParameterSummary', { count: Object.keys(toolParametersFor(step.toolCode)).length, required: toolRequiredParametersFor(step.toolCode).length }) }}</span>
-                    <ElTag size="small" :type="toolByCode(step.toolCode)?.operationType === 'action' ? 'warning' : 'info'">
-                      {{ toolByCode(step.toolCode)?.operationType === 'action' ? $t('rag.skill.apiToolAction') : $t('rag.skill.apiToolQuery') }}
+                    <span>
+                      {{
+                        $t('rag.skill.apiParameterSummary', {
+                          count: Object.keys(toolParametersFor(step.toolCode)).length,
+                          required: toolRequiredParametersFor(step.toolCode).length
+                        })
+                      }}
+                    </span>
+                    <ElTag
+                      size="small"
+                      :type="toolByCode(step.toolCode)?.operationType === 'action' ? 'warning' : 'info'"
+                    >
+                      {{
+                        toolByCode(step.toolCode)?.operationType === 'action'
+                          ? $t('rag.skill.apiToolAction')
+                          : $t('rag.skill.apiToolQuery')
+                      }}
                     </ElTag>
                   </div>
                   <div v-for="(row, rowIndex) in step.params" :key="rowIndex" class="skill-api-parameter-row">
@@ -2771,13 +3023,18 @@ function goTo(path: string) {
                       >
                         <ElOption :label="apiParameterLabel(step, row.key)" :value="row.key" />
                         <ElOption
-                          v-for="([name]) in apiParameterOptions(step).filter(([name]) => name !== row.key)"
+                          v-for="[name] in apiParameterOptions(step).filter(([name]) => name !== row.key)"
                           :key="name"
                           :label="apiParameterLabel(step, name)"
                           :value="name"
                         />
                       </ElSelect>
-                      <ElInput v-else v-model="row.key" :placeholder="$t('rag.skill.paramName')" class="skill-api-parameter-row__name" />
+                      <ElInput
+                        v-else
+                        v-model="row.key"
+                        :placeholder="$t('rag.skill.paramName')"
+                        class="skill-api-parameter-row__name"
+                      />
                       <ElRadioGroup v-model="row.mode" size="small">
                         <ElRadioButton value="literal">{{ $t('rag.skill.paramLiteral') }}</ElRadioButton>
                         <ElRadioButton value="binding">{{ $t('rag.skill.paramBinding') }}</ElRadioButton>
@@ -2793,7 +3050,12 @@ function goTo(path: string) {
                       </ElButton>
                     </div>
                     <div class="skill-api-parameter-row__hint">{{ apiParameterHint(step, row) }}</div>
-                    <ElAlert v-if="apiLiteralValidation(step, row)" type="warning" :closable="false" :title="apiLiteralValidation(step, row) || undefined" />
+                    <ElAlert
+                      v-if="apiLiteralValidation(step, row)"
+                      type="warning"
+                      :closable="false"
+                      :title="apiLiteralValidation(step, row) || undefined"
+                    />
                     <template v-if="row.mode === 'literal'">
                       <ElSelect
                         v-if="apiParameterMeta(step, row.key)?.enum?.length"
@@ -2802,7 +3064,12 @@ function goTo(path: string) {
                         clearable
                         @update:model-value="value => normalizeLiteralValue(step, row, value)"
                       >
-                        <ElOption v-for="item in apiParameterMeta(step, row.key)?.enum" :key="JSON.stringify(item)" :label="String(item)" :value="item as any" />
+                        <ElOption
+                          v-for="item in apiParameterMeta(step, row.key)?.enum"
+                          :key="JSON.stringify(item)"
+                          :label="String(item)"
+                          :value="item as any"
+                        />
                       </ElSelect>
                       <ElSwitch
                         v-else-if="apiParameterValueType(step, row) === 'boolean'"
@@ -2811,7 +3078,9 @@ function goTo(path: string) {
                       />
                       <ElInputNumber
                         v-else-if="['integer', 'number'].includes(apiParameterValueType(step, row))"
-                        :model-value="Number.isFinite(Number(parseValue(row.value))) ? Number(parseValue(row.value)) : undefined"
+                        :model-value="
+                          Number.isFinite(Number(parseValue(row.value))) ? Number(parseValue(row.value)) : undefined
+                        "
                         class="w-full"
                         :precision="apiParameterValueType(step, row) === 'integer' ? 0 : undefined"
                         :step="apiParameterValueType(step, row) === 'integer' ? 1 : 0.1"
@@ -2857,7 +3126,16 @@ function goTo(path: string) {
                       />
                     </div>
                   </div>
-                  <ElButton :disabled="Boolean(step.toolCode && Object.keys(toolParametersFor(step.toolCode)).length && !apiParameterOptions(step).length)" @click="addApiParameter(step)">
+                  <ElButton
+                    :disabled="
+                      Boolean(
+                        step.toolCode &&
+                        Object.keys(toolParametersFor(step.toolCode)).length &&
+                        !apiParameterOptions(step).length
+                      )
+                    "
+                    @click="addApiParameter(step)"
+                  >
                     <SvgIcon icon="mdi:plus" class="mr-1" />
                     {{ $t('rag.skill.addParameter') }}
                   </ElButton>
@@ -2889,15 +3167,52 @@ function goTo(path: string) {
                     :title="$t('rag.skill.builtinArgumentsHint')"
                   />
                   <div v-for="(row, rowIndex) in step.arguments" :key="rowIndex" class="flex gap-2">
-                    <ElSelect v-if="builtinArgumentSpecs[step.toolCode]?.length" v-model="row.key" filterable allow-create class="w-44">
-                      <ElOption v-for="spec in builtinArgumentSpecs[step.toolCode]" :key="spec.key" :label="`${spec.key}${spec.required ? ' *' : ''}`" :value="spec.key" />
+                    <ElSelect
+                      v-if="builtinArgumentSpecs[step.toolCode]?.length"
+                      v-model="row.key"
+                      filterable
+                      allow-create
+                      class="w-44"
+                    >
+                      <ElOption
+                        v-for="spec in builtinArgumentSpecs[step.toolCode]"
+                        :key="spec.key"
+                        :label="`${spec.key}${spec.required ? ' *' : ''}`"
+                        :value="spec.key"
+                      />
                     </ElSelect>
                     <ElInput v-else v-model="row.key" :placeholder="$t('rag.skill.paramName')" class="w-40" />
-                    <ElSelect v-if="row.mode === 'literal' && builtinArgumentSpec(step.toolCode, row.key)?.type === 'select'" v-model="row.value" filterable allow-create class="flex-1">
-                      <ElOption v-for="option in builtinArgumentSpec(step.toolCode, row.key)?.options || []" :key="option" :label="option" :value="option" />
+                    <ElSelect
+                      v-if="row.mode === 'literal' && builtinArgumentSpec(step.toolCode, row.key)?.type === 'select'"
+                      v-model="row.value"
+                      filterable
+                      allow-create
+                      class="flex-1"
+                    >
+                      <ElOption
+                        v-for="option in builtinArgumentSpec(step.toolCode, row.key)?.options || []"
+                        :key="option"
+                        :label="option"
+                        :value="option"
+                      />
                     </ElSelect>
-                    <ElInput v-else-if="row.mode === 'literal' && ['number', 'integer'].includes(builtinArgumentSpec(step.toolCode, row.key)?.type || '')" v-model="row.value" type="number" class="flex-1" />
-                    <ElInput v-else v-model="row.value" :placeholder="builtinArgumentSpec(step.toolCode, row.key)?.placeholder || $t('rag.skill.paramValue')" class="flex-1" />
+                    <ElInput
+                      v-else-if="
+                        row.mode === 'literal' &&
+                        ['number', 'integer'].includes(builtinArgumentSpec(step.toolCode, row.key)?.type || '')
+                      "
+                      v-model="row.value"
+                      type="number"
+                      class="flex-1"
+                    />
+                    <ElInput
+                      v-else
+                      v-model="row.value"
+                      :placeholder="
+                        builtinArgumentSpec(step.toolCode, row.key)?.placeholder || $t('rag.skill.paramValue')
+                      "
+                      class="flex-1"
+                    />
                     <ElDropdown v-if="step.dependsOn.length" trigger="click">
                       <ElButton text circle>
                         <SvgIcon icon="mdi:variable" />
@@ -2971,7 +3286,10 @@ function goTo(path: string) {
                   <ElSegmented
                     :model-value="step.advancedConfigMode"
                     size="small"
-                    :options="[{ label: $t('rag.skill.schemaForm'), value: 'form' }, { label: $t('rag.skill.schemaJson'), value: 'json' }]"
+                    :options="[
+                      { label: $t('rag.skill.schemaForm'), value: 'form' },
+                      { label: $t('rag.skill.schemaJson'), value: 'json' }
+                    ]"
                     @change="value => switchAdvancedConfigMode(step, value as StepConfigMode)"
                   />
                 </div>
@@ -2979,27 +3297,96 @@ function goTo(path: string) {
                   <div class="skill-advanced-config__panel">
                     <ElForm label-position="top">
                       <div class="skill-advanced-config__grid">
-                        <ElFormItem :label="$t('rag.skill.foreachItems')"><ElInput v-model="step.foreachForm.items" placeholder="{{query_orders}}" /></ElFormItem>
-                        <ElFormItem :label="$t('rag.skill.foreachItemPath')"><ElInput v-model="step.foreachForm.itemPath" placeholder="records" /></ElFormItem>
-                        <ElFormItem :label="$t('rag.skill.foreachMaxItems')"><ElInputNumber v-model="step.foreachForm.maxItems" :min="1" :max="200" class="w-full" /></ElFormItem>
-                        <ElFormItem :label="$t('rag.skill.foreachMaxAttempts')"><ElInputNumber v-model="step.foreachForm.maxAttempts" :min="1" :max="3" class="w-full" /></ElFormItem>
-                        <ElFormItem :label="$t('rag.skill.foreachContinueOnError')"><ElSwitch v-model="step.foreachForm.continueOnError" /></ElFormItem>
-                        <ElFormItem :label="$t('rag.skill.foreachBodyType')"><ElRadioGroup v-model="step.foreachForm.bodyType"><ElRadio value="api">API</ElRadio><ElRadio value="builtin">{{ $t('rag.skill.types.builtin') }}</ElRadio></ElRadioGroup></ElFormItem>
+                        <ElFormItem :label="$t('rag.skill.foreachItems')">
+                          <ElInput v-model="step.foreachForm.items" placeholder="{{query_orders}}" />
+                        </ElFormItem>
+                        <ElFormItem :label="$t('rag.skill.foreachItemPath')">
+                          <ElInput v-model="step.foreachForm.itemPath" placeholder="records" />
+                        </ElFormItem>
+                        <ElFormItem :label="$t('rag.skill.foreachMaxItems')">
+                          <ElInputNumber v-model="step.foreachForm.maxItems" :min="1" :max="200" class="w-full" />
+                        </ElFormItem>
+                        <ElFormItem :label="$t('rag.skill.foreachMaxAttempts')">
+                          <ElInputNumber v-model="step.foreachForm.maxAttempts" :min="1" :max="3" class="w-full" />
+                        </ElFormItem>
+                        <ElFormItem :label="$t('rag.skill.foreachContinueOnError')">
+                          <ElSwitch v-model="step.foreachForm.continueOnError" />
+                        </ElFormItem>
+                        <ElFormItem :label="$t('rag.skill.foreachBodyType')">
+                          <ElRadioGroup v-model="step.foreachForm.bodyType">
+                            <ElRadio value="api">API</ElRadio>
+                            <ElRadio value="builtin">{{ $t('rag.skill.types.builtin') }}</ElRadio>
+                          </ElRadioGroup>
+                        </ElFormItem>
                       </div>
                       <ElFormItem :label="$t('rag.skill.foreachBodyTool')">
-                        <ElSelect v-if="step.foreachForm.bodyType === 'api'" v-model="step.foreachForm.toolCode" filterable class="w-full"><ElOption v-for="tool in tools" :key="tool.code" :label="tool.name" :value="tool.code" /></ElSelect>
-                        <ElSelect v-else v-model="step.foreachForm.toolCode" class="w-full"><ElOption v-for="item in foreachBuiltinTools" :key="item.value" :label="item.label" :value="item.value" /></ElSelect>
+                        <ElSelect
+                          v-if="step.foreachForm.bodyType === 'api'"
+                          v-model="step.foreachForm.toolCode"
+                          filterable
+                          class="w-full"
+                        >
+                          <ElOption v-for="tool in tools" :key="tool.code" :label="tool.name" :value="tool.code" />
+                        </ElSelect>
+                        <ElSelect v-else v-model="step.foreachForm.toolCode" class="w-full">
+                          <ElOption
+                            v-for="item in foreachBuiltinTools"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                          />
+                        </ElSelect>
                       </ElFormItem>
                     </ElForm>
                   </div>
-                  <div class="skill-advanced-config__subhead"><span>{{ step.foreachForm.bodyType === 'api' ? $t('rag.skill.parameters') : $t('rag.skill.arguments') }}</span><ElButton size="small" @click="addRow(step.foreachForm.bodyType === 'api' ? step.foreachForm.params : step.foreachForm.arguments)"><SvgIcon icon="mdi:plus" class="mr-1" />{{ $t('rag.skill.addParameter') }}</ElButton></div>
-                  <div v-for="(row, rowIndex) in step.foreachForm.bodyType === 'api' ? step.foreachForm.params : step.foreachForm.arguments" :key="rowIndex" class="skill-advanced-config__row">
+                  <div class="skill-advanced-config__subhead">
+                    <span>
+                      {{ step.foreachForm.bodyType === 'api' ? $t('rag.skill.parameters') : $t('rag.skill.arguments') }}
+                    </span>
+                    <ElButton
+                      size="small"
+                      @click="
+                        addRow(
+                          step.foreachForm.bodyType === 'api' ? step.foreachForm.params : step.foreachForm.arguments
+                        )
+                      "
+                    >
+                      <SvgIcon icon="mdi:plus" class="mr-1" />
+                      {{ $t('rag.skill.addParameter') }}
+                    </ElButton>
+                  </div>
+                  <div
+                    v-for="(row, rowIndex) in step.foreachForm.bodyType === 'api'
+                      ? step.foreachForm.params
+                      : step.foreachForm.arguments"
+                    :key="rowIndex"
+                    class="skill-advanced-config__row"
+                  >
                     <ElInput v-model="row.key" :placeholder="$t('rag.skill.paramName')" />
                     <ElInput v-model="row.value" placeholder="{{item.id}} / {{index}}" />
-                    <ElButton text circle type="danger" :title="$t('common.delete')" @click="(step.foreachForm.bodyType === 'api' ? step.foreachForm.params : step.foreachForm.arguments).splice(rowIndex, 1)"><SvgIcon icon="mdi:close" /></ElButton>
+                    <ElButton
+                      text
+                      circle
+                      type="danger"
+                      :title="$t('common.delete')"
+                      @click="
+                        (step.foreachForm.bodyType === 'api'
+                          ? step.foreachForm.params
+                          : step.foreachForm.arguments
+                        ).splice(rowIndex, 1)
+                      "
+                    >
+                      <SvgIcon icon="mdi:close" />
+                    </ElButton>
                   </div>
                 </template>
-                <ConfigCodeEditor v-else v-model="step.rawConfig" :rows="10" expected-root="object" :example="skillHelpExamples.foreach" />
+                <ConfigCodeEditor
+                  v-else
+                  v-model="step.rawConfig"
+                  :rows="10"
+                  expected-root="object"
+                  :example="skillHelpExamples.foreach"
+                />
               </div>
             </ElFormItem>
             <ElFormItem v-if="step.type === 'transform'">
@@ -3025,42 +3412,204 @@ function goTo(path: string) {
                   <ElSegmented
                     :model-value="step.advancedConfigMode"
                     size="small"
-                    :options="[{ label: $t('rag.skill.schemaForm'), value: 'form' }, { label: $t('rag.skill.schemaJson'), value: 'json' }]"
+                    :options="[
+                      { label: $t('rag.skill.schemaForm'), value: 'form' },
+                      { label: $t('rag.skill.schemaJson'), value: 'json' }
+                    ]"
                     @change="value => switchAdvancedConfigMode(step, value as StepConfigMode)"
                   />
                 </div>
                 <template v-if="step.advancedConfigMode === 'form'">
-                  <div class="skill-advanced-config__subhead"><span>{{ $t('rag.skill.transformInputs') }}</span><ElButton size="small" @click="addTransformInput(step)"><SvgIcon icon="mdi:plus" class="mr-1" />{{ $t('rag.skill.addParameter') }}</ElButton></div>
-                  <div v-for="(row, rowIndex) in step.transformForm.inputs" :key="rowIndex" class="skill-transform-input-row">
-                    <ElInput v-model="row.key" :placeholder="$t('rag.skill.paramName')" />
-                    <ElSelect v-model="row.source" class="w-full"><ElOption v-for="id in step.dependsOn" :key="id" :label="id" :value="id" /></ElSelect>
-                    <ElInput v-model="row.path" placeholder="$ / $[*]" />
-                    <ElSelect v-model="row.cardinality" class="w-full"><ElOption value="one" :label="$t('rag.skill.cardinalityOne')" /><ElOption value="many" :label="$t('rag.skill.cardinalityMany')" /></ElSelect>
-                    <ElButton text circle type="danger" :title="$t('common.delete')" @click="step.transformForm.inputs.splice(rowIndex, 1)"><SvgIcon icon="mdi:close" /></ElButton>
+                  <div class="skill-advanced-config__subhead">
+                    <span>{{ $t('rag.skill.transformInputs') }}</span>
+                    <ElButton size="small" @click="addTransformInput(step)">
+                      <SvgIcon icon="mdi:plus" class="mr-1" />
+                      {{ $t('rag.skill.addParameter') }}
+                    </ElButton>
                   </div>
-                  <div class="skill-advanced-config__subhead"><span>{{ $t('rag.skill.transformOperationsTitle') }}</span></div>
-                  <div v-for="(operation, operationIndex) in step.transformForm.operations" :key="operation.key" class="skill-transform-operation-row">
-                    <ElSelect v-model="operation.op"><ElOption v-for="option in transformOperationOptions" :key="option.value" :label="$t(option.label)" :value="option.value" /></ElSelect>
+                  <div
+                    v-for="(row, rowIndex) in step.transformForm.inputs"
+                    :key="rowIndex"
+                    class="skill-transform-input-row"
+                  >
+                    <ElInput v-model="row.key" :placeholder="$t('rag.skill.paramName')" />
+                    <ElSelect v-model="row.source" class="w-full">
+                      <ElOption v-for="id in step.dependsOn" :key="id" :label="id" :value="id" />
+                    </ElSelect>
+                    <ElInput v-model="row.path" placeholder="$ / $[*]" />
+                    <ElSelect v-model="row.cardinality" class="w-full">
+                      <ElOption value="one" :label="$t('rag.skill.cardinalityOne')" />
+                      <ElOption value="many" :label="$t('rag.skill.cardinalityMany')" />
+                    </ElSelect>
+                    <ElButton
+                      text
+                      circle
+                      type="danger"
+                      :title="$t('common.delete')"
+                      @click="step.transformForm.inputs.splice(rowIndex, 1)"
+                    >
+                      <SvgIcon icon="mdi:close" />
+                    </ElButton>
+                  </div>
+                  <div class="skill-advanced-config__subhead">
+                    <span>{{ $t('rag.skill.transformOperationsTitle') }}</span>
+                  </div>
+                  <div
+                    v-for="(operation, operationIndex) in step.transformForm.operations"
+                    :key="operation.key"
+                    class="skill-transform-operation-row"
+                  >
+                    <ElSelect v-model="operation.op">
+                      <ElOption
+                        v-for="option in transformOperationOptions"
+                        :key="option.value"
+                        :label="$t(option.label)"
+                        :value="option.value"
+                      />
+                    </ElSelect>
                     <ElInput v-model="operation.path" placeholder="$.records" />
                     <ConfigCodeEditor v-model="operation.detailsJson" :rows="3" expected-root="object" />
-                    <ElButton text circle type="danger" :title="$t('common.delete')" @click="step.transformForm.operations.splice(operationIndex, 1)"><SvgIcon icon="mdi:close" /></ElButton>
+                    <ElButton
+                      text
+                      circle
+                      type="danger"
+                      :title="$t('common.delete')"
+                      @click="step.transformForm.operations.splice(operationIndex, 1)"
+                    >
+                      <SvgIcon icon="mdi:close" />
+                    </ElButton>
                   </div>
                   <div class="skill-transform-output-schema">
                     <div class="skill-output-schema__header">
-                      <div><div class="font-medium">{{ $t('rag.skill.outputSchema') }}</div><div class="text-xs text-gray-500">{{ $t('rag.skill.transformOutputSchemaHint') }}</div><div v-if="transformOutputSchemaSummary(step.transformForm)" class="mt-1 text-xs text-gray-500">{{ transformOutputSchemaSummary(step.transformForm) }}</div></div>
-                      <ElSegmented :model-value="step.transformForm.outputSchemaMode" size="small" :options="[{ label: $t('rag.skill.schemaForm'), value: 'form' }, { label: $t('rag.skill.schemaJson'), value: 'json' }]" @change="value => switchTransformOutputSchemaMode(step.transformForm, value as OutputSchemaMode)" />
+                      <div>
+                        <div class="font-medium">{{ $t('rag.skill.outputSchema') }}</div>
+                        <div class="text-xs text-gray-500">{{ $t('rag.skill.transformOutputSchemaHint') }}</div>
+                        <div v-if="transformOutputSchemaSummary(step.transformForm)" class="mt-1 text-xs text-gray-500">
+                          {{ transformOutputSchemaSummary(step.transformForm) }}
+                        </div>
+                      </div>
+                      <ElSegmented
+                        :model-value="step.transformForm.outputSchemaMode"
+                        size="small"
+                        :options="[
+                          { label: $t('rag.skill.schemaForm'), value: 'form' },
+                          { label: $t('rag.skill.schemaJson'), value: 'json' }
+                        ]"
+                        @change="
+                          value => switchTransformOutputSchemaMode(step.transformForm, value as OutputSchemaMode)
+                        "
+                      />
                     </div>
-                    <ElAlert v-if="step.transformForm.outputSchemaMode === 'json'" type="warning" :closable="false" :title="$t('rag.skill.outputSchemaAdvancedHint')" />
+                    <ElAlert
+                      v-if="step.transformForm.outputSchemaMode === 'json'"
+                      type="warning"
+                      :closable="false"
+                      :title="$t('rag.skill.outputSchemaAdvancedHint')"
+                    />
                     <template v-else>
-                      <ElCheckbox v-model="step.transformForm.outputSchemaForm.enabled" class="skill-output-schema__enabled">{{ $t('rag.skill.outputSchemaEnabled') }}</ElCheckbox>
+                      <ElCheckbox
+                        v-model="step.transformForm.outputSchemaForm.enabled"
+                        class="skill-output-schema__enabled"
+                      >
+                        {{ $t('rag.skill.outputSchemaEnabled') }}
+                      </ElCheckbox>
                       <div v-if="step.transformForm.outputSchemaForm.enabled" class="skill-output-schema__root">
-                        <ElForm label-position="top" class="skill-output-schema__form"><div class="skill-output-schema__grid"><ElFormItem :label="$t('rag.skill.outputSchemaRootType')"><ElSelect v-model="step.transformForm.outputSchemaForm.rootType" class="w-full"><ElOption v-for="type in ['object', 'array', 'string', 'integer', 'number', 'boolean', 'null']" :key="type" :label="type" :value="type" /></ElSelect></ElFormItem><ElFormItem :label="$t('rag.skill.outputSchemaTitle')"><ElInput v-model="step.transformForm.outputSchemaForm.title" /></ElFormItem><ElFormItem :label="$t('rag.skill.outputSchemaDescription')"><ElInput v-model="step.transformForm.outputSchemaForm.description" /></ElFormItem></div><div class="skill-output-schema__switches"><ElCheckbox v-model="step.transformForm.outputSchemaForm.includeDraft7">{{ $t('rag.skill.outputSchemaDraft7') }}</ElCheckbox><ElCheckbox v-if="step.transformForm.outputSchemaForm.rootType === 'object'" :model-value="step.transformForm.outputSchemaForm.additionalProperties === true" @update:model-value="step.transformForm.outputSchemaForm.additionalProperties = Boolean($event)">{{ $t('rag.skill.outputSchemaAdditionalProperties') }}</ElCheckbox></div><div v-if="step.transformForm.outputSchemaForm.rootType === 'array'" class="skill-output-schema__array-rules"><ElFormItem :label="$t('rag.skill.outputSchemaMinItems')"><ElInputNumber v-model="step.transformForm.outputSchemaForm.minItems" :min="0" class="w-full" /></ElFormItem><ElFormItem :label="$t('rag.skill.outputSchemaMaxItems')"><ElInputNumber v-model="step.transformForm.outputSchemaForm.maxItems" :min="0" class="w-full" /></ElFormItem><ElFormItem :label="$t('rag.skill.outputSchemaUniqueItems')"><ElCheckbox v-model="step.transformForm.outputSchemaForm.uniqueItems" /></ElFormItem></div></ElForm>
-                        <div v-if="step.transformForm.outputSchemaForm.rootType === 'object'" class="skill-output-schema__fields-header"><div><div class="font-medium">{{ $t('rag.skill.outputSchemaFieldsTitle') }}</div><div class="text-xs text-gray-500">{{ $t('rag.skill.outputSchemaNestedFieldsHint') }}</div></div><ElButton size="small" type="primary" plain @click="step.transformForm.outputSchemaForm.fields.push(createOutputSchemaField())"><SvgIcon icon="mdi:plus" class="mr-1" />{{ $t('rag.skill.outputSchemaAddField') }}</ElButton></div>
-                        <OutputSchemaNodeEditor v-for="(field, fieldIndex) in step.transformForm.outputSchemaForm.fields" :key="field.key" :model-value="field" @remove="step.transformForm.outputSchemaForm.fields.splice(fieldIndex, 1)" />
-                        <template v-if="step.transformForm.outputSchemaForm.rootType === 'array'"><div class="schema-node__item">{{ $t('rag.skill.outputSchemaArrayItems') }}</div><OutputSchemaNodeEditor :model-value="step.transformForm.outputSchemaForm.arrayItem" :show-name="false" /></template>
+                        <ElForm label-position="top" class="skill-output-schema__form">
+                          <div class="skill-output-schema__grid">
+                            <ElFormItem :label="$t('rag.skill.outputSchemaRootType')">
+                              <ElSelect v-model="step.transformForm.outputSchemaForm.rootType" class="w-full">
+                                <ElOption
+                                  v-for="type in ['object', 'array', 'string', 'integer', 'number', 'boolean', 'null']"
+                                  :key="type"
+                                  :label="type"
+                                  :value="type"
+                                />
+                              </ElSelect>
+                            </ElFormItem>
+                            <ElFormItem :label="$t('rag.skill.outputSchemaTitle')">
+                              <ElInput v-model="step.transformForm.outputSchemaForm.title" />
+                            </ElFormItem>
+                            <ElFormItem :label="$t('rag.skill.outputSchemaDescription')">
+                              <ElInput v-model="step.transformForm.outputSchemaForm.description" />
+                            </ElFormItem>
+                          </div>
+                          <div class="skill-output-schema__switches">
+                            <ElCheckbox v-model="step.transformForm.outputSchemaForm.includeDraft7">
+                              {{ $t('rag.skill.outputSchemaDraft7') }}
+                            </ElCheckbox>
+                            <ElCheckbox
+                              v-if="step.transformForm.outputSchemaForm.rootType === 'object'"
+                              :model-value="step.transformForm.outputSchemaForm.additionalProperties === true"
+                              @update:model-value="
+                                step.transformForm.outputSchemaForm.additionalProperties = Boolean($event)
+                              "
+                            >
+                              {{ $t('rag.skill.outputSchemaAdditionalProperties') }}
+                            </ElCheckbox>
+                          </div>
+                          <div
+                            v-if="step.transformForm.outputSchemaForm.rootType === 'array'"
+                            class="skill-output-schema__array-rules"
+                          >
+                            <ElFormItem :label="$t('rag.skill.outputSchemaMinItems')">
+                              <ElInputNumber
+                                v-model="step.transformForm.outputSchemaForm.minItems"
+                                :min="0"
+                                class="w-full"
+                              />
+                            </ElFormItem>
+                            <ElFormItem :label="$t('rag.skill.outputSchemaMaxItems')">
+                              <ElInputNumber
+                                v-model="step.transformForm.outputSchemaForm.maxItems"
+                                :min="0"
+                                class="w-full"
+                              />
+                            </ElFormItem>
+                            <ElFormItem :label="$t('rag.skill.outputSchemaUniqueItems')">
+                              <ElCheckbox v-model="step.transformForm.outputSchemaForm.uniqueItems" />
+                            </ElFormItem>
+                          </div>
+                        </ElForm>
+                        <div
+                          v-if="step.transformForm.outputSchemaForm.rootType === 'object'"
+                          class="skill-output-schema__fields-header"
+                        >
+                          <div>
+                            <div class="font-medium">{{ $t('rag.skill.outputSchemaFieldsTitle') }}</div>
+                            <div class="text-xs text-gray-500">{{ $t('rag.skill.outputSchemaNestedFieldsHint') }}</div>
+                          </div>
+                          <ElButton
+                            size="small"
+                            type="primary"
+                            plain
+                            @click="step.transformForm.outputSchemaForm.fields.push(createOutputSchemaField())"
+                          >
+                            <SvgIcon icon="mdi:plus" class="mr-1" />
+                            {{ $t('rag.skill.outputSchemaAddField') }}
+                          </ElButton>
+                        </div>
+                        <OutputSchemaNodeEditor
+                          v-for="(field, fieldIndex) in step.transformForm.outputSchemaForm.fields"
+                          :key="field.key"
+                          :model-value="field"
+                          @remove="step.transformForm.outputSchemaForm.fields.splice(fieldIndex, 1)"
+                        />
+                        <template v-if="step.transformForm.outputSchemaForm.rootType === 'array'">
+                          <div class="schema-node__item">{{ $t('rag.skill.outputSchemaArrayItems') }}</div>
+                          <OutputSchemaNodeEditor
+                            :model-value="step.transformForm.outputSchemaForm.arrayItem"
+                            :show-name="false"
+                          />
+                        </template>
                       </div>
                     </template>
-                    <ConfigCodeEditor v-if="step.transformForm.outputSchemaMode === 'json'" v-model="step.transformForm.outputSchema" :rows="8" expected-root="object" :example="outputSchemaExample" />
+                    <ConfigCodeEditor
+                      v-if="step.transformForm.outputSchemaMode === 'json'"
+                      v-model="step.transformForm.outputSchema"
+                      :rows="8"
+                      expected-root="object"
+                      :example="outputSchemaExample"
+                    />
                   </div>
                 </template>
                 <div class="flex justify-end">
@@ -3107,7 +3656,9 @@ function goTo(path: string) {
                 <div class="skill-output-schema__header">
                   <div>
                     <div class="text-xs text-gray-500">{{ $t('rag.skill.outputSchemaHint') }}</div>
-                    <div v-if="hasOutputSchema(step)" class="mt-1 text-xs text-gray-500">{{ outputSchemaSummary(step) }}</div>
+                    <div v-if="hasOutputSchema(step)" class="mt-1 text-xs text-gray-500">
+                      {{ outputSchemaSummary(step) }}
+                    </div>
                   </div>
                   <ElSegmented
                     :model-value="step.outputSchemaMode"
@@ -3141,23 +3692,50 @@ function goTo(path: string) {
                       <div class="skill-output-schema__grid">
                         <ElFormItem :label="$t('rag.skill.outputSchemaRootType')">
                           <ElSelect v-model="step.outputSchemaForm.rootType" class="w-full">
-                            <ElOption v-for="type in ['object', 'array', 'string', 'integer', 'number', 'boolean', 'null']" :key="type" :label="type" :value="type" />
+                            <ElOption
+                              v-for="type in ['object', 'array', 'string', 'integer', 'number', 'boolean', 'null']"
+                              :key="type"
+                              :label="type"
+                              :value="type"
+                            />
                           </ElSelect>
                         </ElFormItem>
                         <ElFormItem :label="$t('rag.skill.outputSchemaTitle')">
-                          <ElInput v-model="step.outputSchemaForm.title" :placeholder="$t('rag.skill.outputSchemaTitlePlaceholder')" />
+                          <ElInput
+                            v-model="step.outputSchemaForm.title"
+                            :placeholder="$t('rag.skill.outputSchemaTitlePlaceholder')"
+                          />
                         </ElFormItem>
                         <ElFormItem :label="$t('rag.skill.outputSchemaDescription')">
-                          <ElInput v-model="step.outputSchemaForm.description" :placeholder="$t('rag.skill.outputSchemaDescriptionPlaceholder')" />
+                          <ElInput
+                            v-model="step.outputSchemaForm.description"
+                            :placeholder="$t('rag.skill.outputSchemaDescriptionPlaceholder')"
+                          />
                         </ElFormItem>
                       </div>
                       <div class="skill-output-schema__switches">
-                        <ElCheckbox v-model="step.outputSchemaForm.includeDraft7">{{ $t('rag.skill.outputSchemaDraft7') }}</ElCheckbox>
-                        <ElCheckbox v-if="step.outputSchemaForm.rootType === 'object'" :model-value="step.outputSchemaForm.additionalProperties === true" @update:model-value="step.outputSchemaForm.additionalProperties = Boolean($event)">
+                        <ElCheckbox v-model="step.outputSchemaForm.includeDraft7">
+                          {{ $t('rag.skill.outputSchemaDraft7') }}
+                        </ElCheckbox>
+                        <ElCheckbox
+                          v-if="step.outputSchemaForm.rootType === 'object'"
+                          :model-value="step.outputSchemaForm.additionalProperties === true"
+                          @update:model-value="step.outputSchemaForm.additionalProperties = Boolean($event)"
+                        >
                           {{ $t('rag.skill.outputSchemaAdditionalProperties') }}
                         </ElCheckbox>
                       </div>
-                      <div v-if="step.outputSchemaForm.rootType === 'array'" class="skill-output-schema__array-rules"><ElFormItem :label="$t('rag.skill.outputSchemaMinItems')"><ElInputNumber v-model="step.outputSchemaForm.minItems" :min="0" class="w-full" /></ElFormItem><ElFormItem :label="$t('rag.skill.outputSchemaMaxItems')"><ElInputNumber v-model="step.outputSchemaForm.maxItems" :min="0" class="w-full" /></ElFormItem><ElFormItem :label="$t('rag.skill.outputSchemaUniqueItems')"><ElCheckbox v-model="step.outputSchemaForm.uniqueItems" /></ElFormItem></div>
+                      <div v-if="step.outputSchemaForm.rootType === 'array'" class="skill-output-schema__array-rules">
+                        <ElFormItem :label="$t('rag.skill.outputSchemaMinItems')">
+                          <ElInputNumber v-model="step.outputSchemaForm.minItems" :min="0" class="w-full" />
+                        </ElFormItem>
+                        <ElFormItem :label="$t('rag.skill.outputSchemaMaxItems')">
+                          <ElInputNumber v-model="step.outputSchemaForm.maxItems" :min="0" class="w-full" />
+                        </ElFormItem>
+                        <ElFormItem :label="$t('rag.skill.outputSchemaUniqueItems')">
+                          <ElCheckbox v-model="step.outputSchemaForm.uniqueItems" />
+                        </ElFormItem>
+                      </div>
                     </ElForm>
                   </div>
                   <template v-if="step.outputSchemaForm.enabled && step.outputSchemaForm.rootType === 'object'">
@@ -3166,7 +3744,12 @@ function goTo(path: string) {
                         <div class="font-medium">{{ $t('rag.skill.outputSchemaFieldsTitle') }}</div>
                         <div class="text-xs text-gray-500">{{ $t('rag.skill.outputSchemaFieldsHint') }}</div>
                       </div>
-                      <ElButton size="small" type="primary" plain @click="step.outputSchemaForm.fields.push(createOutputSchemaField())">
+                      <ElButton
+                        size="small"
+                        type="primary"
+                        plain
+                        @click="step.outputSchemaForm.fields.push(createOutputSchemaField())"
+                      >
                         <SvgIcon icon="mdi:plus" class="mr-1" />
                         {{ $t('rag.skill.outputSchemaAddField') }}
                       </ElButton>
@@ -3177,9 +3760,17 @@ function goTo(path: string) {
                       :closable="false"
                       :title="$t('rag.skill.outputSchemaFieldsEmpty')"
                     />
-                    <OutputSchemaNodeEditor v-for="(field, fieldIndex) in step.outputSchemaForm.fields" :key="field.key" :model-value="field" @remove="step.outputSchemaForm.fields.splice(fieldIndex, 1)" />
+                    <OutputSchemaNodeEditor
+                      v-for="(field, fieldIndex) in step.outputSchemaForm.fields"
+                      :key="field.key"
+                      :model-value="field"
+                      @remove="step.outputSchemaForm.fields.splice(fieldIndex, 1)"
+                    />
                   </template>
-                  <template v-else-if="step.outputSchemaForm.enabled && step.outputSchemaForm.rootType === 'array'"><div class="schema-node__item">{{ $t('rag.skill.outputSchemaArrayItems') }}</div><OutputSchemaNodeEditor :model-value="step.outputSchemaForm.arrayItem" :show-name="false" /></template>
+                  <template v-else-if="step.outputSchemaForm.enabled && step.outputSchemaForm.rootType === 'array'">
+                    <div class="schema-node__item">{{ $t('rag.skill.outputSchemaArrayItems') }}</div>
+                    <OutputSchemaNodeEditor :model-value="step.outputSchemaForm.arrayItem" :show-name="false" />
+                  </template>
                   <ElCollapse v-if="step.outputSchemaForm.enabled" class="skill-output-schema__preview">
                     <ElCollapseItem :title="$t('rag.skill.outputSchemaPreview')" name="preview">
                       <pre>{{ outputSchemaPreview(step) }}</pre>

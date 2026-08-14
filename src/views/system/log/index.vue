@@ -59,11 +59,21 @@ onMounted(getList);
 </script>
 
 <template>
-  <div class="h-full page-container">
+  <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
-        <ElInput v-model="queryParams.module" :placeholder="$t('page.manage.log.module')" clearable style="width: 160px" />
-        <ElSelect v-model="queryParams.status" :placeholder="$t('page.manage.log.status')" clearable style="width: 120px">
+        <ElInput
+          v-model="queryParams.module"
+          :placeholder="$t('page.manage.log.module')"
+          clearable
+          style="width: 160px"
+        />
+        <ElSelect
+          v-model="queryParams.status"
+          :placeholder="$t('page.manage.log.status')"
+          clearable
+          style="width: 120px"
+        >
           <ElOption v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
         </ElSelect>
         <ElDatePicker
@@ -95,7 +105,13 @@ onMounted(getList);
         </ElTableColumn>
         <ElTableColumn prop="operation" :label="$t('page.manage.log.operation')" min-width="140" align="left" />
         <ElTableColumn prop="module" :label="$t('page.manage.log.module')" min-width="120" align="left" />
-        <ElTableColumn prop="requestUrl" :label="$t('page.manage.log.requestUrl')" min-width="200" show-overflow-tooltip align="left" />
+        <ElTableColumn
+          prop="requestUrl"
+          :label="$t('page.manage.log.requestUrl')"
+          min-width="200"
+          show-overflow-tooltip
+          align="left"
+        />
         <ElTableColumn prop="ip" :label="$t('page.manage.log.ip')" min-width="140" align="left" />
         <ElTableColumn prop="duration" :label="$t('page.manage.log.duration')" min-width="100" align="center" />
         <ElTableColumn prop="status" :label="$t('page.manage.log.status')" min-width="100" align="center">

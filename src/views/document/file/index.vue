@@ -87,7 +87,7 @@ function startPolling() {
   stopPolling();
   pollTimer = window.setInterval(() => {
     if (dataList.value.some(row => row.status === 'parsing')) getList();
-    }, 20000);
+  }, 20000);
 }
 
 function stopPolling() {
@@ -210,12 +210,16 @@ async function submitAcl() {
     ElMessage.warning($t('page.manage.process.selectAclSubject'));
     return;
   }
-    const payload = {
-      aclMode: aclEditMode.value,
-      aclList: aclSubjectIds.value.map(subjectId => ({ subjectType: aclEditMode.value, subjectId }))
-    };
-    try { await ElMessageBox.confirm($t('page.manage.process.confirmAclSave'), $t('common.tip'), { type: 'warning' }); } catch { return; }
-    aclSubmitting.value = true;
+  const payload = {
+    aclMode: aclEditMode.value,
+    aclList: aclSubjectIds.value.map(subjectId => ({ subjectType: aclEditMode.value, subjectId }))
+  };
+  try {
+    await ElMessageBox.confirm($t('page.manage.process.confirmAclSave'), $t('common.tip'), { type: 'warning' });
+  } catch {
+    return;
+  }
+  aclSubmitting.value = true;
   try {
     const response =
       aclTargetIds.value.length === 1
@@ -248,12 +252,16 @@ function removeFile(index: number) {
 }
 
 async function startUpload() {
-    if (uploadFiles.value.length === 0) {
-      ElMessage.warning($t('page.manage.file.selectFile'));
-      return;
-    }
-    try { await ElMessageBox.confirm($t('page.manage.file.confirmUpload'), $t('common.tip'), { type: 'warning' }); } catch { return; }
-    uploading.value = true;
+  if (uploadFiles.value.length === 0) {
+    ElMessage.warning($t('page.manage.file.selectFile'));
+    return;
+  }
+  try {
+    await ElMessageBox.confirm($t('page.manage.file.confirmUpload'), $t('common.tip'), { type: 'warning' });
+  } catch {
+    return;
+  }
+  uploading.value = true;
   const selectedDepartment = aclOptions.departments.find(item => item.id === departmentId.value);
   const selectedPost = aclOptions.posts.find(item => item.id === postId.value);
 
@@ -312,7 +320,11 @@ async function startUpload() {
     }
     await getList();
   } catch (error) {
-    uploadFiles.value.filter(item => item.status !== 'success').forEach(item => { item.status = 'failed'; });
+    uploadFiles.value
+      .filter(item => item.status !== 'success')
+      .forEach(item => {
+        item.status = 'failed';
+      });
     ElMessage.error((error as any)?.message || $t('page.manage.file.uploadFailed'));
   } finally {
     uploading.value = false;
@@ -339,19 +351,21 @@ async function handleDownload(row: any) {
 }
 
 async function handleParse(row: any) {
-    const { data } = (await fetchParseCheck([row.id])) as any;
-    if (!data) return;
+  const { data } = (await fetchParseCheck([row.id])) as any;
+  if (!data) return;
 
-    try {
-      await ElMessageBox.confirm(
-        $t('page.manage.file.parseConfirm', { name: row.fileName }),
-        $t('page.manage.parse.processSubmitted'),
-        { type: 'warning' }
-      );
-    } catch { return; }
+  try {
+    await ElMessageBox.confirm(
+      $t('page.manage.file.parseConfirm', { name: row.fileName }),
+      $t('page.manage.parse.processSubmitted'),
+      { type: 'warning' }
+    );
+  } catch {
+    return;
+  }
 
-    const isReparse = data.needConfirm && data.needConfirm.length > 0;
-    const { data: result, error } = (await fetchSubmitParse(row.id, isReparse)) as any;
+  const isReparse = data.needConfirm && data.needConfirm.length > 0;
+  const { data: result, error } = (await fetchSubmitParse(row.id, isReparse)) as any;
   if (error) {
     ElMessage.warning(error?.message || $t('page.manage.file.uploadFailed'));
     return;
@@ -365,31 +379,33 @@ async function handleParse(row: any) {
 }
 
 async function handleBatchParse() {
-    if (selectedRows.value.length === 0) {
-      ElMessage.warning($t('page.manage.file.selectFile'));
-      return;
-    }
-    const fileIds = selectedRows.value.map(r => r.id);
-    const { data } = (await fetchParseCheck(fileIds)) as any;
-    if (!data) return;
-
-    try {
-      await ElMessageBox.confirm(
-        $t('page.manage.file.batchParseConfirm', { count: selectedRows.value.length }),
-        $t('page.manage.parse.batchSubmitted'),
-        { type: 'warning' }
-      );
-    } catch { return; }
-
-    const isReparse = data.needConfirm && data.needConfirm.length > 0;
-    const { error } = (await fetchBatchParse(fileIds, isReparse)) as any;
-    if (error) {
-      ElMessage.warning(error?.message || $t('page.manage.file.uploadFailed'));
-      return;
-    }
-    ElMessage.success($t('page.manage.parse.batchSubmitted'));
-    getList();
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning($t('page.manage.file.selectFile'));
+    return;
   }
+  const fileIds = selectedRows.value.map(r => r.id);
+  const { data } = (await fetchParseCheck(fileIds)) as any;
+  if (!data) return;
+
+  try {
+    await ElMessageBox.confirm(
+      $t('page.manage.file.batchParseConfirm', { count: selectedRows.value.length }),
+      $t('page.manage.parse.batchSubmitted'),
+      { type: 'warning' }
+    );
+  } catch {
+    return;
+  }
+
+  const isReparse = data.needConfirm && data.needConfirm.length > 0;
+  const { error } = (await fetchBatchParse(fileIds, isReparse)) as any;
+  if (error) {
+    ElMessage.warning(error?.message || $t('page.manage.file.uploadFailed'));
+    return;
+  }
+  ElMessage.success($t('page.manage.parse.batchSubmitted'));
+  getList();
+}
 
 function handleSelectionChange(rows: any[]) {
   selectedRows.value = rows;

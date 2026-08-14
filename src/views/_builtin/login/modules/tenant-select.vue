@@ -36,7 +36,7 @@ async function handleSelect(tenantId: number) {
         :key="item.id"
         :loading="loading"
         size="large"
-        class="w-full !h-48px !ml-0"
+        class="w-full !ml-0 !h-48px"
         @click="handleSelect(item.id)"
       >
         {{ item.name }}

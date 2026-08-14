@@ -30,7 +30,9 @@ function handleNavigate(key: string) {
 </script>
 
 <template>
-  <aside class="docs-sidebar h-full w-260px flex flex-col flex-shrink-0 border-r border-[var(--el-border-color-lighter)] bg-[var(--el-bg-color)]">
+  <aside
+    class="docs-sidebar h-full w-260px flex flex-col flex-shrink-0 border-r border-[var(--el-border-color-lighter)] bg-[var(--el-bg-color)]"
+  >
     <div class="flex-shrink-0 border-b border-[var(--el-border-color-lighter)] p-3">
       <ElInput v-model="keyword" :placeholder="$t('page.docs.searchPlaceholder')" size="small" clearable>
         <template #prefix>

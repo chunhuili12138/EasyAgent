@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Parse locale file to extract the object
 function parseLocaleFile(filePath) {
@@ -8,7 +8,7 @@ function parseLocaleFile(filePath) {
   if (!match) {
     throw new Error(`Could not parse locale file: ${filePath}`);
   }
-  const obj = eval('(' + match[1] + ')');
+  const obj = eval(`(${match[1]})`);
   return obj;
 }
 
@@ -64,7 +64,7 @@ const dynamicKeys = [
   'theme.page.mode.fade-scale',
   'theme.page.mode.zoom-fade',
   'theme.page.mode.zoom-out',
-  'theme.page.mode.none',
+  'theme.page.mode.none'
 ];
 
 // ACL_MODES from constants/document
@@ -121,11 +121,27 @@ console.log(`Missing in en-US: ${missingInEnUS}`);
 const searchKeys = [
   'common.noData',
   // from search-result.vue and search-modal.vue
-  'system.menu', 'system.role', 'system.department', 'system.post', 'system.dict',
-  'system.tenant', 'system.user', 'system.message', 'system.log',
-  'document.file', 'document.kb', 'document.parse', 'document.process',
-  'rag.skill', 'rag.datasource', 'rag.tool', 'rag.experience', 'rag.sql-log',
-  'rag.bad-case', 'rag.audit', 'rag.chat'
+  'system.menu',
+  'system.role',
+  'system.department',
+  'system.post',
+  'system.dict',
+  'system.tenant',
+  'system.user',
+  'system.message',
+  'system.log',
+  'document.file',
+  'document.kb',
+  'document.parse',
+  'document.process',
+  'rag.skill',
+  'rag.datasource',
+  'rag.tool',
+  'rag.experience',
+  'rag.sql-log',
+  'rag.bad-case',
+  'rag.audit',
+  'rag.chat'
 ];
 
 console.log('\n=== Checking search/routing i18n keys ===');

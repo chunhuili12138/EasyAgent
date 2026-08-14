@@ -93,6 +93,11 @@ export const request = createFlatRequest(
         }
       }
 
+      // when the backend response code is not success, show the error message
+      if (backendError.message) {
+        showErrorMsg(request.state, backendError.message);
+      }
+
       return null;
     },
     onError(error) {

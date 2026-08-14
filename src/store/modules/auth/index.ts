@@ -133,7 +133,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         const tenantId = userInfo.tenants[0].id;
         const { data: switchResult, error: switchError } = await fetchSwitchTenant(tenantId);
         if (!switchError && switchResult) {
-      setLoginState(switchResult);
+          setLoginState(switchResult);
         }
         await routeStore.reloadAuthRoutes();
         const isClear = checkTabClear();

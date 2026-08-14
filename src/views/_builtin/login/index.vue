@@ -54,7 +54,7 @@ const bgColor = computed(() => {
 </script>
 
 <template>
-    <div class="relative h-screen w-full flex-center overflow-hidden" :style="{ backgroundColor: bgColor }">
+  <div class="relative h-screen w-full flex-center overflow-hidden" :style="{ backgroundColor: bgColor }">
     <WaveBg :theme-color="bgThemeColor" />
     <ElCard class="relative z-4 w-auto rd-12px">
       <div class="w-400px lt-sm:w-300px">

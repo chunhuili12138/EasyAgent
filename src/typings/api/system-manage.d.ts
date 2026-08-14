@@ -147,7 +147,12 @@ declare namespace Api {
       departmentName?: string;
     }>;
     type PostList = Common.PaginatingQueryRecord<Post>;
-    type PostSearchParams = PageParams & { departmentId?: number | null; keyword?: string; name?: string; code?: string };
+    type PostSearchParams = PageParams & {
+      departmentId?: number | null;
+      keyword?: string;
+      name?: string;
+      code?: string;
+    };
 
     type DictType = Common.CommonRecord<{
       name: string;
@@ -186,7 +191,13 @@ declare namespace Api {
       createdAt?: string;
     }>;
     type LogList = Common.PaginatingQueryRecord<Log>;
-    type LogSearchParams = PageParams & { username?: string; module?: string; status?: number | string; startTime?: string; endTime?: string };
+    type LogSearchParams = PageParams & {
+      username?: string;
+      module?: string;
+      status?: number | string;
+      startTime?: string;
+      endTime?: string;
+    };
 
     type Message = Common.CommonRecord<{
       tenantId: number;

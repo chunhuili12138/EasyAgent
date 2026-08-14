@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { $t } from '@/locales';
 import { request } from '@/service/request';
 import { useAuthStore } from '@/store/modules/auth';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'MessageBell' });
 
@@ -17,10 +17,10 @@ let timer: number | null = null;
 
 async function fetchUnread() {
   const tenantId = authStore.userInfo.currentTenantId;
-  const { data } = await request<number>({
+  const { data } = (await request<number>({
     url: '/system/message/unread-count',
     method: 'get'
-  }) as any;
+  })) as any;
   if (tenantId === authStore.userInfo.currentTenantId && data != null) unreadCount.value = data;
 }
 
@@ -28,11 +28,11 @@ async function fetchRecentMessages() {
   const tenantId = authStore.userInfo.currentTenantId;
   loading.value = true;
   try {
-    const { data } = await request<{ records: any[] }>({
+    const { data } = (await request<{ records: any[] }>({
       url: '/system/message/page',
       method: 'get',
       params: { current: 1, size: 5 }
-    }) as any;
+    })) as any;
     if (tenantId === authStore.userInfo.currentTenantId) {
       recentMessages.value = data?.records || [];
     }
@@ -117,9 +117,9 @@ function getTypeTag(type: string) {
     </template>
 
     <div>
-      <div class="flex items-center justify-between mb-3">
+      <div class="mb-3 flex items-center justify-between">
         <span class="text-14px font-medium">{{ $t('page.manage.message.title') }}</span>
-        <ElButton type="primary" link size="small" @click="handleMarkAllRead" :disabled="unreadCount === 0">
+        <ElButton type="primary" link size="small" :disabled="unreadCount === 0" @click="handleMarkAllRead">
           {{ $t('page.manage.message.markAllRead') }}
         </ElButton>
       </div>
@@ -132,28 +132,26 @@ function getTypeTag(type: string) {
           <div
             v-for="msg in recentMessages"
             :key="msg.id"
-            class="flex items-start gap-3 py-2 border-b cursor-pointer hover:bg-gray-50"
+            class="flex cursor-pointer items-start gap-3 border-b py-2 hover:bg-gray-50"
             @click="handleMarkRead(msg)"
           >
-            <ElTag :type="(getTypeTag(msg.type).type as any)" size="small" class="mt-1 flex-shrink-0">
+            <ElTag :type="getTypeTag(msg.type).type as any" size="small" class="mt-1 flex-shrink-0">
               {{ getTypeTag(msg.type).label }}
             </ElTag>
-            <div class="flex-1 min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
-                <span class="text-13px truncate">{{ msg.title }}</span>
+                <span class="truncate text-13px">{{ msg.title }}</span>
                 <ElBadge v-if="msg.isRead === 0" :is-dot="true" class="flex-shrink-0" />
               </div>
-              <div class="text-12px text-gray-400 mt-1 truncate">{{ msg.content }}</div>
+              <div class="mt-1 truncate text-12px text-gray-400">{{ msg.content }}</div>
             </div>
-            <span class="text-12px text-gray-400 flex-shrink-0 whitespace-nowrap">{{ formatTime(msg.createdAt) }}</span>
+            <span class="flex-shrink-0 whitespace-nowrap text-12px text-gray-400">{{ formatTime(msg.createdAt) }}</span>
           </div>
         </div>
       </div>
 
       <div class="mt-3 text-center">
-        <ElButton type="primary" link size="small" @click="goMessages">
-          查看全部
-        </ElButton>
+        <ElButton type="primary" link size="small" @click="goMessages">查看全部</ElButton>
       </div>
     </div>
   </ElPopover>

@@ -5,13 +5,13 @@ import { useBoolean } from '@sa/hooks';
 import type { CustomRoute, ElegantConstRoute, LastLevelRouteKey, RouteKey, RouteMap } from '@elegant-router/types';
 import { router } from '@/router';
 import { fetchGetConstantRoutes, fetchGetUserRoutes, fetchIsRouteExist } from '@/service/api';
+import { localStg } from '@/utils/storage';
 import { SetupStoreId } from '@/enum';
 import { createStaticRoutes, getAuthVueRoutes } from '@/router/routes';
 import { ROOT_ROUTE } from '@/router/routes/builtin';
 import { getRouteName, getRoutePath } from '@/router/elegant/transform';
 import { useAuthStore } from '../auth';
 import { useTabStore } from '../tab';
-import { localStg } from '@/utils/storage';
 import {
   filterAuthRoutesByRoles,
   getBreadcrumbsByRoute,
