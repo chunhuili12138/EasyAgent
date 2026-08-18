@@ -231,6 +231,7 @@ export function fetchRunSkillTest(data: {
   definition?: any;
   yamlContent?: string;
   executeActions?: boolean;
+  runtimeArgs?: Record<string, unknown>;
 }) {
   return request<any>({ url: '/rag/skills/test-run', method: 'post', data, timeout: 180000 });
 }
