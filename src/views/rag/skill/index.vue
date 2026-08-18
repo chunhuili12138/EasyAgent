@@ -48,6 +48,16 @@ type ApiParameterSchema = {
   maximum?: number;
   items?: Record<string, unknown>;
 };
+type SkillInputField = {
+  key: string;
+  type: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
+  description: string;
+  required: boolean;
+  defaultValue: string;
+};
+type SkillRunInputField = SkillInputField & {
+  value: string | number | boolean | null | undefined;
+};
 type OutputSchemaMode = 'form' | 'json';
 type StepConfigMode = 'form' | 'json';
 type StepStatusTag = {
@@ -186,6 +196,7 @@ const runResult = ref<any>(null);
 const runLoading = ref(false);
 const runTargetSkill = ref<any>(null);
 const runExecuteActions = ref(false);
+const runInputFields = ref<SkillRunInputField[]>([]);
 const selectedTemplate = ref<SkillTemplateKey>('rag_answer');
 let stepUid = 0;
 let outputSchemaFieldUid = 0;
@@ -1010,6 +1021,8 @@ function openCreate() {
     intentType: 'knowledge',
     positiveExamples: '',
     negativeExamples: '',
+    inputFields: [],
+    requiredEvidence: '',
     minScore: 0.65,
     status: 1
   };
@@ -1225,6 +1238,8 @@ async function openEdit(row: any) {
     intentType: detail.definition?.intentType || 'knowledge',
     positiveExamples: examplesToText(detail.definition?.positiveExamples),
     negativeExamples: examplesToText(detail.definition?.negativeExamples),
+    inputFields: inputFieldsFromDefinition(detail.definition || {}),
+    requiredEvidence: requiredEvidenceFromDefinition(detail.definition || {}).join('\n'),
     minScore: detail.minScore ?? 0.65,
     status: detail.status ?? 1
   };
@@ -1247,7 +1262,10 @@ async function openEdit(row: any) {
 function definitionFromDetail(detail: any) {
   if (Array.isArray(detail.definition?.steps)) return detail.definition;
   if (!detail.yamlContent)
-    return { description: '', intentType: 'knowledge', positiveExamples: [], negativeExamples: [], steps: [] };
+    return {
+      description: '', intentType: 'knowledge', positiveExamples: [], negativeExamples: [],
+      inputSchema: {}, goalContract: {}, steps: []
+    };
   try {
     const parsed = parse(detail.yamlContent);
     return {
@@ -1255,11 +1273,69 @@ function definitionFromDetail(detail: any) {
       intentType: parsed?.intent_type || 'knowledge',
       positiveExamples: Array.isArray(parsed?.positive_examples) ? parsed.positive_examples : [],
       negativeExamples: Array.isArray(parsed?.negative_examples) ? parsed.negative_examples : [],
+      inputSchema: parsed?.input_schema || {},
+      goalContract: parsed?.goal_contract || {},
       steps: Array.isArray(parsed?.steps) ? parsed.steps : []
     };
   } catch {
-    return { description: '', intentType: 'knowledge', positiveExamples: [], negativeExamples: [], steps: [] };
+    return {
+      description: '', intentType: 'knowledge', positiveExamples: [], negativeExamples: [],
+      inputSchema: {}, goalContract: {}, steps: []
+    };
   }
+}
+
+function inputFieldsFromDefinition(value: any): SkillInputField[] {
+  const schema = value?.inputSchema || value?.input_schema || {};
+  const properties = schema?.properties && typeof schema.properties === 'object' ? schema.properties : {};
+  const required = new Set(Array.isArray(schema?.required) ? schema.required : []);
+  return Object.entries(properties).map(([key, raw]: [string, any]) => ({
+    key,
+    type: ['string', 'number', 'integer', 'boolean', 'array', 'object'].includes(raw?.type) ? raw.type : 'string',
+    description: typeof raw?.description === 'string' ? raw.description : '',
+    required: required.has(key),
+    defaultValue: raw?.default === undefined ? '' : JSON.stringify(raw.default)
+  }));
+}
+
+function requiredEvidenceFromDefinition(value: any): string[] {
+  const contract = value?.goalContract || value?.goal_contract || {};
+  return Array.isArray(contract?.required_evidence) ? contract.required_evidence.map(String) : [];
+}
+
+function addInputField() {
+  form.value.inputFields.push({ key: '', type: 'string', description: '', required: false, defaultValue: '' });
+}
+
+function removeInputField(index: number) {
+  form.value.inputFields.splice(index, 1);
+}
+
+function inputSchema() {
+  const properties: Record<string, Record<string, any>> = {};
+  const required: string[] = [];
+  for (const field of form.value.inputFields || []) {
+    const key = String(field.key || '').trim();
+    if (!key) continue;
+    const property: Record<string, any> = { type: field.type || 'string' };
+    if (field.description?.trim()) property.description = field.description.trim();
+    if (field.defaultValue?.trim()) {
+      try {
+        property.default = JSON.parse(field.defaultValue);
+      } catch {
+        property.default = field.defaultValue;
+      }
+    }
+    properties[key] = property;
+    if (field.required) required.push(key);
+  }
+  return Object.keys(properties).length ? { type: 'object', properties, required } : {};
+}
+
+function goalContract() {
+  const requiredEvidence = String(form.value.requiredEvidence || '')
+    .split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+  return requiredEvidence.length ? { required_evidence: requiredEvidence } : {};
 }
 
 function examplesToText(value: unknown) {
@@ -2126,6 +2202,8 @@ function definition() {
     intentType: form.value.intentType || 'knowledge',
     positiveExamples: textToExamples(form.value.positiveExamples),
     negativeExamples: textToExamples(form.value.negativeExamples),
+    inputSchema: inputSchema(),
+    goalContract: goalContract(),
     steps: steps.value.map(toDefinitionStep)
   };
 }
@@ -2145,6 +2223,8 @@ function generateYaml() {
       intent_type: data.intentType,
       ...(data.positiveExamples.length ? { positive_examples: data.positiveExamples } : {}),
       ...(data.negativeExamples.length ? { negative_examples: data.negativeExamples } : {}),
+      ...(Object.keys(data.inputSchema).length ? { input_schema: data.inputSchema } : {}),
+      ...(Object.keys(data.goalContract).length ? { goal_contract: data.goalContract } : {}),
       steps: yamlSteps
     },
     { lineWidth: 0 }
@@ -2275,6 +2355,9 @@ function localValidation(): string | null {
   const ids = steps.value.map(step => step.id.trim());
   if (ids.some(id => !id)) return $t('rag.skill.stepIdRequired');
   if (new Set(ids).size !== ids.length) return $t('rag.skill.stepIdDuplicate');
+  const inputKeys = (form.value.inputFields || []).map((field: SkillInputField) => field.key.trim()).filter(Boolean);
+  if (new Set(inputKeys).size !== inputKeys.length) return $t('rag.skill.inputNameDuplicate');
+  if (inputKeys.some((key: string) => !/^[A-Za-z_][A-Za-z0-9_-]*$/.test(key))) return $t('rag.skill.inputNameInvalid');
   for (const step of steps.value) {
     const error = stepValidation(step, ids);
     if (error) return error;
@@ -2321,7 +2404,8 @@ function stepValidation(step: SkillStepForm, ids: string[]): string | null {
     const literalError = step.params.map(row => apiLiteralValidation(step, row)).find(Boolean);
     if (literalError) return literalError;
   }
-  if (step.type === 'api' && step.params.some(row => row.mode === 'binding' && !step.dependsOn.includes(row.source))) {
+  if (step.type === 'api' && step.params.some(row => row.mode === 'binding'
+    && row.source !== 'runtime_args' && !step.dependsOn.includes(row.source))) {
     return $t('rag.skill.missingDependency');
   }
   if (step.type === 'builtin' && hasDuplicateKeys(step.arguments)) return $t('rag.skill.parameterKeyDuplicate');
@@ -2371,6 +2455,8 @@ async function applyYaml() {
   form.value.intentType = res.data.definition?.intentType || 'knowledge';
   form.value.positiveExamples = examplesToText(res.data.definition?.positiveExamples);
   form.value.negativeExamples = examplesToText(res.data.definition?.negativeExamples);
+  form.value.inputFields = inputFieldsFromDefinition(res.data.definition || {});
+  form.value.requiredEvidence = requiredEvidenceFromDefinition(res.data.definition || {}).join('\n');
   steps.value = (res.data.definition?.steps || []).map(fromDefinitionStep);
   yamlDirty.value = false;
   ElMessage.success($t('rag.skill.yamlApplied'));
@@ -2473,12 +2559,78 @@ async function runMatchTest() {
   }
 }
 
-function openRunTest(row?: any) {
+function parseInputDefault(field: SkillInputField) {
+  if (!field.defaultValue?.trim()) return field.type === 'boolean' ? undefined : '';
+  try {
+    const parsed = JSON.parse(field.defaultValue);
+    if (field.type === 'array' || field.type === 'object') return JSON.stringify(parsed);
+    if (field.type === 'number' || field.type === 'integer') return Number(parsed);
+    if (field.type === 'boolean') return Boolean(parsed);
+    return String(parsed);
+  } catch {
+    return field.defaultValue;
+  }
+}
+
+function prepareRunInputFields(fields: SkillInputField[]) {
+  runInputFields.value = fields.map(field => ({ ...field, value: parseInputDefault(field) }));
+}
+
+function runNumberValue(field: SkillRunInputField) {
+  return typeof field.value === 'number' ? field.value : undefined;
+}
+
+function runTextValue(field: SkillRunInputField) {
+  return typeof field.value === 'string' || typeof field.value === 'number' ? field.value : undefined;
+}
+
+async function openRunTest(row?: any) {
   runTargetSkill.value = row || null;
   runQuery.value = '';
   runResult.value = null;
   runExecuteActions.value = false;
+  if (row?.id) {
+    const detail = await fetchSkillDetail(row.id);
+    prepareRunInputFields(inputFieldsFromDefinition(detail.data?.definition || {}));
+  } else {
+    prepareRunInputFields(form.value.inputFields || []);
+  }
   runDialogVisible.value = true;
+}
+
+function buildRuntimeArgs() {
+  const runtimeArgs: Record<string, unknown> = {};
+  for (const field of runInputFields.value) {
+    const value = field.value;
+    const empty = value === undefined || value === null || value === '';
+    if (empty) {
+      if (field.required) throw new Error(t('rag.skill.runParameterRequired', { key: field.key }));
+      continue;
+    }
+    if (field.type === 'integer' || field.type === 'number') {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric) || (field.type === 'integer' && !Number.isInteger(numeric))) {
+        throw new Error(t('rag.skill.runParameterInvalid', { key: field.key }));
+      }
+      runtimeArgs[field.key] = numeric;
+    } else if (field.type === 'boolean') {
+      runtimeArgs[field.key] = value === true || value === 'true';
+    } else if (field.type === 'array' || field.type === 'object') {
+      try {
+        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        if (field.type === 'array' && !Array.isArray(parsed)) throw new Error('array');
+        if (field.type === 'object' && (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))) {
+          throw new Error('object');
+        }
+        runtimeArgs[field.key] = parsed;
+      } catch {
+        throw new Error(t('rag.skill.runParameterInvalid', { key: field.key }));
+      }
+    } else {
+      runtimeArgs[field.key] = String(value);
+    }
+  }
+  return runtimeArgs;
 }
 
 async function runSkillTest() {
@@ -2495,9 +2647,21 @@ async function runSkillTest() {
   }
   runLoading.value = true;
   try {
+    let runtimeArgs: Record<string, unknown>;
+    try {
+      runtimeArgs = buildRuntimeArgs();
+    } catch (error) {
+      ElMessage.warning(error instanceof Error ? error.message : String(error));
+      return;
+    }
     const payload = runTargetSkill.value
-      ? { skillId: runTargetSkill.value.id, query: runQuery.value.trim(), executeActions: runExecuteActions.value }
-      : { definition: definition(), query: runQuery.value.trim(), executeActions: runExecuteActions.value };
+      ? {
+          skillId: runTargetSkill.value.id,
+          query: runQuery.value.trim(),
+          executeActions: runExecuteActions.value,
+          runtimeArgs
+        }
+      : { definition: definition(), query: runQuery.value.trim(), executeActions: runExecuteActions.value, runtimeArgs };
     const res = await fetchRunSkillTest(payload);
     runResult.value = res.data;
   } finally {
@@ -2698,6 +2862,38 @@ function openGuideRoute(path: string) {
                 :rows="3"
                 :placeholder="$t('rag.skill.descriptionPlaceholder')"
               />
+            </ElFormItem>
+            <ElFormItem :label="$t('rag.skill.inputContract')">
+              <div class="w-full rounded border border-blue-200 bg-blue-50 p-3">
+                <div class="mb-2 text-xs text-gray-600">{{ $t('rag.skill.inputContractHint') }}</div>
+                <div v-for="(field, index) in form.inputFields" :key="`input-field-${index}`" class="mb-2 grid grid-cols-1 gap-2 md:grid-cols-12">
+                  <ElInput v-model="field.key" class="md:col-span-3" :placeholder="$t('rag.skill.inputNamePlaceholder')" />
+                  <ElSelect v-model="field.type" class="md:col-span-2">
+                    <ElOption label="string" value="string" />
+                    <ElOption label="number" value="number" />
+                    <ElOption label="integer" value="integer" />
+                    <ElOption label="boolean" value="boolean" />
+                    <ElOption label="array" value="array" />
+                    <ElOption label="object" value="object" />
+                  </ElSelect>
+                  <ElInput v-model="field.description" class="md:col-span-3" :placeholder="$t('rag.skill.inputDescriptionPlaceholder')" />
+                  <ElInput v-model="field.defaultValue" class="md:col-span-2" :placeholder="$t('rag.skill.inputDefaultPlaceholder')" />
+                  <div class="flex items-center gap-2 md:col-span-2">
+                    <ElCheckbox v-model="field.required">{{ $t('rag.skill.inputRequired') }}</ElCheckbox>
+                    <ElButton text type="danger" @click="removeInputField(Number(index))">{{ $t('rag.common.delete') }}</ElButton>
+                  </div>
+                </div>
+                <ElButton size="small" @click="addInputField">+ {{ $t('rag.skill.addInput') }}</ElButton>
+              </div>
+            </ElFormItem>
+            <ElFormItem :label="$t('rag.skill.goalContract')">
+              <ElInput
+                v-model="form.requiredEvidence"
+                type="textarea"
+                :rows="3"
+                :placeholder="$t('rag.skill.requiredEvidencePlaceholder')"
+              />
+              <div class="mt-1 text-xs text-gray-500">{{ $t('rag.skill.goalContractHint') }}</div>
             </ElFormItem>
             <ElFormItem :label="$t('rag.skill.triggerKeywords')">
               <template #label>
@@ -3097,8 +3293,12 @@ function openGuideRoute(path: string) {
                     <div v-else class="skill-api-binding-grid">
                       <ElSelect v-model="row.source" :placeholder="$t('rag.skill.bindingSource')">
                         <ElOption v-for="id in step.dependsOn" :key="id" :label="id" :value="id" />
+                        <ElOption v-if="form.inputFields?.length" :label="$t('rag.skill.skillInputSource')" value="runtime_args" />
                       </ElSelect>
-                      <ElInput v-model="row.path" :placeholder="$t('rag.skill.bindingPath')" />
+                      <ElSelect v-if="row.source === 'runtime_args'" v-model="row.path" :placeholder="$t('rag.skill.inputSelectPlaceholder')">
+                        <ElOption v-for="field in form.inputFields" :key="field.key" :label="field.key" :value="`$.${field.key}`" />
+                      </ElSelect>
+                      <ElInput v-else v-model="row.path" :placeholder="$t('rag.skill.bindingPath')" />
                       <ElSelect v-model="row.cardinality">
                         <ElOption :label="$t('rag.skill.cardinalityOne')" value="one" />
                         <ElOption :label="$t('rag.skill.cardinalityMany')" value="many" />
@@ -3435,8 +3635,12 @@ function openGuideRoute(path: string) {
                     <ElInput v-model="row.key" :placeholder="$t('rag.skill.paramName')" />
                     <ElSelect v-model="row.source" class="w-full">
                       <ElOption v-for="id in step.dependsOn" :key="id" :label="id" :value="id" />
+                      <ElOption v-if="form.inputFields?.length" :label="$t('rag.skill.skillInputSource')" value="runtime_args" />
                     </ElSelect>
-                    <ElInput v-model="row.path" placeholder="$ / $[*]" />
+                    <ElSelect v-if="row.source === 'runtime_args'" v-model="row.path" class="w-full">
+                      <ElOption v-for="field in form.inputFields" :key="field.key" :label="field.key" :value="`$.${field.key}`" />
+                    </ElSelect>
+                    <ElInput v-else v-model="row.path" placeholder="$ / $[*]" />
                     <ElSelect v-model="row.cardinality" class="w-full">
                       <ElOption value="one" :label="$t('rag.skill.cardinalityOne')" />
                       <ElOption value="many" :label="$t('rag.skill.cardinalityMany')" />
@@ -3876,6 +4080,39 @@ function openGuideRoute(path: string) {
         </ElFormItem>
         <ElFormItem :label="t('rag.skill.testQuestion')">
           <ElInput v-model="runQuery" type="textarea" :rows="3" :placeholder="t('rag.skill.runQuestionPlaceholder')" />
+        </ElFormItem>
+        <ElFormItem v-if="runInputFields.length" :label="t('rag.skill.runParameters')">
+          <div class="w-full space-y-2">
+            <div v-for="field in runInputFields" :key="field.key" class="rounded border border-gray-200 p-2">
+              <div class="mb-1 flex items-center gap-2 text-xs">
+                <span class="font-medium">{{ field.key }}</span>
+                <ElTag size="small">{{ field.type }}</ElTag>
+                <ElTag v-if="field.required" size="small" type="danger">{{ t('rag.skill.inputRequired') }}</ElTag>
+              </div>
+              <div v-if="field.type === 'boolean'">
+                <ElSelect v-model="field.value" clearable class="w-full" :placeholder="field.description || field.key">
+                  <ElOption :label="t('rag.skill.runBooleanTrue')" :value="true" />
+                  <ElOption :label="t('rag.skill.runBooleanFalse')" :value="false" />
+                </ElSelect>
+              </div>
+              <ElInputNumber
+                v-else-if="field.type === 'integer' || field.type === 'number'"
+                :model-value="runNumberValue(field)"
+                class="w-full"
+                :precision="field.type === 'integer' ? 0 : undefined"
+                @update:model-value="field.value = $event"
+              />
+              <ElInput
+                v-else
+                :model-value="runTextValue(field)"
+                :type="field.type === 'array' || field.type === 'object' ? 'textarea' : 'text'"
+                :rows="field.type === 'array' || field.type === 'object' ? 2 : 1"
+                :placeholder="field.description || field.key"
+                @update:model-value="field.value = $event"
+              />
+              <div v-if="field.description" class="mt-1 text-xs text-gray-500">{{ field.description }}</div>
+            </div>
+          </div>
         </ElFormItem>
         <ElFormItem :label="t('rag.skill.actionGateCheck')">
           <ElSwitch v-model="runExecuteActions" />
