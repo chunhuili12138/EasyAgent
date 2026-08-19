@@ -743,7 +743,12 @@ const local: App.I18n.Schema = {
         duration: 'Duration(ms)',
         requestUrl: 'Request URL',
         ip: 'IP',
-        operation: 'Operation'
+        operation: 'Operation',
+        account: 'Account',
+        nickname: 'Nickname',
+        tenant: 'Tenant',
+        accountPlaceholder: 'Enter account',
+        tenantPlaceholder: 'Select tenant'
       },
       parse: {
         submitProcess: 'Submit Process',
@@ -1307,17 +1312,20 @@ const local: App.I18n.Schema = {
       codePlaceholder: 'Enter a unique code, e.g. order_query',
       descriptionPlaceholder: 'Describe applicable scenarios and capability boundaries',
       inputContract: 'Input Contract',
-      inputContractHint: 'Declare structured parameters first, then bind them in steps through Skill parameters. Unconsumed parameters are rejected instead of being silently ignored.',
+      inputContractHint:
+        'Declare structured parameters first, then bind them in steps through Skill parameters. Unconsumed parameters are rejected instead of being silently ignored.',
       inputNamePlaceholder: 'Parameter name, e.g. keyword',
       inputDescriptionPlaceholder: 'Parameter description and constraints',
       inputDefaultPlaceholder: 'Default value (JSON)',
       inputRequired: 'Required',
       addInput: 'Add Parameter',
       inputNameDuplicate: 'Input parameter names must be unique',
-      inputNameInvalid: 'Input parameter names must start with a letter or underscore and contain only letters, numbers, underscores, or hyphens',
+      inputNameInvalid:
+        'Input parameter names must start with a letter or underscore and contain only letters, numbers, underscores, or hyphens',
       goalContract: 'Completion Contract',
       requiredEvidencePlaceholder: 'One required evidence field or path per line, e.g. code, status',
-      goalContractHint: 'The runtime checks these evidence fields after execution and returns a recoverable result when they are missing.',
+      goalContractHint:
+        'The runtime checks these evidence fields after execution and returns a recoverable result when they are missing.',
       skillInputSource: 'Skill Parameter',
       inputSelectPlaceholder: 'Select a Skill parameter',
       triggerPlaceholder: 'Separate multiple trigger words with commas',

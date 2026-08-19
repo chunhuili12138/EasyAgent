@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { fetchGetLogList } from '@/service/api/system-manage';
+import { fetchGetLogList, fetchGetTenantList } from '@/service/api/system-manage';
 import { $t } from '@/locales';
 
 defineOptions({ name: 'SystemLog' });
@@ -8,13 +8,30 @@ defineOptions({ name: 'SystemLog' });
 const loading = ref(false);
 const dataList = ref<any[]>([]);
 const total = ref(0);
-const queryParams = reactive({ current: 1, size: 10, module: '', status: '' });
+const queryParams = reactive({
+  current: 1,
+  size: 10,
+  account: '',
+  tenantId: undefined as number | undefined,
+  module: '',
+  status: ''
+});
 const statusOptions = computed(() => [
   { value: '', label: $t('page.manage.log.all') },
   { value: '1', label: $t('page.manage.log.success') },
   { value: '0', label: $t('page.manage.log.fail') }
 ]);
 const dateRange = ref<[string, string]>(['', '']);
+const tenantOptions = ref<{ id: number; name: string }[]>([]);
+
+async function loadTenants() {
+  try {
+    const { data, error } = await fetchGetTenantList({ current: 1, size: 200 });
+    if (!error) tenantOptions.value = data?.records || [];
+  } catch {
+    /* ignore */
+  }
+}
 
 async function getList() {
   loading.value = true;
@@ -38,6 +55,8 @@ function handleSearch() {
 }
 
 function handleReset() {
+  queryParams.account = '';
+  queryParams.tenantId = undefined;
   queryParams.module = '';
   queryParams.status = '';
   dateRange.value = ['', ''];
@@ -55,13 +74,31 @@ function handleSizeChange(size: number) {
   getList();
 }
 
-onMounted(getList);
+onMounted(() => {
+  loadTenants();
+  getList();
+});
 </script>
 
 <template>
   <div class="page-container h-full">
     <ElCard class="w-full">
       <div class="mb-4 flex flex-wrap items-center gap-4">
+        <ElInput
+          v-model="queryParams.account"
+          :placeholder="$t('page.manage.log.accountPlaceholder')"
+          clearable
+          style="width: 160px"
+        />
+        <ElSelect
+          v-model="queryParams.tenantId"
+          :placeholder="$t('page.manage.log.tenantPlaceholder')"
+          clearable
+          filterable
+          style="width: 180px"
+        >
+          <ElOption v-for="t in tenantOptions" :key="t.id" :label="t.name" :value="t.id" />
+        </ElSelect>
         <ElInput
           v-model="queryParams.module"
           :placeholder="$t('page.manage.log.module')"
@@ -103,6 +140,8 @@ onMounted(getList);
             </div>
           </template>
         </ElTableColumn>
+        <ElTableColumn prop="username" :label="$t('page.manage.log.account')" min-width="140" align="left" />
+        <ElTableColumn prop="nickname" :label="$t('page.manage.log.nickname')" min-width="120" align="left" />
         <ElTableColumn prop="operation" :label="$t('page.manage.log.operation')" min-width="140" align="left" />
         <ElTableColumn prop="module" :label="$t('page.manage.log.module')" min-width="120" align="left" />
         <ElTableColumn

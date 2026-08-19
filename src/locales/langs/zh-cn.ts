@@ -742,7 +742,12 @@ const local = {
         duration: '耗时(ms)',
         requestUrl: '请求URL',
         ip: 'IP地址',
-        operation: '操作'
+        operation: '操作',
+        account: '账号',
+        nickname: '账号昵称',
+        tenant: '租户',
+        accountPlaceholder: '请输入账号',
+        tenantPlaceholder: '请选择租户'
       },
       parse: {
         submitProcess: '提交处理',
@@ -1298,7 +1303,8 @@ const local = {
       codePlaceholder: '请输入唯一编码，例如 order_query',
       descriptionPlaceholder: '请说明适用场景和能力边界',
       inputContract: '输入合同',
-      inputContractHint: '先声明 Agent 可传入的结构化参数，再在步骤中选择“Skill 参数”进行绑定。平台不会猜测或丢弃未消费的参数。',
+      inputContractHint:
+        '先声明 Agent 可传入的结构化参数，再在步骤中选择“Skill 参数”进行绑定。平台不会猜测或丢弃未消费的参数。',
       inputNamePlaceholder: '参数名，如 keyword',
       inputDescriptionPlaceholder: '参数描述和取值边界',
       inputDefaultPlaceholder: '默认值（JSON）',

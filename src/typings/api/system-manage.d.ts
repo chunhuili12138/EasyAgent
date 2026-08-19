@@ -178,6 +178,7 @@ declare namespace Api {
       tenantId?: number;
       userId?: number;
       username?: string;
+      nickname?: string;
       operation?: string;
       module?: string;
       requestUrl?: string;
@@ -192,6 +193,8 @@ declare namespace Api {
     }>;
     type LogList = Common.PaginatingQueryRecord<Log>;
     type LogSearchParams = PageParams & {
+      account?: string;
+      tenantId?: number;
       username?: string;
       module?: string;
       status?: number | string;
