@@ -221,10 +221,6 @@ export function fetchParseSkillYaml(data: { yamlContent: string }) {
   return request<any>({ url: '/rag/skills/parse-yaml', method: 'post', data });
 }
 
-export function fetchTestSkillMatch(data: { query: string }) {
-  return request<any>({ url: '/rag/skills/test-match', method: 'post', data });
-}
-
 export function fetchRunSkillTest(data: {
   query: string;
   skillId?: number;
@@ -234,6 +230,34 @@ export function fetchRunSkillTest(data: {
   runtimeArgs?: Record<string, unknown>;
 }) {
   return request<any>({ url: '/rag/skills/test-run', method: 'post', data, timeout: 180000 });
+}
+
+export function createSkillDesignTask(data: {
+  name: string;
+  code: string;
+  description: string;
+}) {
+  return request<any>({ url: '/rag/skill-design/tasks', method: 'post', data, timeout: 180000 });
+}
+
+export function fetchSkillDesignTask(taskId: string) {
+  return request<any>({ url: `/rag/skill-design/tasks/${taskId}`, method: 'get' });
+}
+
+export function fetchSkillDesignEvents(taskId: string, after?: number) {
+  return request<any[]>({ url: `/rag/skill-design/tasks/${taskId}/events`, method: 'get', params: { after } });
+}
+
+export function cancelSkillDesignTask(taskId: string) {
+  return request<any>({ url: `/rag/skill-design/tasks/${taskId}/cancel`, method: 'post' });
+}
+
+export function trialSkillDesignTask(taskId: string, data: {
+  query?: string;
+  runtimeArgs?: Record<string, unknown>;
+  executeActions?: boolean;
+}) {
+  return request<any>({ url: `/rag/skill-design/tasks/${taskId}/trial`, method: 'post', data, timeout: 180000 });
 }
 
 export function fetchDatasources(params?: {
