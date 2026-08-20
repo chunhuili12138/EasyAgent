@@ -5,13 +5,15 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { parse, stringify } from 'yaml';
 import {
   fetchCreateSkill,
+  createSkillDesignTask,
+  fetchSkillDesignTask,
   fetchDatasources,
   fetchDeleteSkill,
   fetchParseSkillYaml,
   fetchRunSkillTest,
+  trialSkillDesignTask,
   fetchSkillDetail,
   fetchSkills,
-  fetchTestSkillMatch,
   fetchToolSchema,
   fetchTools,
   fetchUpdateSkill,
@@ -21,12 +23,10 @@ import { $t } from '@/locales';
 import ConfigHelp from '../shared/config-help.vue';
 import ConfigCodeEditor from '../shared/config-code-editor.vue';
 import OutputSchemaNodeEditor from '../shared/output-schema-node-editor.vue';
-import { formatKeywords } from '../shared/display';
 
 defineOptions({ name: 'RagSkill' });
 
 type StepType = 'rag' | 'nl2sql' | 'api' | 'builtin' | 'llm' | 'foreach' | 'transform';
-type SkillIntentType = 'knowledge' | 'action' | 'composite';
 type ParamRow = {
   key: string;
   value: string;
@@ -186,10 +186,11 @@ const datasources = ref<any[]>([]);
 const tools = ref<any[]>([]);
 const toolSchemas = ref<Record<string, Record<string, any>>>({});
 const toolSchemaLoading = ref<Record<string, boolean>>({});
-const matchDialogVisible = ref(false);
-const matchQuery = ref('');
-const matchResult = ref<any>(null);
-const matchLoading = ref(false);
+const aiDialogVisible = ref(false);
+const aiForm = ref({ name: '', code: '', description: '', trialQuery: '' });
+const aiTask = ref<any>(null);
+const aiGenerating = ref(false);
+const currentDesignTaskId = ref<string | null>(null);
 const runDialogVisible = ref(false);
 const runQuery = ref('');
 const runResult = ref<any>(null);
@@ -208,36 +209,26 @@ const skillTemplates = computed(
         key: 'rag_answer',
         name: t('rag.skill.templateRagName'),
         description: t('rag.skill.templateRagDescription'),
-        keywords: t('rag.skill.templateRagKeywords'),
-        intentType: 'knowledge' as SkillIntentType
       },
       {
         key: 'data_query',
         name: t('rag.skill.templateDataName'),
         description: t('rag.skill.templateDataDescription'),
-        keywords: t('rag.skill.templateDataKeywords'),
-        intentType: 'action' as SkillIntentType
       },
       {
         key: 'api_action',
         name: t('rag.skill.templateToolName'),
         description: t('rag.skill.templateToolDescription'),
-        keywords: t('rag.skill.templateToolKeywords'),
-        intentType: 'action' as SkillIntentType
       },
       {
         key: 'data_transform_action',
         name: t('rag.skill.templateTransformName'),
         description: t('rag.skill.templateTransformDescription'),
-        keywords: t('rag.skill.templateTransformKeywords'),
-        intentType: 'composite' as SkillIntentType
       },
       {
         key: 'batch_action',
         name: t('rag.skill.templateBatchName'),
         description: t('rag.skill.templateBatchDescription'),
-        keywords: t('rag.skill.templateBatchKeywords'),
-        intentType: 'composite' as SkillIntentType
       }
     ] as const
 );
@@ -663,33 +654,6 @@ const skillParameters = computed(() => [
     example: $t('rag.skill.help.descriptionExample')
   },
   {
-    name: $t('rag.skill.intentType'),
-    description: $t('rag.skill.help.fields.intentType'),
-    example: 'composite',
-    required: true
-  },
-  {
-    name: $t('rag.skill.triggerKeywords'),
-    description: $t('rag.skill.help.fields.triggerKeywords'),
-    example: $t('rag.skill.help.triggerExample')
-  },
-  {
-    name: $t('rag.skill.positiveExamples'),
-    description: $t('rag.skill.help.fields.positiveExamples'),
-    example: $t('rag.skill.help.fieldExamples.positiveExamples')
-  },
-  {
-    name: $t('rag.skill.negativeExamples'),
-    description: $t('rag.skill.help.fields.negativeExamples'),
-    example: $t('rag.skill.help.fieldExamples.negativeExamples')
-  },
-  {
-    name: $t('rag.skill.minScore'),
-    description: $t('rag.skill.help.fields.minScore'),
-    example: '0.65',
-    required: true
-  },
-  {
     name: $t('rag.common.status'),
     description: $t('rag.skill.help.fields.status'),
     example: $t('common.on'),
@@ -1017,22 +981,74 @@ function openCreate() {
     name: '',
     code: '',
     description: '',
-    triggerKeywords: '',
-    intentType: 'knowledge',
-    positiveExamples: '',
-    negativeExamples: '',
     inputFields: [],
-    requiredEvidence: '',
-    minScore: 0.65,
-    status: 1
+    status: 0
   };
   steps.value = [];
+  currentDesignTaskId.value = null;
   applySkillTemplate('rag_answer', false);
   activeTab.value = 'basic';
   validateResult.value = null;
   yamlDirty.value = false;
   yamlContent.value = generateYaml();
   dialogVisible.value = true;
+}
+
+async function startAiDesign() {
+  if (
+    !aiForm.value.name.trim() ||
+    !aiForm.value.code.trim() ||
+    !aiForm.value.description.trim() ||
+    !aiForm.value.trialQuery.trim()
+  ) {
+    ElMessage.warning(t('rag.skill.aiRequiredFields'));
+    return;
+  }
+  aiGenerating.value = true;
+  aiTask.value = null;
+  try {
+    const created = await createSkillDesignTask({
+      name: aiForm.value.name.trim(),
+      code: aiForm.value.code.trim(),
+      description: aiForm.value.description.trim(),
+      trialQuery: aiForm.value.trialQuery.trim()
+    });
+    const taskId = created.data?.taskId;
+    if (!taskId) return;
+    for (let attempt = 0; attempt < 180; attempt += 1) {
+      const response = await fetchSkillDesignTask(taskId);
+      aiTask.value = response.data;
+      if (['DRAFT_READY', 'COMPLETED'].includes(response.data?.status)) {
+        const generated = response.data.definition || {};
+        form.value = {
+          name: response.data.name,
+          code: response.data.code,
+          description: generated.description || response.data.description,
+          inputFields: inputFieldsFromDefinition(generated),
+          status: 0
+        };
+        steps.value = (generated.steps || []).map(fromDefinitionStep);
+        yamlContent.value = response.data.draftYaml || generateYaml();
+        yamlDirty.value = false;
+        validateResult.value = { valid: true, errors: [] };
+        isEdit.value = false;
+        activeTab.value = 'basic';
+        currentDesignTaskId.value = taskId;
+        aiDialogVisible.value = false;
+        dialogVisible.value = true;
+         ElMessage.success(t('rag.skill.aiDraftReady'));
+        return;
+      }
+      if (['FAILED', 'CANCELLED'].includes(response.data?.status)) {
+        ElMessage.error(response.data?.errorMessage || t('rag.skill.aiGenerateFailed'));
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    ElMessage.warning(t('rag.skill.aiStillRunning'));
+  } finally {
+    aiGenerating.value = false;
+  }
 }
 
 async function applySelectedTemplate() {
@@ -1051,8 +1067,6 @@ async function applySkillTemplate(templateKey: SkillTemplateKey, confirmReplace 
     });
   }
   form.value.description = form.value.description || template.description;
-  form.value.triggerKeywords = form.value.triggerKeywords || template.keywords;
-  form.value.intentType = template.intentType;
   steps.value = [];
   if (templateKey === 'rag_answer') {
     steps.value.push(
@@ -1220,27 +1234,16 @@ function hasCurrentStepConfig() {
 }
 
 async function openEdit(row: any) {
+  currentDesignTaskId.value = null;
   isEdit.value = true;
   const res = await fetchSkillDetail(row.id);
   const detail = res.data || row;
-  let keywords = detail.triggerKeywords || '';
-  try {
-    keywords = JSON.parse(keywords).join(', ');
-  } catch {
-    // Keep legacy comma-separated trigger words.
-  }
   form.value = {
     id: detail.id,
     name: detail.name,
     code: detail.code,
     description: detail.definition?.description || '',
-    triggerKeywords: keywords,
-    intentType: detail.definition?.intentType || 'knowledge',
-    positiveExamples: examplesToText(detail.definition?.positiveExamples),
-    negativeExamples: examplesToText(detail.definition?.negativeExamples),
     inputFields: inputFieldsFromDefinition(detail.definition || {}),
-    requiredEvidence: requiredEvidenceFromDefinition(detail.definition || {}).join('\n'),
-    minScore: detail.minScore ?? 0.65,
     status: detail.status ?? 1
   };
   const parsedDefinition = definitionFromDetail(detail);
@@ -1249,9 +1252,6 @@ async function openEdit(row: any) {
     steps.value.filter(step => step.type === 'api' && step.toolCode).map(step => loadToolSchema(step.toolCode))
   );
   form.value.description = parsedDefinition.description || form.value.description;
-  form.value.intentType = parsedDefinition.intentType || form.value.intentType;
-  form.value.positiveExamples = examplesToText(parsedDefinition.positiveExamples);
-  form.value.negativeExamples = examplesToText(parsedDefinition.negativeExamples);
   activeTab.value = 'basic';
   validateResult.value = null;
   yamlDirty.value = false;
@@ -1263,23 +1263,20 @@ function definitionFromDetail(detail: any) {
   if (Array.isArray(detail.definition?.steps)) return detail.definition;
   if (!detail.yamlContent)
     return {
-      description: '', intentType: 'knowledge', positiveExamples: [], negativeExamples: [],
+      description: '',
       inputSchema: {}, goalContract: {}, steps: []
     };
   try {
     const parsed = parse(detail.yamlContent);
     return {
       description: typeof parsed?.description === 'string' ? parsed.description : '',
-      intentType: parsed?.intent_type || 'knowledge',
-      positiveExamples: Array.isArray(parsed?.positive_examples) ? parsed.positive_examples : [],
-      negativeExamples: Array.isArray(parsed?.negative_examples) ? parsed.negative_examples : [],
       inputSchema: parsed?.input_schema || {},
       goalContract: parsed?.goal_contract || {},
       steps: Array.isArray(parsed?.steps) ? parsed.steps : []
     };
   } catch {
     return {
-      description: '', intentType: 'knowledge', positiveExamples: [], negativeExamples: [],
+      description: '',
       inputSchema: {}, goalContract: {}, steps: []
     };
   }
@@ -1296,11 +1293,6 @@ function inputFieldsFromDefinition(value: any): SkillInputField[] {
     required: required.has(key),
     defaultValue: raw?.default === undefined ? '' : JSON.stringify(raw.default)
   }));
-}
-
-function requiredEvidenceFromDefinition(value: any): string[] {
-  const contract = value?.goalContract || value?.goal_contract || {};
-  return Array.isArray(contract?.required_evidence) ? contract.required_evidence.map(String) : [];
 }
 
 function addInputField() {
@@ -1333,21 +1325,40 @@ function inputSchema() {
 }
 
 function goalContract() {
-  const requiredEvidence = String(form.value.requiredEvidence || '')
-    .split(/\r?\n/).map(item => item.trim()).filter(Boolean);
-  return requiredEvidence.length ? { required_evidence: requiredEvidence } : {};
+  const requiredSteps = steps.value.map(step => String(step.id || '').trim()).filter(Boolean);
+  return {
+    mode: 'automatic',
+    outcome: form.value.description?.trim() || '',
+    success_policy: 'all_required_steps_succeeded',
+    allow_empty_result: true,
+    required_steps: requiredSteps,
+    failure_states: ['failed', 'timeout', 'rejected', 'cancelled'],
+    route_contract: {
+      execution: 'dependency_ready',
+      steps: steps.value
+        .filter(step => String(step.id || '').trim())
+        .map(step => ({
+          step_id: String(step.id).trim(),
+          depends_on: effectiveDependencies(step)
+        }))
+    }
+  };
 }
 
-function examplesToText(value: unknown) {
-  return Array.isArray(value) ? value.filter(item => typeof item === 'string').join('\n') : '';
+function validationStatusText(status: unknown) {
+  const normalized = String(status || '').trim().toUpperCase();
+  if (normalized === 'VALID') return t('rag.skill.validationStatuses.valid');
+  if (normalized === 'NEEDS_REVALIDATION') return t('rag.skill.validationStatuses.needsRevalidation');
+  if (normalized === 'INVALID') return t('rag.skill.validationStatuses.invalid');
+  return t('rag.skill.validationStatuses.unknown');
 }
 
-function textToExamples(value: unknown) {
-  if (typeof value !== 'string') return [];
-  return value
-    .split(/\r?\n/)
-    .map(item => item.trim())
-    .filter(Boolean);
+function validationStatusTagType(status: unknown): 'success' | 'warning' | 'danger' | 'info' {
+  const normalized = String(status || '').trim().toUpperCase();
+  if (normalized === 'VALID') return 'success';
+  if (normalized === 'NEEDS_REVALIDATION') return 'warning';
+  if (normalized === 'INVALID') return 'danger';
+  return 'info';
 }
 
 function nextStepUid() {
@@ -1916,7 +1927,12 @@ function fromDefinitionStep(raw: any): SkillStepForm {
 function rowsFromObject(value: any): ParamRow[] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
   return Object.entries(value).map(([key, item]) => {
-    const binding = item && typeof item === 'object' && !Array.isArray(item) && 'source' in item ? (item as any) : null;
+    const runtimeMatch = typeof item === 'string' ? item.match(/^\{\{runtime_args\.(.+)}}$/) : null;
+    const binding = runtimeMatch
+      ? { source: 'runtime_args', path: `$.${runtimeMatch[1]}` }
+      : item && typeof item === 'object' && !Array.isArray(item) && 'source' in item
+        ? (item as any)
+        : null;
     return {
       key,
       value: binding
@@ -2191,17 +2207,22 @@ function toDefinitionStep(step: SkillStepForm) {
     id: step.id.trim(),
     type: step.type,
     description: step.description.trim(),
-    dependsOn: step.dependsOn,
+    dependsOn: effectiveDependencies(step),
     config
   };
+}
+
+function effectiveDependencies(step: SkillStepForm) {
+  const dependencies = new Set(step.dependsOn);
+  for (const row of [...step.params, ...step.arguments]) {
+    if (row.mode === 'binding' && row.source && row.source !== 'runtime_args') dependencies.add(row.source);
+  }
+  return [...dependencies];
 }
 
 function definition() {
   return {
     description: form.value.description?.trim() || '',
-    intentType: form.value.intentType || 'knowledge',
-    positiveExamples: textToExamples(form.value.positiveExamples),
-    negativeExamples: textToExamples(form.value.negativeExamples),
     inputSchema: inputSchema(),
     goalContract: goalContract(),
     steps: steps.value.map(toDefinitionStep)
@@ -2220,9 +2241,6 @@ function generateYaml() {
   return stringify(
     {
       ...(data.description ? { description: data.description } : {}),
-      intent_type: data.intentType,
-      ...(data.positiveExamples.length ? { positive_examples: data.positiveExamples } : {}),
-      ...(data.negativeExamples.length ? { negative_examples: data.negativeExamples } : {}),
       ...(Object.keys(data.inputSchema).length ? { input_schema: data.inputSchema } : {}),
       ...(Object.keys(data.goalContract).length ? { goal_contract: data.goalContract } : {}),
       steps: yamlSteps
@@ -2452,11 +2470,7 @@ async function applyYaml() {
   validateResult.value = res.data;
   if (!res.data?.valid) return false;
   form.value.description = res.data.definition?.description || '';
-  form.value.intentType = res.data.definition?.intentType || 'knowledge';
-  form.value.positiveExamples = examplesToText(res.data.definition?.positiveExamples);
-  form.value.negativeExamples = examplesToText(res.data.definition?.negativeExamples);
   form.value.inputFields = inputFieldsFromDefinition(res.data.definition || {});
-  form.value.requiredEvidence = requiredEvidenceFromDefinition(res.data.definition || {}).join('\n');
   steps.value = (res.data.definition?.steps || []).map(fromDefinitionStep);
   yamlDirty.value = false;
   ElMessage.success($t('rag.skill.yamlApplied'));
@@ -2490,8 +2504,6 @@ async function save() {
     const payload = {
       name: form.value.name.trim(),
       code: form.value.code.trim(),
-      triggerKeywords: form.value.triggerKeywords,
-      minScore: form.value.minScore,
       status: form.value.status,
       definition: definition()
     };
@@ -2507,7 +2519,6 @@ async function save() {
 
 function buildPublishWarnings() {
   const warnings: string[] = [];
-  if (!form.value.triggerKeywords?.trim()) warnings.push(t('rag.skill.missingTriggerWarning'));
   if (steps.value.some(step => step.type === 'api' && !step.params.length)) {
     warnings.push(t('rag.skill.apiParamWarning'));
   }
@@ -2530,33 +2541,6 @@ async function deleteItem(row: any) {
   await fetchDeleteSkill(row.id);
   ElMessage.success($t('common.deleteSuccess'));
   await loadData();
-}
-
-function openMatchTest(row?: any) {
-  matchQuery.value = row?.triggerKeywords ? formatKeywords(row.triggerKeywords).split(/[，,]/)[0] || '' : '';
-  matchResult.value = null;
-  matchDialogVisible.value = true;
-}
-
-function matchSourceLabel(source?: string) {
-  if (source === 'rule') return t('rag.skill.matchSourceRule');
-  if (source === 'vector_llm') return t('rag.skill.matchSourceSemantic');
-  if (source === 'llm') return t('rag.skill.matchSourceLlmFallback');
-  return t('rag.skill.matchSourceUnknown');
-}
-
-async function runMatchTest() {
-  if (!matchQuery.value.trim()) {
-    ElMessage.warning(t('rag.skill.testQuestionRequired'));
-    return;
-  }
-  matchLoading.value = true;
-  try {
-    const res = await fetchTestSkillMatch({ query: matchQuery.value.trim() });
-    matchResult.value = res.data;
-  } finally {
-    matchLoading.value = false;
-  }
 }
 
 function parseInputDefault(field: SkillInputField) {
@@ -2585,7 +2569,9 @@ function runTextValue(field: SkillRunInputField) {
 }
 
 async function openRunTest(row?: any) {
-  runTargetSkill.value = row || null;
+  runTargetSkill.value = row || (currentDesignTaskId.value
+    ? { name: form.value.name, designTaskId: currentDesignTaskId.value }
+    : null);
   runQuery.value = '';
   runResult.value = null;
   runExecuteActions.value = false;
@@ -2654,15 +2640,27 @@ async function runSkillTest() {
       ElMessage.warning(error instanceof Error ? error.message : String(error));
       return;
     }
-    const payload = runTargetSkill.value
-      ? {
-          skillId: runTargetSkill.value.id,
+    const res = runTargetSkill.value?.designTaskId
+      ? await trialSkillDesignTask(runTargetSkill.value.designTaskId, {
           query: runQuery.value.trim(),
           executeActions: runExecuteActions.value,
           runtimeArgs
-        }
-      : { definition: definition(), query: runQuery.value.trim(), executeActions: runExecuteActions.value, runtimeArgs };
-    const res = await fetchRunSkillTest(payload);
+        })
+      : await fetchRunSkillTest(
+          runTargetSkill.value
+            ? {
+                skillId: runTargetSkill.value.id,
+                query: runQuery.value.trim(),
+                executeActions: runExecuteActions.value,
+                runtimeArgs
+              }
+            : {
+                definition: definition(),
+                query: runQuery.value.trim(),
+                executeActions: runExecuteActions.value,
+                runtimeArgs
+              }
+        );
     runResult.value = res.data;
   } finally {
     runLoading.value = false;
@@ -2701,6 +2699,25 @@ function openGuideRoute(path: string) {
   firstUseGuideVisible.value = false;
   goTo(path);
 }
+
+function openAiDesignDialog() {
+  aiForm.value = { name: '', code: '', description: t('rag.skill.aiDescriptionTemplate'), trialQuery: '' };
+  aiTask.value = null;
+  aiDialogVisible.value = true;
+}
+
+function aiStageLabel(task: any) {
+  const value = task?.currentStage || task?.status || 'PENDING';
+  return t(`rag.skill.aiStages.${value}` as any, value);
+}
+
+function aiStageType(task: any) {
+  const status = task?.status;
+  if (status === 'DRAFT_READY') return 'success';
+  if (status === 'FAILED' || status === 'CANCELLED') return 'danger';
+  if (status === 'TRIAL_INCOMPLETE') return 'warning';
+  return 'info';
+}
 </script>
 
 <template>
@@ -2723,14 +2740,23 @@ function openGuideRoute(path: string) {
       </div>
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElButton type="primary" @click="openCreate">+ {{ $t('rag.common.create') }}</ElButton>
-        <ElButton @click="openMatchTest()">{{ t('rag.skill.matchTest') }}</ElButton>
+        <ElButton type="success" @click="openAiDesignDialog">{{ t('rag.skill.aiCreate') }}</ElButton>
         <ElButton @click="goTo('/rag/bad-case')">{{ t('rag.skill.viewBadCase') }}</ElButton>
       </div>
       <ElTable v-loading="loading" :data="list" stripe border class="w-full" :empty-text="t('rag.skill.emptyHint')">
         <ElTableColumn prop="name" :label="$t('rag.skill.name')" min-width="160" show-overflow-tooltip />
         <ElTableColumn prop="code" :label="$t('rag.skill.code')" min-width="140" show-overflow-tooltip />
-        <ElTableColumn :label="$t('rag.skill.triggerKeywords')" min-width="180" show-overflow-tooltip>
-          <template #default="{ row }">{{ formatKeywords(row.triggerKeywords) }}</template>
+        <ElTableColumn :label="t('rag.skill.validationStatus')" min-width="140" align="center">
+          <template #default="{ row }">
+            <ElTooltip v-if="row.validationMessage" :content="row.validationMessage" placement="top">
+              <ElTag :type="validationStatusTagType(row.validationStatus)">
+                {{ validationStatusText(row.validationStatus) }}
+              </ElTag>
+            </ElTooltip>
+            <ElTag v-else :type="validationStatusTagType(row.validationStatus)">
+              {{ validationStatusText(row.validationStatus) }}
+            </ElTag>
+          </template>
         </ElTableColumn>
         <ElTableColumn prop="version" :label="$t('rag.skill.version')" width="90" align="center" />
         <ElTableColumn :label="$t('rag.common.status')" width="90" align="center">
@@ -2743,7 +2769,6 @@ function openGuideRoute(path: string) {
         <ElTableColumn :label="$t('rag.common.action')" width="360" fixed="right" align="center">
           <template #default="{ row }">
             <ElButton link type="primary" @click="openRunTest(row)">{{ t('rag.skill.runTest') }}</ElButton>
-            <ElButton link @click="openMatchTest(row)">{{ t('rag.skill.matchTest') }}</ElButton>
             <ElButton link @click="openEdit(row)">{{ $t('rag.common.edit') }}</ElButton>
             <ElButton link type="danger" @click="deleteItem(row)">{{ $t('rag.common.delete') }}</ElButton>
           </template>
@@ -2887,87 +2912,14 @@ function openGuideRoute(path: string) {
               </div>
             </ElFormItem>
             <ElFormItem :label="$t('rag.skill.goalContract')">
-              <ElInput
-                v-model="form.requiredEvidence"
-                type="textarea"
-                :rows="3"
-                :placeholder="$t('rag.skill.requiredEvidencePlaceholder')"
-              />
-              <div class="mt-1 text-xs text-gray-500">{{ $t('rag.skill.goalContractHint') }}</div>
-            </ElFormItem>
-            <ElFormItem :label="$t('rag.skill.triggerKeywords')">
-              <template #label>
-                <span>{{ $t('rag.skill.triggerKeywords') }}</span>
-                <ConfigHelp
-                  field
-                  :title="$t('rag.skill.help.triggerTitle')"
-                  :description="$t('rag.skill.help.triggerDescription')"
-                  :examples="[$t('rag.skill.help.triggerExample')]"
-                />
-              </template>
-              <ElInput v-model="form.triggerKeywords" :placeholder="$t('rag.skill.triggerPlaceholder')" />
-            </ElFormItem>
-            <ElFormItem :label="$t('rag.skill.intentType')">
-              <ElSelect v-model="form.intentType" class="w-full">
-                <ElOption :label="$t('rag.skill.intentTypes.knowledge')" value="knowledge" />
-                <ElOption :label="$t('rag.skill.intentTypes.action')" value="action" />
-                <ElOption :label="$t('rag.skill.intentTypes.composite')" value="composite" />
-              </ElSelect>
-              <div class="mt-1 text-xs text-gray-500">{{ $t('rag.skill.intentTypeHint') }}</div>
-            </ElFormItem>
-            <ElFormItem :label="$t('rag.skill.positiveExamples')">
-              <template #label>
-                <span>{{ $t('rag.skill.positiveExamples') }}</span>
-                <ConfigHelp
-                  field
-                  :title="$t('rag.skill.help.positiveExamplesTitle')"
-                  :description="$t('rag.skill.help.fields.positiveExamples')"
-                  :examples="[$t('rag.skill.help.fieldExamples.positiveExamplesMultiline')]"
-                  :rules="[
-                    $t('rag.skill.help.exampleRules.onePerLine'),
-                    $t('rag.skill.help.exampleRules.realUtterance')
-                  ]"
-                />
-              </template>
-              <ElInput
-                v-model="form.positiveExamples"
-                type="textarea"
-                :rows="3"
-                :placeholder="$t('rag.skill.positiveExamplesPlaceholder')"
-              />
-            </ElFormItem>
-            <ElFormItem :label="$t('rag.skill.negativeExamples')">
-              <template #label>
-                <span>{{ $t('rag.skill.negativeExamples') }}</span>
-                <ConfigHelp
-                  field
-                  :title="$t('rag.skill.help.negativeExamplesTitle')"
-                  :description="$t('rag.skill.help.fields.negativeExamples')"
-                  :examples="[$t('rag.skill.help.fieldExamples.negativeExamplesMultiline')]"
-                  :rules="[
-                    $t('rag.skill.help.exampleRules.onePerLine'),
-                    $t('rag.skill.help.exampleRules.negativePriority')
-                  ]"
-                />
-              </template>
-              <ElInput
-                v-model="form.negativeExamples"
-                type="textarea"
-                :rows="3"
-                :placeholder="$t('rag.skill.negativeExamplesPlaceholder')"
-              />
-            </ElFormItem>
-            <ElFormItem :label="$t('rag.skill.minScore')">
-              <template #label>
-                <span>{{ $t('rag.skill.minScore') }}</span>
-                <ConfigHelp
-                  field
-                  :title="$t('rag.skill.help.scoreTitle')"
-                  :description="$t('rag.skill.help.scoreDescription')"
-                  :examples="['0.65']"
-                />
-              </template>
-              <ElSlider v-model="form.minScore" :min="0.5" :max="1" :step="0.05" show-input />
+              <div class="w-full rounded border border-emerald-200 bg-emerald-50 p-3">
+                <div class="font-medium text-emerald-800">{{ $t('rag.skill.automaticGoalTitle') }}</div>
+                <div class="mt-1 text-sm text-emerald-700">
+                  {{ $t('rag.skill.automaticGoalSummary', { count: steps.length }) }}
+                </div>
+                <div class="mt-2 text-xs text-gray-600">{{ $t('rag.skill.automaticGoalEmptyResult') }}</div>
+                <div class="mt-1 text-xs text-gray-600">{{ $t('rag.skill.automaticGoalFailure') }}</div>
+              </div>
             </ElFormItem>
             <ElFormItem :label="$t('rag.common.status')">
               <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
@@ -4038,37 +3990,58 @@ function openGuideRoute(path: string) {
       </template>
     </ElDialog>
 
-    <ElDialog v-model="matchDialogVisible" :title="t('rag.skill.matchTest')" width="min(560px, 95vw)" align-center>
-      <ElAlert class="mb-3" type="info" :closable="false" :title="t('rag.skill.matchTestHint')" show-icon />
-      <ElForm label-width="90px">
-        <ElFormItem :label="t('rag.skill.testQuestion')">
+    <ElDialog v-model="aiDialogVisible" :title="t('rag.skill.aiCreate')" width="min(720px, 95vw)" align-center>
+      <ElAlert
+        class="mb-4"
+        type="info"
+        :closable="false"
+         :title="t('rag.skill.aiIntro')"
+        show-icon
+      />
+      <ElForm label-width="100px">
+         <ElFormItem :label="t('rag.skill.name')" required><ElInput v-model="aiForm.name" maxlength="100" :placeholder="t('rag.skill.aiNamePlaceholder')" /></ElFormItem>
+         <ElFormItem :label="t('rag.skill.code')" required><ElInput v-model="aiForm.code" maxlength="100" :placeholder="t('rag.skill.aiCodePlaceholder')" /></ElFormItem>
+        <ElFormItem :label="t('rag.skill.aiDescription')" required>
           <ElInput
-            v-model="matchQuery"
+            v-model="aiForm.description"
             type="textarea"
-            :rows="3"
-            :placeholder="t('rag.skill.testQuestionPlaceholder')"
+            :rows="8"
+             :placeholder="t('rag.skill.aiDescriptionPlaceholder')"
           />
         </ElFormItem>
+        <ElFormItem :label="t('rag.skill.aiTrialQuery')" required>
+          <ElInput
+            v-model="aiForm.trialQuery"
+            type="textarea"
+            :rows="4"
+            :placeholder="t('rag.skill.aiTrialQueryPlaceholder')"
+          />
+          <div class="mt-1 text-xs text-gray-500">{{ t('rag.skill.aiTrialQueryHint') }}</div>
+        </ElFormItem>
+         <ElFormItem v-if="aiTask" :label="t('rag.skill.aiStage')">
+          <ElTag :type="aiStageType(aiTask)">
+            {{ aiStageLabel(aiTask) }}
+          </ElTag>
+          <span v-if="aiTask.errorMessage" class="ml-2 text-danger">{{ aiTask.errorMessage }}</span>
+        </ElFormItem>
+        <ElDescriptions v-if="aiTask" :column="2" border size="small">
+          <ElDescriptionsItem :label="t('rag.skill.aiFirstAttempt')">
+            {{ aiTask.firstAttemptStatus || '-' }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem :label="t('rag.skill.aiAttemptCount')">
+            {{ aiTask.attemptCount ?? 0 }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem :label="t('rag.skill.aiLedgerEvent')">
+            {{ aiTask.latestLedgerEventId || '-' }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem :label="t('rag.skill.aiFailureType')">
+            {{ aiTask.terminalFailureType || '-' }}
+          </ElDescriptionsItem>
+        </ElDescriptions>
       </ElForm>
-      <ElAlert
-        v-if="matchResult"
-        class="mb-3"
-        :type="matchResult.matched ? 'success' : 'warning'"
-        :closable="false"
-        :title="
-          matchResult.matched
-            ? t('rag.skill.matchedResult', {
-                name: matchResult.skillName,
-                code: matchResult.skillCode,
-                score: Number(matchResult.score || 0).toFixed(2),
-                source: matchSourceLabel(matchResult.source)
-              })
-            : t('rag.skill.noMatch')
-        "
-      />
       <template #footer>
-        <ElButton @click="matchDialogVisible = false">{{ t('rag.skill.close') }}</ElButton>
-        <ElButton type="primary" :loading="matchLoading" @click="runMatchTest">{{ t('rag.skill.startTest') }}</ElButton>
+         <ElButton :disabled="aiGenerating" @click="aiDialogVisible = false">{{ t('rag.common.cancel') }}</ElButton>
+         <ElButton type="primary" :loading="aiGenerating" @click="startAiDesign">{{ t('rag.skill.aiGenerate') }}</ElButton>
       </template>
     </ElDialog>
 
