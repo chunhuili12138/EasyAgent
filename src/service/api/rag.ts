@@ -236,6 +236,7 @@ export function createSkillDesignTask(data: {
   name: string;
   code: string;
   description: string;
+  trialQuery: string;
 }) {
   return request<any>({ url: '/rag/skill-design/tasks', method: 'post', data, timeout: 180000 });
 }

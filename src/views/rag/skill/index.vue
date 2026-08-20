@@ -187,7 +187,7 @@ const tools = ref<any[]>([]);
 const toolSchemas = ref<Record<string, Record<string, any>>>({});
 const toolSchemaLoading = ref<Record<string, boolean>>({});
 const aiDialogVisible = ref(false);
-const aiForm = ref({ name: '', code: '', description: '' });
+const aiForm = ref({ name: '', code: '', description: '', trialQuery: '' });
 const aiTask = ref<any>(null);
 const aiGenerating = ref(false);
 const currentDesignTaskId = ref<string | null>(null);
@@ -982,7 +982,6 @@ function openCreate() {
     code: '',
     description: '',
     inputFields: [],
-    requiredEvidence: '',
     status: 0
   };
   steps.value = [];
@@ -996,7 +995,12 @@ function openCreate() {
 }
 
 async function startAiDesign() {
-  if (!aiForm.value.name.trim() || !aiForm.value.code.trim() || !aiForm.value.description.trim()) {
+  if (
+    !aiForm.value.name.trim() ||
+    !aiForm.value.code.trim() ||
+    !aiForm.value.description.trim() ||
+    !aiForm.value.trialQuery.trim()
+  ) {
     ElMessage.warning(t('rag.skill.aiRequiredFields'));
     return;
   }
@@ -1006,21 +1010,21 @@ async function startAiDesign() {
     const created = await createSkillDesignTask({
       name: aiForm.value.name.trim(),
       code: aiForm.value.code.trim(),
-      description: aiForm.value.description.trim()
+      description: aiForm.value.description.trim(),
+      trialQuery: aiForm.value.trialQuery.trim()
     });
     const taskId = created.data?.taskId;
     if (!taskId) return;
     for (let attempt = 0; attempt < 180; attempt += 1) {
       const response = await fetchSkillDesignTask(taskId);
       aiTask.value = response.data;
-      if (response.data?.status === 'COMPLETED') {
+      if (['DRAFT_READY', 'COMPLETED'].includes(response.data?.status)) {
         const generated = response.data.definition || {};
         form.value = {
           name: response.data.name,
           code: response.data.code,
           description: generated.description || response.data.description,
           inputFields: inputFieldsFromDefinition(generated),
-          requiredEvidence: requiredEvidenceFromDefinition(generated).join('\n'),
           status: 0
         };
         steps.value = (generated.steps || []).map(fromDefinitionStep);
@@ -1036,12 +1040,12 @@ async function startAiDesign() {
         return;
       }
       if (['FAILED', 'CANCELLED'].includes(response.data?.status)) {
-        ElMessage.error(response.data?.errorMessage || 'Skill 自动生成失败');
+        ElMessage.error(response.data?.errorMessage || t('rag.skill.aiGenerateFailed'));
         return;
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
-    ElMessage.warning('Skill 仍在生成，可稍后重新打开查看任务状态');
+    ElMessage.warning(t('rag.skill.aiStillRunning'));
   } finally {
     aiGenerating.value = false;
   }
@@ -1240,7 +1244,6 @@ async function openEdit(row: any) {
     code: detail.code,
     description: detail.definition?.description || '',
     inputFields: inputFieldsFromDefinition(detail.definition || {}),
-    requiredEvidence: requiredEvidenceFromDefinition(detail.definition || {}).join('\n'),
     status: detail.status ?? 1
   };
   const parsedDefinition = definitionFromDetail(detail);
@@ -1292,11 +1295,6 @@ function inputFieldsFromDefinition(value: any): SkillInputField[] {
   }));
 }
 
-function requiredEvidenceFromDefinition(value: any): string[] {
-  const contract = value?.goalContract || value?.goal_contract || {};
-  return Array.isArray(contract?.required_evidence) ? contract.required_evidence.map(String) : [];
-}
-
 function addInputField() {
   form.value.inputFields.push({ key: '', type: 'string', description: '', required: false, defaultValue: '' });
 }
@@ -1327,9 +1325,40 @@ function inputSchema() {
 }
 
 function goalContract() {
-  const requiredEvidence = String(form.value.requiredEvidence || '')
-    .split(/\r?\n/).map(item => item.trim()).filter(Boolean);
-  return requiredEvidence.length ? { required_evidence: requiredEvidence } : {};
+  const requiredSteps = steps.value.map(step => String(step.id || '').trim()).filter(Boolean);
+  return {
+    mode: 'automatic',
+    outcome: form.value.description?.trim() || '',
+    success_policy: 'all_required_steps_succeeded',
+    allow_empty_result: true,
+    required_steps: requiredSteps,
+    failure_states: ['failed', 'timeout', 'rejected', 'cancelled'],
+    route_contract: {
+      execution: 'dependency_ready',
+      steps: steps.value
+        .filter(step => String(step.id || '').trim())
+        .map(step => ({
+          step_id: String(step.id).trim(),
+          depends_on: effectiveDependencies(step)
+        }))
+    }
+  };
+}
+
+function validationStatusText(status: unknown) {
+  const normalized = String(status || '').trim().toUpperCase();
+  if (normalized === 'VALID') return t('rag.skill.validationStatuses.valid');
+  if (normalized === 'NEEDS_REVALIDATION') return t('rag.skill.validationStatuses.needsRevalidation');
+  if (normalized === 'INVALID') return t('rag.skill.validationStatuses.invalid');
+  return t('rag.skill.validationStatuses.unknown');
+}
+
+function validationStatusTagType(status: unknown): 'success' | 'warning' | 'danger' | 'info' {
+  const normalized = String(status || '').trim().toUpperCase();
+  if (normalized === 'VALID') return 'success';
+  if (normalized === 'NEEDS_REVALIDATION') return 'warning';
+  if (normalized === 'INVALID') return 'danger';
+  return 'info';
 }
 
 function nextStepUid() {
@@ -1898,7 +1927,12 @@ function fromDefinitionStep(raw: any): SkillStepForm {
 function rowsFromObject(value: any): ParamRow[] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
   return Object.entries(value).map(([key, item]) => {
-    const binding = item && typeof item === 'object' && !Array.isArray(item) && 'source' in item ? (item as any) : null;
+    const runtimeMatch = typeof item === 'string' ? item.match(/^\{\{runtime_args\.(.+)}}$/) : null;
+    const binding = runtimeMatch
+      ? { source: 'runtime_args', path: `$.${runtimeMatch[1]}` }
+      : item && typeof item === 'object' && !Array.isArray(item) && 'source' in item
+        ? (item as any)
+        : null;
     return {
       key,
       value: binding
@@ -2173,9 +2207,17 @@ function toDefinitionStep(step: SkillStepForm) {
     id: step.id.trim(),
     type: step.type,
     description: step.description.trim(),
-    dependsOn: step.dependsOn,
+    dependsOn: effectiveDependencies(step),
     config
   };
+}
+
+function effectiveDependencies(step: SkillStepForm) {
+  const dependencies = new Set(step.dependsOn);
+  for (const row of [...step.params, ...step.arguments]) {
+    if (row.mode === 'binding' && row.source && row.source !== 'runtime_args') dependencies.add(row.source);
+  }
+  return [...dependencies];
 }
 
 function definition() {
@@ -2429,7 +2471,6 @@ async function applyYaml() {
   if (!res.data?.valid) return false;
   form.value.description = res.data.definition?.description || '';
   form.value.inputFields = inputFieldsFromDefinition(res.data.definition || {});
-  form.value.requiredEvidence = requiredEvidenceFromDefinition(res.data.definition || {}).join('\n');
   steps.value = (res.data.definition?.steps || []).map(fromDefinitionStep);
   yamlDirty.value = false;
   ElMessage.success($t('rag.skill.yamlApplied'));
@@ -2658,6 +2699,25 @@ function openGuideRoute(path: string) {
   firstUseGuideVisible.value = false;
   goTo(path);
 }
+
+function openAiDesignDialog() {
+  aiForm.value = { name: '', code: '', description: t('rag.skill.aiDescriptionTemplate'), trialQuery: '' };
+  aiTask.value = null;
+  aiDialogVisible.value = true;
+}
+
+function aiStageLabel(task: any) {
+  const value = task?.currentStage || task?.status || 'PENDING';
+  return t(`rag.skill.aiStages.${value}` as any, value);
+}
+
+function aiStageType(task: any) {
+  const status = task?.status;
+  if (status === 'DRAFT_READY') return 'success';
+  if (status === 'FAILED' || status === 'CANCELLED') return 'danger';
+  if (status === 'TRIAL_INCOMPLETE') return 'warning';
+  return 'info';
+}
 </script>
 
 <template>
@@ -2680,13 +2740,24 @@ function openGuideRoute(path: string) {
       </div>
       <div class="mb-4 flex flex-wrap items-center gap-4">
         <ElButton type="primary" @click="openCreate">+ {{ $t('rag.common.create') }}</ElButton>
-     <ElButton type="success" @click="aiDialogVisible = true">{{ t('rag.skill.aiCreate') }}</ElButton>
+        <ElButton type="success" @click="openAiDesignDialog">{{ t('rag.skill.aiCreate') }}</ElButton>
         <ElButton @click="goTo('/rag/bad-case')">{{ t('rag.skill.viewBadCase') }}</ElButton>
       </div>
       <ElTable v-loading="loading" :data="list" stripe border class="w-full" :empty-text="t('rag.skill.emptyHint')">
         <ElTableColumn prop="name" :label="$t('rag.skill.name')" min-width="160" show-overflow-tooltip />
         <ElTableColumn prop="code" :label="$t('rag.skill.code')" min-width="140" show-overflow-tooltip />
-        <ElTableColumn prop="validationStatus" :label="t('rag.skill.validationStatus')" min-width="140" show-overflow-tooltip />
+        <ElTableColumn :label="t('rag.skill.validationStatus')" min-width="140" align="center">
+          <template #default="{ row }">
+            <ElTooltip v-if="row.validationMessage" :content="row.validationMessage" placement="top">
+              <ElTag :type="validationStatusTagType(row.validationStatus)">
+                {{ validationStatusText(row.validationStatus) }}
+              </ElTag>
+            </ElTooltip>
+            <ElTag v-else :type="validationStatusTagType(row.validationStatus)">
+              {{ validationStatusText(row.validationStatus) }}
+            </ElTag>
+          </template>
+        </ElTableColumn>
         <ElTableColumn prop="version" :label="$t('rag.skill.version')" width="90" align="center" />
         <ElTableColumn :label="$t('rag.common.status')" width="90" align="center">
           <template #default="{ row }">
@@ -2841,13 +2912,14 @@ function openGuideRoute(path: string) {
               </div>
             </ElFormItem>
             <ElFormItem :label="$t('rag.skill.goalContract')">
-              <ElInput
-                v-model="form.requiredEvidence"
-                type="textarea"
-                :rows="3"
-                :placeholder="$t('rag.skill.requiredEvidencePlaceholder')"
-              />
-              <div class="mt-1 text-xs text-gray-500">{{ $t('rag.skill.goalContractHint') }}</div>
+              <div class="w-full rounded border border-emerald-200 bg-emerald-50 p-3">
+                <div class="font-medium text-emerald-800">{{ $t('rag.skill.automaticGoalTitle') }}</div>
+                <div class="mt-1 text-sm text-emerald-700">
+                  {{ $t('rag.skill.automaticGoalSummary', { count: steps.length }) }}
+                </div>
+                <div class="mt-2 text-xs text-gray-600">{{ $t('rag.skill.automaticGoalEmptyResult') }}</div>
+                <div class="mt-1 text-xs text-gray-600">{{ $t('rag.skill.automaticGoalFailure') }}</div>
+              </div>
             </ElFormItem>
             <ElFormItem :label="$t('rag.common.status')">
               <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
@@ -3927,9 +3999,9 @@ function openGuideRoute(path: string) {
         show-icon
       />
       <ElForm label-width="100px">
-         <ElFormItem :label="t('rag.skill.name')" required><ElInput v-model="aiForm.name" maxlength="100" /></ElFormItem>
-         <ElFormItem :label="t('rag.skill.code')" required><ElInput v-model="aiForm.code" maxlength="100" /></ElFormItem>
-         <ElFormItem :label="t('rag.skill.aiDescription')" required>
+         <ElFormItem :label="t('rag.skill.name')" required><ElInput v-model="aiForm.name" maxlength="100" :placeholder="t('rag.skill.aiNamePlaceholder')" /></ElFormItem>
+         <ElFormItem :label="t('rag.skill.code')" required><ElInput v-model="aiForm.code" maxlength="100" :placeholder="t('rag.skill.aiCodePlaceholder')" /></ElFormItem>
+        <ElFormItem :label="t('rag.skill.aiDescription')" required>
           <ElInput
             v-model="aiForm.description"
             type="textarea"
@@ -3937,12 +4009,35 @@ function openGuideRoute(path: string) {
              :placeholder="t('rag.skill.aiDescriptionPlaceholder')"
           />
         </ElFormItem>
+        <ElFormItem :label="t('rag.skill.aiTrialQuery')" required>
+          <ElInput
+            v-model="aiForm.trialQuery"
+            type="textarea"
+            :rows="4"
+            :placeholder="t('rag.skill.aiTrialQueryPlaceholder')"
+          />
+          <div class="mt-1 text-xs text-gray-500">{{ t('rag.skill.aiTrialQueryHint') }}</div>
+        </ElFormItem>
          <ElFormItem v-if="aiTask" :label="t('rag.skill.aiStage')">
-          <ElTag :type="aiTask.status === 'FAILED' ? 'danger' : aiTask.status === 'COMPLETED' ? 'success' : 'warning'">
-            {{ aiTask.currentStage || aiTask.status }}
+          <ElTag :type="aiStageType(aiTask)">
+            {{ aiStageLabel(aiTask) }}
           </ElTag>
           <span v-if="aiTask.errorMessage" class="ml-2 text-danger">{{ aiTask.errorMessage }}</span>
         </ElFormItem>
+        <ElDescriptions v-if="aiTask" :column="2" border size="small">
+          <ElDescriptionsItem :label="t('rag.skill.aiFirstAttempt')">
+            {{ aiTask.firstAttemptStatus || '-' }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem :label="t('rag.skill.aiAttemptCount')">
+            {{ aiTask.attemptCount ?? 0 }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem :label="t('rag.skill.aiLedgerEvent')">
+            {{ aiTask.latestLedgerEventId || '-' }}
+          </ElDescriptionsItem>
+          <ElDescriptionsItem :label="t('rag.skill.aiFailureType')">
+            {{ aiTask.terminalFailureType || '-' }}
+          </ElDescriptionsItem>
+        </ElDescriptions>
       </ElForm>
       <template #footer>
          <ElButton :disabled="aiGenerating" @click="aiDialogVisible = false">{{ t('rag.common.cancel') }}</ElButton>
