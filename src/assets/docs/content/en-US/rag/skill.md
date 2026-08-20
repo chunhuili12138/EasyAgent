@@ -23,6 +23,16 @@ Main menu: **Agent Management → Skill Management**.
 6. Save and enable the Skill, then use **Match Test** for rule and semantic matching; the result shows the match source.
 7. Finally, use natural multi-turn business requests in Chat to validate routing, permissions, clarification, HITL, and result presentation.
 
+## AI-generated Skill Steps
+
+Click **Generate Skill Steps**, then enter a name, code, complete workflow description, and one realistic trial question that can run immediately. Once generation starts, the input form is locked and the dialog continuously shows the current stage, first-attempt result, attempt count, and ledger event so the visible input cannot diverge from the running task.
+
+- **Skill generation is in progress** means the task is still running, not failed.
+- If automatic status polling pauses, the task may still be running in the background; click **Continue checking status**.
+- If **Skill generation did not succeed** appears, adjust the description or trial question using the failure details, then click **Regenerate**.
+- If **Skill draft generated but not saved** appears, click **Preview and confirm save** to review basic information, input parameters, execution steps, and YAML in the standard Skill editor.
+- A successful AI run creates a disabled draft only. It is not saved or enabled automatically. Click **Save** at the bottom of the editor and confirm the new list record before treating creation as complete.
+
 ## Basic Fields
 
 | Field | Required | Description |

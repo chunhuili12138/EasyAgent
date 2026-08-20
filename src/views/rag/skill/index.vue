@@ -190,6 +190,8 @@ const aiDialogVisible = ref(false);
 const aiForm = ref({ name: '', code: '', description: '', trialQuery: '' });
 const aiTask = ref<any>(null);
 const aiGenerating = ref(false);
+const aiDesignTaskId = ref<string | null>(null);
+const aiPollingPaused = ref(false);
 const currentDesignTaskId = ref<string | null>(null);
 const runDialogVisible = ref(false);
 const runQuery = ref('');
@@ -994,6 +996,67 @@ function openCreate() {
   dialogVisible.value = true;
 }
 
+const aiTaskReady = computed(() => ['DRAFT_READY', 'COMPLETED'].includes(String(aiTask.value?.status || '')));
+const aiTaskFailed = computed(() => ['FAILED', 'CANCELLED'].includes(String(aiTask.value?.status || '')));
+const aiTaskActive = computed(
+  () => Boolean(aiDesignTaskId.value) && !aiTaskReady.value && !aiTaskFailed.value
+);
+const aiFormDisabled = computed(() => aiGenerating.value || aiTaskActive.value || aiTaskReady.value);
+
+function prepareGeneratedSkillDraft(task: any, taskId: string) {
+  const generated = task.definition || {};
+  form.value = {
+    name: task.name,
+    code: task.code,
+    description: generated.description || task.description,
+    inputFields: inputFieldsFromDefinition(generated),
+    status: 0
+  };
+  steps.value = (generated.steps || []).map(fromDefinitionStep);
+  yamlContent.value = task.draftYaml || generateYaml();
+  yamlDirty.value = false;
+  validateResult.value = { valid: true, errors: [] };
+  isEdit.value = false;
+  activeTab.value = 'basic';
+  currentDesignTaskId.value = taskId;
+}
+
+function openGeneratedSkillDraft() {
+  if (!aiTaskReady.value) return;
+  aiDialogVisible.value = false;
+  dialogVisible.value = true;
+}
+
+async function pollAiDesignTask(taskId: string) {
+  aiGenerating.value = true;
+  aiPollingPaused.value = false;
+  try {
+    for (let attempt = 0; attempt < 180; attempt += 1) {
+      const response = await fetchSkillDesignTask(taskId);
+      if (response.error || !response.data) {
+        aiPollingPaused.value = true;
+        ElMessage.error(t('rag.skill.aiStatusQueryFailed'));
+        return;
+      }
+      aiTask.value = response.data;
+      if (['DRAFT_READY', 'COMPLETED'].includes(response.data?.status)) {
+        prepareGeneratedSkillDraft(response.data, taskId);
+        ElMessage.success(t('rag.skill.aiDraftReady'));
+        return;
+      }
+      if (['FAILED', 'CANCELLED'].includes(response.data?.status)) {
+        ElMessage.error(response.data?.errorMessage || t('rag.skill.aiGenerateFailed'));
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    aiPollingPaused.value = true;
+    ElMessage.warning(t('rag.skill.aiStillRunning'));
+  } finally {
+    aiGenerating.value = false;
+  }
+}
+
 async function startAiDesign() {
   if (
     !aiForm.value.name.trim() ||
@@ -1006,6 +1069,8 @@ async function startAiDesign() {
   }
   aiGenerating.value = true;
   aiTask.value = null;
+  aiDesignTaskId.value = null;
+  aiPollingPaused.value = false;
   try {
     const created = await createSkillDesignTask({
       name: aiForm.value.name.trim(),
@@ -1014,41 +1079,20 @@ async function startAiDesign() {
       trialQuery: aiForm.value.trialQuery.trim()
     });
     const taskId = created.data?.taskId;
-    if (!taskId) return;
-    for (let attempt = 0; attempt < 180; attempt += 1) {
-      const response = await fetchSkillDesignTask(taskId);
-      aiTask.value = response.data;
-      if (['DRAFT_READY', 'COMPLETED'].includes(response.data?.status)) {
-        const generated = response.data.definition || {};
-        form.value = {
-          name: response.data.name,
-          code: response.data.code,
-          description: generated.description || response.data.description,
-          inputFields: inputFieldsFromDefinition(generated),
-          status: 0
-        };
-        steps.value = (generated.steps || []).map(fromDefinitionStep);
-        yamlContent.value = response.data.draftYaml || generateYaml();
-        yamlDirty.value = false;
-        validateResult.value = { valid: true, errors: [] };
-        isEdit.value = false;
-        activeTab.value = 'basic';
-        currentDesignTaskId.value = taskId;
-        aiDialogVisible.value = false;
-        dialogVisible.value = true;
-         ElMessage.success(t('rag.skill.aiDraftReady'));
-        return;
-      }
-      if (['FAILED', 'CANCELLED'].includes(response.data?.status)) {
-        ElMessage.error(response.data?.errorMessage || t('rag.skill.aiGenerateFailed'));
-        return;
-      }
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    if (created.error || !taskId) {
+      ElMessage.error(t('rag.skill.aiGenerateFailed'));
+      return;
     }
-    ElMessage.warning(t('rag.skill.aiStillRunning'));
+    aiDesignTaskId.value = taskId;
   } finally {
     aiGenerating.value = false;
   }
+  await pollAiDesignTask(aiDesignTaskId.value!);
+}
+
+async function continueAiDesignPolling() {
+  if (!aiDesignTaskId.value) return;
+  await pollAiDesignTask(aiDesignTaskId.value);
 }
 
 async function applySelectedTemplate() {
@@ -2703,6 +2747,8 @@ function openGuideRoute(path: string) {
 function openAiDesignDialog() {
   aiForm.value = { name: '', code: '', description: t('rag.skill.aiDescriptionTemplate'), trialQuery: '' };
   aiTask.value = null;
+  aiDesignTaskId.value = null;
+  aiPollingPaused.value = false;
   aiDialogVisible.value = true;
 }
 
@@ -2717,6 +2763,12 @@ function aiStageType(task: any) {
   if (status === 'FAILED' || status === 'CANCELLED') return 'danger';
   if (status === 'TRIAL_INCOMPLETE') return 'warning';
   return 'info';
+}
+
+function aiFirstAttemptStatusText(status: unknown) {
+  const normalized = String(status || '').trim().toUpperCase();
+  if (!normalized) return '-';
+  return t(`rag.skill.aiFirstAttemptStatuses.${normalized}` as any, normalized);
 }
 </script>
 
@@ -3990,23 +4042,62 @@ function aiStageType(task: any) {
       </template>
     </ElDialog>
 
-    <ElDialog v-model="aiDialogVisible" :title="t('rag.skill.aiCreate')" width="min(720px, 95vw)" align-center>
+    <ElDialog
+      v-model="aiDialogVisible"
+      :title="t('rag.skill.aiCreate')"
+      width="min(720px, 95vw)"
+      :close-on-click-modal="!aiFormDisabled"
+      :close-on-press-escape="!aiFormDisabled"
+      :show-close="!aiGenerating && !aiTaskActive"
+      align-center
+    >
       <ElAlert
         class="mb-4"
         type="info"
         :closable="false"
-         :title="t('rag.skill.aiIntro')"
+        :title="t('rag.skill.aiIntro')"
         show-icon
       />
-      <ElForm label-width="100px">
-         <ElFormItem :label="t('rag.skill.name')" required><ElInput v-model="aiForm.name" maxlength="100" :placeholder="t('rag.skill.aiNamePlaceholder')" /></ElFormItem>
-         <ElFormItem :label="t('rag.skill.code')" required><ElInput v-model="aiForm.code" maxlength="100" :placeholder="t('rag.skill.aiCodePlaceholder')" /></ElFormItem>
+      <ElAlert
+        v-if="aiTaskReady"
+        class="mb-4"
+        type="success"
+        :closable="false"
+        :title="t('rag.skill.aiReadyTitle')"
+        :description="t('rag.skill.aiReadyHint')"
+        show-icon
+      />
+      <ElAlert
+        v-else-if="aiTaskFailed"
+        class="mb-4"
+        type="error"
+        :closable="false"
+        :title="t('rag.skill.aiFailedTitle')"
+        :description="aiTask?.errorMessage || t('rag.skill.aiFailedHint')"
+        show-icon
+      />
+      <ElAlert
+        v-else-if="aiGenerating || aiTaskActive"
+        class="mb-4"
+        :type="aiPollingPaused ? 'warning' : 'info'"
+        :closable="false"
+        :title="aiPollingPaused ? t('rag.skill.aiPollingPausedTitle') : t('rag.skill.aiRunningTitle')"
+        :description="aiPollingPaused ? t('rag.skill.aiPollingPausedHint') : t('rag.skill.aiRunningHint')"
+        show-icon
+      />
+      <ElForm label-width="100px" :disabled="aiFormDisabled">
+        <ElFormItem :label="t('rag.skill.name')" required>
+          <ElInput v-model="aiForm.name" maxlength="100" :placeholder="t('rag.skill.aiNamePlaceholder')" />
+        </ElFormItem>
+        <ElFormItem :label="t('rag.skill.code')" required>
+          <ElInput v-model="aiForm.code" maxlength="100" :placeholder="t('rag.skill.aiCodePlaceholder')" />
+        </ElFormItem>
         <ElFormItem :label="t('rag.skill.aiDescription')" required>
           <ElInput
             v-model="aiForm.description"
             type="textarea"
             :rows="8"
-             :placeholder="t('rag.skill.aiDescriptionPlaceholder')"
+            :placeholder="t('rag.skill.aiDescriptionPlaceholder')"
           />
         </ElFormItem>
         <ElFormItem :label="t('rag.skill.aiTrialQuery')" required>
@@ -4018,15 +4109,15 @@ function aiStageType(task: any) {
           />
           <div class="mt-1 text-xs text-gray-500">{{ t('rag.skill.aiTrialQueryHint') }}</div>
         </ElFormItem>
-         <ElFormItem v-if="aiTask" :label="t('rag.skill.aiStage')">
+        <ElFormItem v-if="aiTask" :label="t('rag.skill.aiStage')">
           <ElTag :type="aiStageType(aiTask)">
             {{ aiStageLabel(aiTask) }}
           </ElTag>
           <span v-if="aiTask.errorMessage" class="ml-2 text-danger">{{ aiTask.errorMessage }}</span>
         </ElFormItem>
-        <ElDescriptions v-if="aiTask" :column="2" border size="small">
+        <ElDescriptions v-if="aiTask" class="ai-task-summary" :column="1" :label-width="240" border size="small">
           <ElDescriptionsItem :label="t('rag.skill.aiFirstAttempt')">
-            {{ aiTask.firstAttemptStatus || '-' }}
+            {{ aiFirstAttemptStatusText(aiTask.firstAttemptStatus) }}
           </ElDescriptionsItem>
           <ElDescriptionsItem :label="t('rag.skill.aiAttemptCount')">
             {{ aiTask.attemptCount ?? 0 }}
@@ -4040,8 +4131,22 @@ function aiStageType(task: any) {
         </ElDescriptions>
       </ElForm>
       <template #footer>
-         <ElButton :disabled="aiGenerating" @click="aiDialogVisible = false">{{ t('rag.common.cancel') }}</ElButton>
-         <ElButton type="primary" :loading="aiGenerating" @click="startAiDesign">{{ t('rag.skill.aiGenerate') }}</ElButton>
+        <ElButton :disabled="aiGenerating || aiTaskActive" @click="aiDialogVisible = false">{{ t('rag.common.cancel') }}</ElButton>
+        <ElButton v-if="aiTaskReady" type="success" @click="openGeneratedSkillDraft">
+          {{ t('rag.skill.aiPreviewDraft') }}
+        </ElButton>
+        <ElButton
+          v-else-if="aiTaskActive"
+          type="primary"
+          :loading="aiGenerating"
+          :disabled="aiGenerating"
+          @click="continueAiDesignPolling"
+        >
+          {{ aiGenerating ? t('rag.skill.aiGenerating') : t('rag.skill.aiContinuePolling') }}
+        </ElButton>
+        <ElButton v-else type="primary" :loading="aiGenerating" @click="startAiDesign">
+          {{ aiTaskFailed ? t('rag.skill.aiRegenerate') : t('rag.skill.aiGenerate') }}
+        </ElButton>
       </template>
     </ElDialog>
 
@@ -4146,6 +4251,27 @@ function aiStageType(task: any) {
 
 .skill-editor-tabs {
   min-width: 0;
+}
+
+.ai-task-summary {
+  width: 100%;
+}
+
+.ai-task-summary :deep(.el-descriptions__label) {
+  width: 240px;
+  white-space: nowrap;
+}
+
+.ai-task-summary :deep(.el-descriptions__content) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .ai-task-summary :deep(.el-descriptions__label) {
+    width: 180px;
+    white-space: normal;
+  }
 }
 
 .skill-api-parameters,
