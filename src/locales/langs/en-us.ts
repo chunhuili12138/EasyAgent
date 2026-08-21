@@ -247,6 +247,9 @@ const local: App.I18n.Schema = {
     mcp: {
       description: 'Streamable HTTP · read-only capabilities', servers: 'Servers', noServer: 'No MCP server', selectServer: 'Select a server to inspect its catalog',
       validate: 'Validate', edit: 'Edit', disable: 'Disable', tool: 'Tool', descriptionLabel: 'Description', mode: 'Mode', readonly: 'read-only', enabled: 'enabled',
+      events: 'Event audit', searchServers: 'Search name or code', searchTools: 'Search tools', health: 'Health', healthy: 'Healthy', unhealthy: 'Unhealthy', unknown: 'Unknown',
+      refreshCatalog: 'Refresh catalog', enabledFilter: 'Enabled state', enabledOnly: 'Enabled only', disabledOnly: 'Disabled only', access: 'Access', accessTitle: 'Configure tool access',
+      departmentId: 'Department ID', postId: 'Post ID', userId: 'User ID', scopeSaved: 'Access scope saved', healthFailed: 'Health query failed', eventType: 'Event type', eventStatus: 'Event status',
       addServer: 'Add MCP server', editServer: 'Edit MCP server', name: 'Name', code: 'Code', endpoint: 'Public HTTPS endpoint', authentication: 'Authentication',
       none: 'None', apiKey: 'API key', bearer: 'Bearer token', headerName: 'Header name', credential: 'Credential', keepCredential: 'Leave blank to keep the existing credential', status: 'Status', error: 'MCP request failed'
     },

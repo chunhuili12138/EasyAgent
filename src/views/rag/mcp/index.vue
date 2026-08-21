@@ -4,12 +4,15 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   type McpServer,
   type McpTool,
+  type McpEvent,
   fetchCreateMcpServer,
   fetchDeleteMcpServer,
-  fetchMcpServers,
-  fetchMcpTools,
-  fetchMcpEvents,
+  fetchMcpEventPage,
+  fetchMcpHealth,
+  fetchMcpServerPage,
+  fetchMcpToolPage,
   fetchSetMcpToolEnabled,
+  fetchUpdateMcpToolScope,
   fetchUpdateMcpServer,
   fetchValidateMcpServer
 } from '@/service/api/rag';
@@ -27,6 +30,14 @@ const tools = ref<McpTool[]>([]);
 const selected = ref<McpServer | null>(null);
 const loading = ref(false);
 const toolsLoading = ref(false);
+const serverPage = ref(1);
+const serverTotal = ref(0);
+const serverKeyword = ref('');
+const serverHealth = ref('');
+const toolPage = ref(1);
+const toolTotal = ref(0);
+const toolKeyword = ref('');
+const toolEnabled = ref('');
 const dialogVisible = ref(false);
 const saving = ref(false);
 const form = ref({
@@ -41,15 +52,25 @@ const form = ref({
 const isEdit = ref(false);
 const errorText = ref('');
 const eventVisible = ref(false);
-const events = ref<Array<{ id: number; eventType: string; status: string; errorCode: string; createdAt: string }>>([]);
+const events = ref<McpEvent[]>([]);
+const eventPage = ref(1);
+const eventTotal = ref(0);
+const eventType = ref('');
+const eventStatus = ref('');
+const scopeVisible = ref(false);
+const scopeSaving = ref(false);
+const scopeTool = ref<McpTool | null>(null);
+const scopeForm = ref<{ visibility: string; departmentId?: number; postId?: number; userId?: number }>({ visibility: 'public' });
 
 const enabledCount = computed(() => tools.value.filter(tool => tool.enabled === 1).length);
 
-async function loadServers() {
+async function loadServers(page = serverPage.value) {
   loading.value = true;
   try {
-    const response = await fetchMcpServers();
-    if (response.data) servers.value = response.data;
+    serverPage.value = page;
+    const response = await fetchMcpServerPage({ page, size: 10, keyword: serverKeyword.value || undefined, healthStatus: serverHealth.value || undefined });
+    servers.value = response.data?.records || [];
+    serverTotal.value = response.data?.total || 0;
     if (!selected.value || !servers.value.some(server => server.id === selected.value?.id))
       selected.value = servers.value[0] || null;
     if (selected.value) await loadTools(selected.value);
@@ -62,10 +83,30 @@ async function loadServers() {
 
 async function loadTools(server: McpServer) {
   selected.value = server;
+  toolPage.value = 1;
   toolsLoading.value = true;
   try {
-    const response = await fetchMcpTools(server.id);
-    tools.value = response.data || [];
+    const response = await fetchMcpToolPage(server.id, { page: toolPage.value, size: 10, keyword: toolKeyword.value || undefined, enabled: toolEnabled.value === '' ? undefined : Number(toolEnabled.value) });
+    tools.value = response.data?.records || [];
+    toolTotal.value = response.data?.total || 0;
+  } finally {
+    toolsLoading.value = false;
+  }
+}
+
+async function changeToolPage(page: number) {
+  if (!selected.value) return;
+  toolPage.value = page;
+  await loadToolsPage();
+}
+
+async function loadToolsPage() {
+  if (!selected.value) return;
+  toolsLoading.value = true;
+  try {
+    const response = await fetchMcpToolPage(selected.value.id, { page: toolPage.value, size: 10, keyword: toolKeyword.value || undefined, enabled: toolEnabled.value === '' ? undefined : Number(toolEnabled.value) });
+    tools.value = response.data?.records || [];
+    toolTotal.value = response.data?.total || 0;
   } finally {
     toolsLoading.value = false;
   }
@@ -125,6 +166,20 @@ async function validate(server: McpServer) {
   }
 }
 
+async function refreshSelected() {
+  if (selected.value) await validate(selected.value);
+}
+
+async function showHealth(server: McpServer) {
+  try {
+    const response = await fetchMcpHealth(server.id);
+    Object.assign(server, response.data || {});
+    if (selected.value?.id === server.id) selected.value = { ...server };
+  } catch (error: any) {
+    ElMessage.error(error?.message || t('page.mcp.healthFailed'));
+  }
+}
+
 async function remove(server: McpServer) {
   await ElMessageBox.confirm(`${server.name}`, t('page.rag_mcp'), { type: 'warning' });
   await fetchDeleteMcpServer(server.id);
@@ -133,14 +188,41 @@ async function remove(server: McpServer) {
 }
 
 async function toggle(tool: McpTool) {
-  await fetchSetMcpToolEnabled(tool.id, tool.enabled !== 1);
-  tool.enabled = tool.enabled === 1 ? 0 : 1;
+  try {
+    await fetchSetMcpToolEnabled(tool.id, tool.enabled !== 1);
+    tool.enabled = tool.enabled === 1 ? 0 : 1;
+  } catch (error: any) {
+    ElMessage.error(error?.message || t('page.mcp.error'));
+  }
 }
 
-async function openEvents() {
+function openScope(tool: McpTool) {
+  scopeTool.value = tool;
+  scopeForm.value = { visibility: tool.visibility || 'public', departmentId: tool.departmentId, postId: tool.postId, userId: tool.userId };
+  scopeVisible.value = true;
+}
+
+async function saveScope() {
+  if (!scopeTool.value) return;
+  scopeSaving.value = true;
+  try {
+    await fetchUpdateMcpToolScope(scopeTool.value.id, scopeForm.value);
+    scopeVisible.value = false;
+    await loadToolsPage();
+    ElMessage.success(t('page.mcp.scopeSaved'));
+  } catch (error: any) {
+    ElMessage.error(error?.message || t('page.mcp.error'));
+  } finally {
+    scopeSaving.value = false;
+  }
+}
+
+async function openEvents(page = 1) {
   eventVisible.value = true;
-  const response = await fetchMcpEvents();
-  events.value = response.data || [];
+  eventPage.value = page;
+  const response = await fetchMcpEventPage({ page, size: 15, eventType: eventType.value || undefined, status: eventStatus.value || undefined });
+  events.value = response.data?.records || [];
+  eventTotal.value = response.data?.total || 0;
 }
 
 onMounted(loadServers);
@@ -155,8 +237,8 @@ onMounted(loadServers);
       </div>
       <div class="header-actions">
         <ElButton v-if="can('rag:mcp:create')" type="primary" @click="openCreate">{{ $t('common.add') }}</ElButton>
-        <ElButton @click="openEvents">Events</ElButton>
-        <ElButton :loading="loading" @click="loadServers">{{ $t('common.refresh') }}</ElButton>
+        <ElButton v-if="can('rag:mcp:audit')" @click="() => openEvents(1)">{{ $t('page.mcp.events') }}</ElButton>
+        <ElButton :loading="loading" @click="loadServers(1)">{{ $t('common.refresh') }}</ElButton>
       </div>
     </div>
     <ElAlert v-if="errorText" :title="errorText" type="error" show-icon closable @close="errorText = ''" />
@@ -165,6 +247,14 @@ onMounted(loadServers);
         <div class="section-title">
           <span>{{ $t('page.mcp.servers') }}</span>
           <ElTag size="small">{{ servers.length }}</ElTag>
+        </div>
+        <div class="filters">
+          <ElInput v-model="serverKeyword" clearable :placeholder="$t('page.mcp.searchServers')" @keyup.enter="loadServers(1)" />
+          <ElSelect v-model="serverHealth" clearable :placeholder="$t('page.mcp.health')" @change="loadServers(1)">
+            <ElOption :label="$t('page.mcp.healthy')" value="healthy" />
+            <ElOption :label="$t('page.mcp.unhealthy')" value="unhealthy" />
+            <ElOption :label="$t('page.mcp.unknown')" value="unknown" />
+          </ElSelect>
         </div>
         <ElEmpty v-if="!loading && !servers.length" :description="$t('page.mcp.noServer')" />
         <div
@@ -190,11 +280,21 @@ onMounted(loadServers);
             <span>{{ server.toolCount || 0 }} tools</span>
           </div>
           <div class="server-actions">
+            <ElButton text size="small" @click.stop="showHealth(server)">{{ $t('page.mcp.health') }}</ElButton>
             <ElButton v-if="can('rag:mcp:validate')" text size="small" @click.stop="validate(server)">{{ $t('page.mcp.validate') }}</ElButton>
             <ElButton v-if="can('rag:mcp:update')" text size="small" @click.stop="openEdit(server)">{{ $t('page.mcp.edit') }}</ElButton>
             <ElButton v-if="can('rag:mcp:delete')" text type="danger" size="small" @click.stop="remove(server)">{{ $t('page.mcp.disable') }}</ElButton>
           </div>
         </div>
+        <ElPagination
+          v-if="serverTotal > 10"
+          class="pagination"
+          layout="prev, pager, next"
+          :current-page="serverPage"
+          :page-size="10"
+          :total="serverTotal"
+          @current-change="loadServers"
+        />
       </section>
       <section class="catalog-panel">
         <template v-if="selected">
@@ -206,6 +306,14 @@ onMounted(loadServers);
             <ElTag type="success">{{ enabledCount }}/{{ tools.length }} enabled</ElTag>
           </div>
           <ElAlert v-if="selected.lastError" :title="selected.lastError" type="warning" show-icon />
+          <div class="filters tool-filters">
+            <ElInput v-model="toolKeyword" clearable :placeholder="$t('page.mcp.searchTools')" @keyup.enter="loadToolsPage" />
+            <ElSelect v-model="toolEnabled" clearable :placeholder="$t('page.mcp.enabledFilter')" @change="loadToolsPage">
+              <ElOption :label="$t('page.mcp.enabledOnly')" value="1" />
+              <ElOption :label="$t('page.mcp.disabledOnly')" value="0" />
+            </ElSelect>
+            <ElButton v-if="can('rag:mcp:refresh')" :loading="loading" @click="refreshSelected">{{ $t('page.mcp.refreshCatalog') }}</ElButton>
+          </div>
           <ElTable v-loading="toolsLoading" :data="tools" row-key="id" class="tool-table">
             <ElTableColumn :label="$t('page.mcp.tool')" min-width="220">
               <template #default="{ row }">
@@ -217,14 +325,29 @@ onMounted(loadServers);
             </ElTableColumn>
             <ElTableColumn prop="description" :label="$t('page.mcp.descriptionLabel')" min-width="260" show-overflow-tooltip />
             <ElTableColumn :label="$t('page.mcp.mode')" width="110">
-              <template #default="{ row }"><ElTag size="small" type="success">{{ $t('page.mcp.readonly') }}</ElTag></template>
+              <template #default><ElTag size="small" type="success">{{ $t('page.mcp.readonly') }}</ElTag></template>
             </ElTableColumn>
             <ElTableColumn :label="$t('page.mcp.enabled')" width="100" align="right">
               <template #default="{ row }">
                 <ElSwitch :model-value="row.enabled === 1" :disabled="row.readonlyHint !== 1 || !can('rag:mcp:enable')" @change="toggle(row)" />
               </template>
             </ElTableColumn>
+            <ElTableColumn :label="$t('page.mcp.access')" width="120" align="right">
+              <template #default="{ row }">
+                <ElButton v-if="can('rag:mcp:update')" text size="small" @click="openScope(row)">{{ row.visibility || 'public' }}</ElButton>
+                <span v-else>{{ row.visibility || 'public' }}</span>
+              </template>
+            </ElTableColumn>
           </ElTable>
+          <ElPagination
+            v-if="toolTotal > 10"
+            class="pagination"
+            layout="prev, pager, next"
+            :current-page="toolPage"
+            :page-size="10"
+            :total="toolTotal"
+            @current-change="changeToolPage"
+          />
         </template>
         <ElEmpty v-else :description="$t('page.mcp.selectServer')" />
       </section>
@@ -265,13 +388,48 @@ onMounted(loadServers);
         <ElButton type="primary" :loading="saving" @click="save">{{ $t('common.confirm') }}</ElButton>
       </template>
     </ElDialog>
-    <ElDrawer v-model="eventVisible" title="MCP Events" direction="rtl" size="min(520px, 100vw)">
+    <ElDialog v-model="scopeVisible" :title="$t('page.mcp.accessTitle')" width="min(440px, calc(100vw - 32px))">
+      <ElForm label-position="top">
+        <ElFormItem :label="$t('page.mcp.access')">
+          <ElSelect v-model="scopeForm.visibility" class="full-width">
+            <ElOption label="public" value="public" />
+            <ElOption label="department" value="department" />
+            <ElOption label="post" value="post" />
+            <ElOption label="user" value="user" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem v-if="scopeForm.visibility === 'department'" :label="$t('page.mcp.departmentId')"><ElInputNumber v-model="scopeForm.departmentId" :min="1" class="full-width" /></ElFormItem>
+        <ElFormItem v-if="scopeForm.visibility === 'post'" :label="$t('page.mcp.postId')"><ElInputNumber v-model="scopeForm.postId" :min="1" class="full-width" /></ElFormItem>
+        <ElFormItem v-if="scopeForm.visibility === 'user'" :label="$t('page.mcp.userId')"><ElInputNumber v-model="scopeForm.userId" :min="1" class="full-width" /></ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="scopeVisible = false">{{ $t('common.cancel') }}</ElButton>
+        <ElButton type="primary" :loading="scopeSaving" @click="saveScope">{{ $t('common.confirm') }}</ElButton>
+      </template>
+    </ElDialog>
+    <ElDrawer v-model="eventVisible" :title="$t('page.mcp.events')" direction="rtl" size="min(620px, 100vw)">
+      <div class="filters event-filters">
+        <ElInput v-model="eventType" clearable :placeholder="$t('page.mcp.eventType')" @keyup.enter="openEvents(1)" />
+        <ElSelect v-model="eventStatus" clearable :placeholder="$t('page.mcp.eventStatus')" @change="openEvents(1)">
+          <ElOption label="SUCCEEDED" value="SUCCEEDED" />
+          <ElOption label="FAILED" value="FAILED" />
+        </ElSelect>
+      </div>
       <ElTable :data="events" size="small">
         <ElTableColumn prop="eventType" label="Event" min-width="160" />
         <ElTableColumn prop="status" label="Status" width="110" />
         <ElTableColumn prop="errorCode" label="Error" min-width="140" />
         <ElTableColumn prop="createdAt" label="Time" min-width="160" />
       </ElTable>
+      <ElPagination
+        v-if="eventTotal > 15"
+        class="pagination"
+        layout="prev, pager, next"
+        :current-page="eventPage"
+        :page-size="15"
+        :total="eventTotal"
+        @current-change="openEvents"
+      />
     </ElDrawer>
   </div>
 </template>
@@ -359,6 +517,26 @@ code,
 .server-main {
   justify-content: space-between;
 }
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.filters .el-input,
+.filters .el-select {
+  min-width: 0;
+  flex: 1;
+}
+.tool-filters {
+  align-items: center;
+}
+.tool-filters .el-button {
+  flex: 0 0 auto;
+}
+.pagination {
+  justify-content: flex-end;
+  margin-top: 14px;
+}
 .server-meta {
   justify-content: space-between;
   margin-top: 8px;
@@ -400,6 +578,15 @@ code,
   }
   .header-actions .el-button {
     flex: 1;
+  }
+  .filters {
+    flex-wrap: wrap;
+  }
+  .filters .el-input,
+  .filters .el-select,
+  .tool-filters .el-button {
+    width: 100%;
+    flex-basis: 100%;
   }
 }
 </style>
