@@ -1300,7 +1300,7 @@ const local = {
       aiStatusQueryFailed: '暂时无法查询生成状态，请稍后点击“继续查询状态”重试',
       aiFailedTitle: 'Skill 未生成成功',
       aiFailedHint: '请根据失败信息调整描述或试运行问题，然后点击“重新生成”。',
-      aiActionCaptureBlocked: '当前 AI 自动生成仅支持查询和其他无副作用能力，不能在后台自动生成需要人工确认的操作型 Skill。请将目标改为只读流程；操作型 Skill 需要后续配置可审计 dry-run 或人工确认流程。',
+      aiActionCaptureBlocked: '操作型 Skill 已生成 dry-run 草稿，但不会发送真实请求。保存前请完成人工确认和审计；如只需要自动生成可启用草稿，请改用只读流程。',
       aiReadyTitle: 'Skill 草稿已生成，尚未保存',
       aiReadyHint: '点击“预览并确认保存”检查基本信息、执行步骤和 YAML；确认无误后，在编辑窗口底部点击“保存”。草稿默认保持禁用。',
       aiPreviewDraft: '预览并确认保存',
@@ -1309,7 +1309,7 @@ const local = {
       aiRegenerate: '重新生成',
       aiStages: {
         PENDING: '等待生成', ANALYZING: '分析需求', EXPLORING: '探索可用能力', EXECUTING: '执行正常 Agent 问答', REPAIRING: '根据目标审查修复执行',
-        COMPILING: '读取账本并编译成功路径', VALIDATING: '校验并重放草稿', DRAFT_READY: '草稿已生成',
+        COMPILING: '读取账本并编译成功路径', VALIDATING: '校验并重放草稿', DRAFT_READY: '草稿已生成', MANUAL_REPLAY_REQUIRED: '草稿待人工确认',
         TRIAL_INCOMPLETE: '试运行未完成', FAILED: '生成失败', CANCELLED: '已取消'
       },
       aiStage: '当前阶段',

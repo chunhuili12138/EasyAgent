@@ -996,7 +996,7 @@ function openCreate() {
   dialogVisible.value = true;
 }
 
-const aiTaskReady = computed(() => ['DRAFT_READY', 'COMPLETED'].includes(String(aiTask.value?.status || '')));
+const aiTaskReady = computed(() => ['DRAFT_READY', 'MANUAL_REPLAY_REQUIRED', 'COMPLETED'].includes(String(aiTask.value?.status || '')));
 const aiTaskFailed = computed(() => ['FAILED', 'CANCELLED'].includes(String(aiTask.value?.status || '')));
 const aiFailureDescription = computed(() => {
   if (aiTask.value?.errorCode === 'skill_capture_action_requires_confirmation') {
@@ -1047,7 +1047,7 @@ async function pollAiDesignTask(taskId: string) {
         return;
       }
       aiTask.value = response.data;
-      if (['DRAFT_READY', 'COMPLETED'].includes(response.data?.status)) {
+      if (['DRAFT_READY', 'MANUAL_REPLAY_REQUIRED', 'COMPLETED'].includes(response.data?.status)) {
         prepareGeneratedSkillDraft(response.data, taskId);
         ElMessage.success(t('rag.skill.aiDraftReady'));
         return;
