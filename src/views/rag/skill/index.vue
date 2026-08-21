@@ -6,6 +6,7 @@ import { parse, stringify } from 'yaml';
 import {
   fetchCreateSkill,
   createSkillDesignTask,
+  confirmSkillDesignManualReview,
   fetchSkillDesignTask,
   fetchDatasources,
   fetchDeleteSkill,
@@ -2543,6 +2544,17 @@ async function save() {
   if (form.value.manualReviewRequired && form.value.status === 1) {
     ElMessage.warning(t('rag.skill.aiActionCaptureBlocked'));
     form.value.status = 0;
+  }
+  if (form.value.manualReviewRequired && currentDesignTaskId.value) {
+    const confirmed = await ElMessageBox.confirm(
+      t('rag.skill.aiActionCaptureBlocked'),
+      t('rag.skill.publishCheckTitle'),
+      { type: 'warning', confirmButtonText: t('rag.skill.continueSave'), cancelButtonText: t('rag.skill.returnEdit') }
+    ).catch(() => null);
+    if (!confirmed) return;
+    const result = await confirmSkillDesignManualReview(currentDesignTaskId.value);
+    if (result.error || !result.data) return;
+    form.value.manualReviewRequired = false;
   }
   const warnings = buildPublishWarnings();
   if (form.value.status === 1 && warnings.length) {

@@ -245,6 +245,10 @@ export function fetchSkillDesignTask(taskId: string) {
   return request<any>({ url: `/rag/skill-design/tasks/${taskId}`, method: 'get' });
 }
 
+export function confirmSkillDesignManualReview(taskId: string) {
+  return request<any>({ url: `/rag/skill-design/tasks/${taskId}/confirm-manual-review`, method: 'post' });
+}
+
 export function fetchSkillDesignEvents(taskId: string, after?: number) {
   return request<any[]>({ url: `/rag/skill-design/tasks/${taskId}/events`, method: 'get', params: { after } });
 }
