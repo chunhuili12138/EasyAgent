@@ -13,9 +13,12 @@ import {
   fetchValidateMcpServer
 } from '@/service/api/rag';
 import { $t } from '@/locales';
+import { useAuth } from '@/hooks/business/auth';
 
 defineOptions({ name: 'RagMcp' });
 const t = $t;
+const { hasAuth } = useAuth();
+const can = (permission: string) => hasAuth([permission, 'rag:mcp:list']);
 const servers = ref<McpServer[]>([]);
 const tools = ref<McpTool[]>([]);
 const selected = ref<McpServer | null>(null);
@@ -140,7 +143,7 @@ onMounted(loadServers);
         <p>Streamable HTTP · read-only capabilities</p>
       </div>
       <div class="header-actions">
-        <ElButton type="primary" @click="openCreate">{{ $t('common.add') }}</ElButton>
+        <ElButton v-if="can('rag:mcp:create')" type="primary" @click="openCreate">{{ $t('common.add') }}</ElButton>
         <ElButton :loading="loading" @click="loadServers">{{ $t('common.refresh') }}</ElButton>
       </div>
     </div>
@@ -175,9 +178,9 @@ onMounted(loadServers);
             <span>{{ server.toolCount || 0 }} tools</span>
           </div>
           <div class="server-actions">
-            <ElButton text size="small" @click.stop="validate(server)">Validate</ElButton>
-            <ElButton text size="small" @click.stop="openEdit(server)">Edit</ElButton>
-            <ElButton text type="danger" size="small" @click.stop="remove(server)">Delete</ElButton>
+            <ElButton v-if="can('rag:mcp:validate')" text size="small" @click.stop="validate(server)">Validate</ElButton>
+            <ElButton v-if="can('rag:mcp:update')" text size="small" @click.stop="openEdit(server)">Edit</ElButton>
+            <ElButton v-if="can('rag:mcp:delete')" text type="danger" size="small" @click.stop="remove(server)">Delete</ElButton>
           </div>
         </div>
       </section>
@@ -206,7 +209,7 @@ onMounted(loadServers);
             </ElTableColumn>
             <ElTableColumn label="Enabled" width="100" align="right">
               <template #default="{ row }">
-                <ElSwitch :model-value="row.enabled === 1" :disabled="row.readonlyHint !== 1" @change="toggle(row)" />
+                <ElSwitch :model-value="row.enabled === 1" :disabled="row.readonlyHint !== 1 || !can('rag:mcp:enable')" @change="toggle(row)" />
               </template>
             </ElTableColumn>
           </ElTable>
