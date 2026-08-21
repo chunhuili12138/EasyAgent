@@ -203,6 +203,12 @@ function openSchema(tool: McpTool) {
   schemaVisible.value = true;
 }
 
+function authLabel(authType: string) {
+  if (authType === 'api_key') return t('page.mcp.apiKey');
+  if (authType === 'bearer') return t('page.mcp.bearer');
+  return t('page.mcp.none');
+}
+
 async function validate(server: McpServer) {
   try {
     await fetchValidateMcpServer(server.id);
@@ -455,7 +461,7 @@ onMounted(loadServers);
           <ElDescriptionsItem :label="$t('page.mcp.name')">{{ form.name }}</ElDescriptionsItem>
           <ElDescriptionsItem :label="$t('page.mcp.code')">{{ form.code }}</ElDescriptionsItem>
           <ElDescriptionsItem :label="$t('page.mcp.endpoint')">{{ form.endpoint }}</ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.mcp.authentication')">{{ form.authType }}</ElDescriptionsItem>
+          <ElDescriptionsItem :label="$t('page.mcp.authentication')">{{ authLabel(form.authType) }}</ElDescriptionsItem>
           <ElDescriptionsItem :label="$t('page.mcp.credential')">{{ form.authType === 'none' ? $t('page.mcp.none') : $t('page.mcp.credentialConfigured') }}</ElDescriptionsItem>
         </ElDescriptions>
       </div>
@@ -511,10 +517,10 @@ onMounted(loadServers);
         </ElSelect>
       </div>
       <ElTable :data="events" size="small">
-        <ElTableColumn prop="eventType" label="Event" min-width="160" />
-        <ElTableColumn prop="status" label="Status" width="110" />
-        <ElTableColumn prop="errorCode" label="Error" min-width="140" />
-        <ElTableColumn prop="createdAt" label="Time" min-width="160" />
+        <ElTableColumn prop="eventType" :label="$t('page.mcp.eventColumn')" min-width="160" />
+        <ElTableColumn prop="status" :label="$t('page.mcp.statusColumn')" width="110" />
+        <ElTableColumn prop="errorCode" :label="$t('page.mcp.errorColumn')" min-width="140" />
+        <ElTableColumn prop="createdAt" :label="$t('page.mcp.timeColumn')" min-width="160" />
       </ElTable>
       <ElPagination
         v-if="eventTotal > 15"

@@ -253,6 +253,7 @@ const local: App.I18n.Schema = {
       catalogStatus: 'Catalog status', schema: 'Schema', view: 'View', schemaTitle: 'Tool Schema', inputSchema: 'Input Schema', outputSchema: 'Output Schema', noSchemaHash: 'No hash',
       stepBasic: 'Basics', stepAuth: 'Authentication', stepConfirm: 'Confirm', previous: 'Previous', next: 'Next', verifyAndSave: 'Verify and save', credentialConfigured: 'Credential configured',
       basicRequired: 'Name, code, and endpoint are required', endpointInvalid: 'Endpoint must be a public HTTPS URL', credentialRequired: 'Credentials are required for authenticated servers', saveFailed: 'Save failed', auditFailed: 'Audit query failed', endpointPlaceholder: 'https://mcp.example.com/mcp',
+      eventColumn: 'Event', statusColumn: 'Status', errorColumn: 'Error code', timeColumn: 'Time',
       addServer: 'Add MCP server', editServer: 'Edit MCP server', name: 'Name', code: 'Code', endpoint: 'Public HTTPS endpoint', authentication: 'Authentication',
       none: 'None', apiKey: 'API key', bearer: 'Bearer token', headerName: 'Header name', credential: 'Credential', keepCredential: 'Leave blank to keep the existing credential', status: 'Status', error: 'MCP request failed'
     },
