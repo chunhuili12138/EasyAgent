@@ -48,6 +48,7 @@ export const docsManifest: Docs.ModuleDef[] = [
     pages: [
       { key: 'rag-datasource', file: 'rag/datasource.md', zhTitle: '数据源管理', enTitle: 'Datasource Management' },
       { key: 'rag-tool', file: 'rag/tool.md', zhTitle: '工具管理', enTitle: 'API Tool Management' },
+      { key: 'rag-mcp', file: 'rag/mcp.md', zhTitle: 'MCP 配置', enTitle: 'MCP Integration' },
       { key: 'rag-skill', file: 'rag/skill.md', zhTitle: 'Skill 管理', enTitle: 'Skill Management' },
       { key: 'rag-experience', file: 'rag/experience.md', zhTitle: '经验池', enTitle: 'Experience Pool' },
       { key: 'rag-bad-case', file: 'rag/bad-case.md', zhTitle: 'Bad Case 分析', enTitle: 'Bad Case Analysis' },

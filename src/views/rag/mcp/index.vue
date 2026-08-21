@@ -2,9 +2,9 @@
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
+  type McpEvent,
   type McpServer,
   type McpTool,
-  type McpEvent,
   fetchCreateMcpServer,
   fetchDeleteMcpServer,
   fetchMcpEventPage,
@@ -13,13 +13,13 @@ import {
   fetchMcpToolPage,
   fetchRefreshMcpServer,
   fetchSetMcpToolEnabled,
-  fetchUpdateMcpToolScope,
   fetchUpdateMcpServer,
+  fetchUpdateMcpToolScope,
   fetchValidateMcpServer
 } from '@/service/api/rag';
-import { $t } from '@/locales';
-import { useAuth } from '@/hooks/business/auth';
 import { useAuthStore } from '@/store/modules/auth';
+import { useAuth } from '@/hooks/business/auth';
+import { $t } from '@/locales';
 
 defineOptions({ name: 'RagMcp' });
 const t = $t;
@@ -179,8 +179,12 @@ function validateFormStep(step: number) {
     return false;
   }
   if (step >= 2 && !/^https:\/\/[^\s/?#]+(?:\/[^\s?#]*)?$/.test(form.value.endpoint.trim())) {
-    formError.value = t('page.mcp.endpointInvalid');
-    return false;
+    const localEndpoint = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(?:\/[^\s?#]*)?$/.test(form.value.endpoint.trim());
+    const localMode = import.meta.env.MODE !== 'prod';
+    if (!localMode || !localEndpoint) {
+      formError.value = t('page.mcp.endpointInvalid');
+      return false;
+    }
   }
   const keepingExistingCredential = isEdit.value && selected.value?.credentialConfigured && !form.value.authConfig.trim();
   if (step >= 2 && form.value.authType !== 'none' && !form.value.authConfig.trim() && !keepingExistingCredential) {
@@ -309,6 +313,22 @@ onMounted(loadServers);
         <ElButton v-if="can('rag:mcp:create')" type="primary" @click="openCreate">{{ $t('common.add') }}</ElButton>
         <ElButton v-if="can('rag:mcp:audit')" @click="() => openEvents(1)">{{ $t('page.mcp.events') }}</ElButton>
         <ElButton :loading="loading" @click="loadServers(1)">{{ $t('common.refresh') }}</ElButton>
+      </div>
+    </div>
+    <ElAlert class="mcp-guide-alert" :title="$t('page.mcp.readonlyNotice')" type="info" show-icon />
+    <div class="guide-grid">
+      <div class="guide-item">
+        <strong>{{ $t('page.mcp.helpPurposeTitle') }}</strong>
+        <p>{{ $t('page.mcp.helpPurpose') }}</p>
+      </div>
+      <div class="guide-item">
+        <strong>{{ $t('page.mcp.helpWorkflowTitle') }}</strong>
+        <p>{{ $t('page.mcp.helpWorkflow') }}</p>
+      </div>
+      <div class="guide-item">
+        <strong>{{ $t('page.mcp.helpExampleTitle') }}</strong>
+        <p>{{ $t('page.mcp.helpExample') }}</p>
+        <code>{{ $t('page.mcp.helpExampleEndpoint') }}</code>
       </div>
     </div>
     <ElAlert v-if="errorText" :title="errorText" type="error" show-icon closable @close="errorText = ''" />
@@ -446,13 +466,21 @@ onMounted(loadServers);
       </ElSteps>
       <ElAlert v-if="formError" :title="formError" type="error" show-icon class="form-error" />
       <ElForm v-if="formStep === 1" label-position="top" @submit.prevent="nextFormStep">
-        <ElFormItem :label="$t('page.mcp.name')" required><ElInput v-model="form.name" maxlength="100" /></ElFormItem>
-        <ElFormItem :label="$t('page.mcp.code')" required><ElInput v-model="form.code" :disabled="isEdit" maxlength="50" /></ElFormItem>
+        <ElFormItem :label="$t('page.mcp.name')" required>
+          <ElInput v-model="form.name" maxlength="100" />
+          <div class="field-hint">{{ $t('page.mcp.nameHelp') }}</div>
+        </ElFormItem>
+        <ElFormItem :label="$t('page.mcp.code')" required>
+          <ElInput v-model="form.code" :disabled="isEdit" maxlength="50" />
+          <div class="field-hint">{{ $t('page.mcp.codeHelp') }}</div>
+        </ElFormItem>
         <ElFormItem :label="$t('page.mcp.endpoint')" required>
           <ElInput v-model="form.endpoint" :placeholder="$t('page.mcp.endpointPlaceholder')" />
+          <div class="field-hint">{{ $t('page.mcp.endpointHelp') }}</div>
         </ElFormItem>
       </ElForm>
       <ElForm v-else-if="formStep === 2" label-position="top" @submit.prevent="nextFormStep">
+        <ElAlert :title="$t('page.mcp.authHelp')" type="info" show-icon class="form-step-alert" />
         <ElFormItem :label="$t('page.mcp.authentication')">
           <ElSelect v-model="form.authType" class="full-width">
             <ElOption :label="$t('page.mcp.none')" value="none" />
@@ -465,10 +493,15 @@ onMounted(loadServers);
         </ElFormItem>
         <ElFormItem v-if="form.authType !== 'none'" :label="$t('page.mcp.credential')">
           <ElInput v-model="form.authConfig" type="password" show-password :placeholder="$t('page.mcp.keepCredential')" />
+          <div class="field-hint">{{ $t('page.mcp.credentialHelp') }}</div>
         </ElFormItem>
-        <ElFormItem :label="$t('page.mcp.status')"><ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" /></ElFormItem>
+        <ElFormItem :label="$t('page.mcp.status')">
+          <ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" />
+          <div class="field-hint">{{ $t('page.mcp.statusHelp') }}</div>
+        </ElFormItem>
       </ElForm>
       <div v-else class="form-confirm">
+        <ElAlert :title="$t('page.mcp.confirmHelp')" type="warning" show-icon class="form-confirm-alert" />
         <ElDescriptions :column="1" border>
           <ElDescriptionsItem :label="$t('page.mcp.name')">{{ form.name }}</ElDescriptionsItem>
           <ElDescriptionsItem :label="$t('page.mcp.code')">{{ form.code }}</ElDescriptionsItem>
@@ -502,6 +535,7 @@ onMounted(loadServers);
       </template>
     </ElDialog>
     <ElDialog v-model="scopeVisible" :title="$t('page.mcp.accessTitle')" width="min(440px, calc(100vw - 32px))">
+      <ElAlert :title="$t('page.mcp.scopeHelp')" type="info" show-icon class="form-step-alert" />
       <ElForm label-position="top">
         <ElFormItem :label="$t('page.mcp.access')">
           <ElSelect v-model="scopeForm.visibility" class="full-width">
@@ -564,6 +598,31 @@ onMounted(loadServers);
 }
 .page-header {
   margin-bottom: 20px;
+}
+.mcp-guide-alert {
+  margin-bottom: 12px;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.guide-item {
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 5px;
+  background: var(--el-bg-color);
+}
+.guide-item p {
+  margin-top: 6px;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+.guide-item code {
+  display: block;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
 }
 h1,
 h2,
@@ -677,6 +736,18 @@ code,
 .form-error {
   margin-bottom: 16px;
 }
+.form-confirm-alert {
+  margin-bottom: 14px;
+}
+.form-step-alert {
+  margin-bottom: 14px;
+}
+.field-hint {
+  margin-top: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .form-confirm {
   min-height: 220px;
 }
@@ -705,6 +776,9 @@ code,
   .page-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .guide-grid {
+    grid-template-columns: 1fr;
   }
   .header-actions {
     width: 100%;
