@@ -1018,7 +1018,8 @@ function prepareGeneratedSkillDraft(task: any, taskId: string) {
     code: task.code,
     description: generated.description || task.description,
     inputFields: inputFieldsFromDefinition(generated),
-    status: 0
+    status: 0,
+    manualReviewRequired: task.status === 'MANUAL_REPLAY_REQUIRED'
   };
   steps.value = (generated.steps || []).map(fromDefinitionStep);
   yamlContent.value = task.draftYaml || generateYaml();
@@ -2539,6 +2540,10 @@ async function save() {
     ElMessage.warning(error);
     return;
   }
+  if (form.value.manualReviewRequired && form.value.status === 1) {
+    ElMessage.warning(t('rag.skill.aiActionCaptureBlocked'));
+    form.value.status = 0;
+  }
   const warnings = buildPublishWarnings();
   if (form.value.status === 1 && warnings.length) {
     try {
@@ -2557,6 +2562,7 @@ async function save() {
       name: form.value.name.trim(),
       code: form.value.code.trim(),
       status: form.value.status,
+      manualReviewRequired: Boolean(form.value.manualReviewRequired),
       definition: definition()
     };
     const { data, error } = isEdit.value ? await fetchUpdateSkill(form.value.id, payload) : await fetchCreateSkill(payload);
