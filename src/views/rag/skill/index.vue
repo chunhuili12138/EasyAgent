@@ -2545,17 +2545,6 @@ async function save() {
     ElMessage.warning(t('rag.skill.aiActionCaptureBlocked'));
     form.value.status = 0;
   }
-  if (form.value.manualReviewRequired && currentDesignTaskId.value) {
-    const confirmed = await ElMessageBox.confirm(
-      t('rag.skill.aiActionCaptureBlocked'),
-      t('rag.skill.publishCheckTitle'),
-      { type: 'warning', confirmButtonText: t('rag.skill.continueSave'), cancelButtonText: t('rag.skill.returnEdit') }
-    ).catch(() => null);
-    if (!confirmed) return;
-    const result = await confirmSkillDesignManualReview(currentDesignTaskId.value);
-    if (result.error || !result.data) return;
-    form.value.manualReviewRequired = false;
-  }
   const warnings = buildPublishWarnings();
   if (form.value.status === 1 && warnings.length) {
     try {
@@ -2579,6 +2568,21 @@ async function save() {
     };
     const { data, error } = isEdit.value ? await fetchUpdateSkill(form.value.id, payload) : await fetchCreateSkill(payload);
     if (error || !data) return;
+    if (form.value.manualReviewRequired && currentDesignTaskId.value) {
+      const confirmed = await ElMessageBox.confirm(
+        t('rag.skill.aiActionCaptureBlocked'),
+        t('rag.skill.publishCheckTitle'),
+        { type: 'warning', confirmButtonText: t('rag.skill.continueSave'), cancelButtonText: t('rag.skill.returnEdit') }
+      ).catch(() => null);
+      if (confirmed) {
+        const review = await confirmSkillDesignManualReview(currentDesignTaskId.value);
+        if (review.error || !review.data) {
+          ElMessage.warning(t('rag.skill.aiActionCaptureBlocked'));
+        } else {
+          form.value.manualReviewRequired = false;
+        }
+      }
+    }
     ElMessage.success($t(isEdit.value ? 'common.updateSuccess' : 'common.addSuccess'));
     dialogVisible.value = false;
     await loadData();
