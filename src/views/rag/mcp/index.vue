@@ -14,11 +14,13 @@ import {
 } from '@/service/api/rag';
 import { $t } from '@/locales';
 import { useAuth } from '@/hooks/business/auth';
+import { useAuthStore } from '@/store/modules/auth';
 
 defineOptions({ name: 'RagMcp' });
 const t = $t;
 const { hasAuth } = useAuth();
-const can = (permission: string) => hasAuth([permission, 'rag:mcp:list']);
+const authStore = useAuthStore();
+const can = (permission: string) => hasAuth(permission) || authStore.userInfo.roles.some(role => ['AGENT_ADMIN', 'SYS_ADMIN'].includes(role));
 const servers = ref<McpServer[]>([]);
 const tools = ref<McpTool[]>([]);
 const selected = ref<McpServer | null>(null);
