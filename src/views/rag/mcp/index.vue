@@ -180,7 +180,7 @@ onMounted(loadServers);
           <div class="server-actions">
             <ElButton v-if="can('rag:mcp:validate')" text size="small" @click.stop="validate(server)">Validate</ElButton>
             <ElButton v-if="can('rag:mcp:update')" text size="small" @click.stop="openEdit(server)">Edit</ElButton>
-            <ElButton v-if="can('rag:mcp:delete')" text type="danger" size="small" @click.stop="remove(server)">Delete</ElButton>
+            <ElButton v-if="can('rag:mcp:delete')" text type="danger" size="small" @click.stop="remove(server)">Disable</ElButton>
           </div>
         </div>
       </section>
