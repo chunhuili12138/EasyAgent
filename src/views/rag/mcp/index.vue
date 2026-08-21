@@ -40,6 +40,8 @@ const toolKeyword = ref('');
 const toolEnabled = ref('');
 const dialogVisible = ref(false);
 const saving = ref(false);
+const formStep = ref(1);
+const formError = ref('');
 const form = ref({
   name: '',
   code: '',
@@ -61,6 +63,8 @@ const scopeVisible = ref(false);
 const scopeSaving = ref(false);
 const scopeTool = ref<McpTool | null>(null);
 const scopeForm = ref<{ visibility: string; departmentId?: number; postId?: number; userId?: number }>({ visibility: 'public' });
+const schemaVisible = ref(false);
+const schemaTool = ref<McpTool | null>(null);
 
 const enabledCount = computed(() => tools.value.filter(tool => tool.enabled === 1).length);
 
@@ -89,6 +93,8 @@ async function loadTools(server: McpServer) {
     const response = await fetchMcpToolPage(server.id, { page: toolPage.value, size: 10, keyword: toolKeyword.value || undefined, enabled: toolEnabled.value === '' ? undefined : Number(toolEnabled.value) });
     tools.value = response.data?.records || [];
     toolTotal.value = response.data?.total || 0;
+  } catch (error: any) {
+    errorText.value = error?.message || t('page.mcp.error');
   } finally {
     toolsLoading.value = false;
   }
@@ -107,6 +113,8 @@ async function loadToolsPage() {
     const response = await fetchMcpToolPage(selected.value.id, { page: toolPage.value, size: 10, keyword: toolKeyword.value || undefined, enabled: toolEnabled.value === '' ? undefined : Number(toolEnabled.value) });
     tools.value = response.data?.records || [];
     toolTotal.value = response.data?.total || 0;
+  } catch (error: any) {
+    errorText.value = error?.message || t('page.mcp.error');
   } finally {
     toolsLoading.value = false;
   }
@@ -114,6 +122,8 @@ async function loadToolsPage() {
 
 function openCreate() {
   isEdit.value = false;
+  formStep.value = 1;
+  formError.value = '';
   form.value = {
     name: '',
     code: '',
@@ -128,6 +138,8 @@ function openCreate() {
 
 function openEdit(server: McpServer) {
   isEdit.value = true;
+  formStep.value = 1;
+  formError.value = '';
   form.value = {
     name: server.name,
     code: server.code,
@@ -141,7 +153,9 @@ function openEdit(server: McpServer) {
 }
 
 async function save() {
+  if (!validateFormStep(3)) return;
   saving.value = true;
+  formError.value = '';
   try {
     const data: Record<string, unknown> = { ...form.value };
     if (!data.authConfig) delete data.authConfig;
@@ -150,9 +164,43 @@ async function save() {
     dialogVisible.value = false;
     ElMessage.success(t('page.rag_mcp'));
     await loadServers();
+  } catch (error: any) {
+    formError.value = error?.message || t('page.mcp.saveFailed');
   } finally {
     saving.value = false;
   }
+}
+
+function validateFormStep(step: number) {
+  formError.value = '';
+  if (step >= 1 && (!form.value.name.trim() || !form.value.code.trim() || !form.value.endpoint.trim())) {
+    formError.value = t('page.mcp.basicRequired');
+    return false;
+  }
+  if (step >= 2 && !/^https:\/\/[^\s/?#]+(?:\/[^\s?#]*)?$/.test(form.value.endpoint.trim())) {
+    formError.value = t('page.mcp.endpointInvalid');
+    return false;
+  }
+  const keepingExistingCredential = isEdit.value && selected.value?.credentialConfigured && !form.value.authConfig.trim();
+  if (step >= 2 && form.value.authType !== 'none' && !form.value.authConfig.trim() && !keepingExistingCredential) {
+    formError.value = t('page.mcp.credentialRequired');
+    return false;
+  }
+  return true;
+}
+
+function nextFormStep() {
+  if (validateFormStep(formStep.value)) formStep.value = Math.min(formStep.value + 1, 3);
+}
+
+function previousFormStep() {
+  formError.value = '';
+  formStep.value = Math.max(formStep.value - 1, 1);
+}
+
+function openSchema(tool: McpTool) {
+  schemaTool.value = tool;
+  schemaVisible.value = true;
 }
 
 async function validate(server: McpServer) {
@@ -220,9 +268,13 @@ async function saveScope() {
 async function openEvents(page = 1) {
   eventVisible.value = true;
   eventPage.value = page;
-  const response = await fetchMcpEventPage({ page, size: 15, eventType: eventType.value || undefined, status: eventStatus.value || undefined });
-  events.value = response.data?.records || [];
-  eventTotal.value = response.data?.total || 0;
+  try {
+    const response = await fetchMcpEventPage({ page, size: 15, eventType: eventType.value || undefined, status: eventStatus.value || undefined });
+    events.value = response.data?.records || [];
+    eventTotal.value = response.data?.total || 0;
+  } catch (error: any) {
+    ElMessage.error(error?.message || t('page.mcp.auditFailed'));
+  }
 }
 
 onMounted(loadServers);
@@ -338,6 +390,18 @@ onMounted(loadServers);
                 <span v-else>{{ row.visibility || 'public' }}</span>
               </template>
             </ElTableColumn>
+            <ElTableColumn :label="$t('page.mcp.catalogStatus')" width="130">
+              <template #default="{ row }">
+                <ElTag size="small" :type="row.catalogStatus === 'ACTIVE' ? 'success' : row.catalogStatus === 'SCHEMA_CHANGED' ? 'warning' : 'danger'">
+                  {{ row.catalogStatus || 'UNKNOWN' }}
+                </ElTag>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn :label="$t('page.mcp.schema')" width="100" align="right">
+              <template #default="{ row }">
+                <ElButton text size="small" @click="openSchema(row)">{{ $t('page.mcp.view') }}</ElButton>
+              </template>
+            </ElTableColumn>
           </ElTable>
           <ElPagination
             v-if="toolTotal > 10"
@@ -357,12 +421,20 @@ onMounted(loadServers);
       :title="isEdit ? $t('page.mcp.editServer') : $t('page.mcp.addServer')"
       width="min(560px, calc(100vw - 32px))"
     >
-      <ElForm label-position="top" @submit.prevent="save">
+      <ElSteps :active="formStep - 1" finish-status="success" align-center class="form-steps">
+        <ElStep :title="$t('page.mcp.stepBasic')" />
+        <ElStep :title="$t('page.mcp.stepAuth')" />
+        <ElStep :title="$t('page.mcp.stepConfirm')" />
+      </ElSteps>
+      <ElAlert v-if="formError" :title="formError" type="error" show-icon class="form-error" />
+      <ElForm v-if="formStep === 1" label-position="top" @submit.prevent="nextFormStep">
         <ElFormItem :label="$t('page.mcp.name')" required><ElInput v-model="form.name" maxlength="100" /></ElFormItem>
         <ElFormItem :label="$t('page.mcp.code')" required><ElInput v-model="form.code" :disabled="isEdit" maxlength="50" /></ElFormItem>
         <ElFormItem :label="$t('page.mcp.endpoint')" required>
-          <ElInput v-model="form.endpoint" placeholder="https://mcp.example.com/mcp" />
+          <ElInput v-model="form.endpoint" :placeholder="$t('page.mcp.endpointPlaceholder')" />
         </ElFormItem>
+      </ElForm>
+      <ElForm v-else-if="formStep === 2" label-position="top" @submit.prevent="nextFormStep">
         <ElFormItem :label="$t('page.mcp.authentication')">
           <ElSelect v-model="form.authType" class="full-width">
             <ElOption :label="$t('page.mcp.none')" value="none" />
@@ -374,18 +446,41 @@ onMounted(loadServers);
           <ElInput v-model="form.authHeaderName" />
         </ElFormItem>
         <ElFormItem v-if="form.authType !== 'none'" :label="$t('page.mcp.credential')">
-          <ElInput
-            v-model="form.authConfig"
-            type="password"
-            show-password
-            :placeholder="$t('page.mcp.keepCredential')"
-          />
+          <ElInput v-model="form.authConfig" type="password" show-password :placeholder="$t('page.mcp.keepCredential')" />
         </ElFormItem>
         <ElFormItem :label="$t('page.mcp.status')"><ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" /></ElFormItem>
       </ElForm>
+      <div v-else class="form-confirm">
+        <ElDescriptions :column="1" border>
+          <ElDescriptionsItem :label="$t('page.mcp.name')">{{ form.name }}</ElDescriptionsItem>
+          <ElDescriptionsItem :label="$t('page.mcp.code')">{{ form.code }}</ElDescriptionsItem>
+          <ElDescriptionsItem :label="$t('page.mcp.endpoint')">{{ form.endpoint }}</ElDescriptionsItem>
+          <ElDescriptionsItem :label="$t('page.mcp.authentication')">{{ form.authType }}</ElDescriptionsItem>
+          <ElDescriptionsItem :label="$t('page.mcp.credential')">{{ form.authType === 'none' ? $t('page.mcp.none') : $t('page.mcp.credentialConfigured') }}</ElDescriptionsItem>
+        </ElDescriptions>
+      </div>
       <template #footer>
         <ElButton @click="dialogVisible = false">{{ $t('common.cancel') }}</ElButton>
-        <ElButton type="primary" :loading="saving" @click="save">{{ $t('common.confirm') }}</ElButton>
+        <ElButton v-if="formStep > 1" @click="previousFormStep">{{ $t('page.mcp.previous') }}</ElButton>
+        <ElButton v-if="formStep < 3" type="primary" @click="nextFormStep">{{ $t('page.mcp.next') }}</ElButton>
+        <ElButton v-else type="primary" :loading="saving" @click="save">{{ $t('page.mcp.verifyAndSave') }}</ElButton>
+      </template>
+    </ElDialog>
+    <ElDialog v-model="schemaVisible" :title="$t('page.mcp.schemaTitle')" width="min(760px, calc(100vw - 32px))">
+      <template v-if="schemaTool">
+        <div class="schema-meta">
+          <strong>{{ schemaTool.title || schemaTool.externalName }}</strong>
+          <code>{{ schemaTool.exposedName }}</code>
+          <ElTag size="small">{{ schemaTool.schemaHash || $t('page.mcp.noSchemaHash') }}</ElTag>
+        </div>
+        <ElTabs>
+          <ElTabPane :label="$t('page.mcp.inputSchema')">
+            <ElInput :model-value="schemaTool.inputSchema || '{}'" type="textarea" :rows="18" readonly />
+          </ElTabPane>
+          <ElTabPane :label="$t('page.mcp.outputSchema')">
+            <ElInput :model-value="schemaTool.outputSchema || '{}'" type="textarea" :rows="18" readonly />
+          </ElTabPane>
+        </ElTabs>
       </template>
     </ElDialog>
     <ElDialog v-model="scopeVisible" :title="$t('page.mcp.accessTitle')" width="min(440px, calc(100vw - 32px))">
@@ -557,6 +652,26 @@ code,
 }
 .full-width {
   width: 100%;
+}
+.form-steps {
+  margin: 4px 0 22px;
+}
+.form-error {
+  margin-bottom: 16px;
+}
+.form-confirm {
+  min-height: 220px;
+}
+.schema-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.schema-meta code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 @media (max-width: 800px) {
   .mcp-page {

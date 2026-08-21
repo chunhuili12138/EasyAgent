@@ -250,6 +250,9 @@ const local = {
       events: '事件审计', searchServers: '搜索名称或编码', searchTools: '搜索工具', health: '健康状态', healthy: '健康', unhealthy: '异常', unknown: '未知',
       refreshCatalog: '刷新目录', enabledFilter: '启用状态', enabledOnly: '仅已启用', disabledOnly: '仅已停用', access: '可见范围', accessTitle: '配置工具可见范围',
       departmentId: '部门 ID', postId: '岗位 ID', userId: '用户 ID', scopeSaved: '可见范围已保存', healthFailed: '健康状态查询失败', eventType: '事件类型', eventStatus: '事件状态',
+      catalogStatus: '目录状态', schema: 'Schema', view: '查看', schemaTitle: '工具 Schema', inputSchema: '输入 Schema', outputSchema: '输出 Schema', noSchemaHash: '无 hash',
+      stepBasic: '基本信息', stepAuth: '认证配置', stepConfirm: '确认保存', previous: '上一步', next: '下一步', verifyAndSave: '验证并保存', credentialConfigured: '已配置凭据',
+      basicRequired: '请填写名称、编码和 endpoint', endpointInvalid: 'endpoint 必须是公网 HTTPS 地址', credentialRequired: '认证方式需要填写凭据', saveFailed: '保存失败', auditFailed: '审计查询失败', endpointPlaceholder: 'https://mcp.example.com/mcp',
       addServer: '新增 MCP 服务', editServer: '编辑 MCP 服务', name: '名称', code: '编码', endpoint: '公网 HTTPS 地址', authentication: '认证方式',
       none: '无认证', apiKey: 'API Key', bearer: 'Bearer Token', headerName: '请求头名称', credential: '凭据', keepCredential: '留空表示保持原凭据', status: '状态', error: 'MCP 请求失败'
     },
