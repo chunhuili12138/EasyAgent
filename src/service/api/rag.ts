@@ -206,6 +206,7 @@ export function fetchDeleteMcpServer(id: number) { return request<void>({ url: `
 export function fetchValidateMcpServer(id: number) { return request<McpServer>({ url: `/rag/mcp/servers/${id}/validate`, method: 'post', timeout: 60000 }); }
 export function fetchMcpTools(id: number) { return request<McpTool[]>({ url: `/rag/mcp/servers/${id}/tools`, method: 'get' }); }
 export function fetchSetMcpToolEnabled(id: number, enabled: boolean) { return request<void>({ url: `/rag/mcp/tools/${id}/enabled`, method: 'put', data: { enabled } }); }
+export function fetchMcpEvents(limit = 50) { return request<Array<{ id: number; eventType: string; status: string; errorCode: string; createdAt: string; provenance: string }>>({ url: '/rag/mcp/events', method: 'get', params: { limit } }); }
 
 export function fetchSkillDetail(id: number) {
   return request<any>({ url: `/rag/skills/${id}`, method: 'get' });

@@ -8,6 +8,7 @@ import {
   fetchDeleteMcpServer,
   fetchMcpServers,
   fetchMcpTools,
+  fetchMcpEvents,
   fetchSetMcpToolEnabled,
   fetchUpdateMcpServer,
   fetchValidateMcpServer
@@ -39,6 +40,8 @@ const form = ref({
 });
 const isEdit = ref(false);
 const errorText = ref('');
+const eventVisible = ref(false);
+const events = ref<Array<{ id: number; eventType: string; status: string; errorCode: string; createdAt: string }>>([]);
 
 const enabledCount = computed(() => tools.value.filter(tool => tool.enabled === 1).length);
 
@@ -134,6 +137,12 @@ async function toggle(tool: McpTool) {
   tool.enabled = tool.enabled === 1 ? 0 : 1;
 }
 
+async function openEvents() {
+  eventVisible.value = true;
+  const response = await fetchMcpEvents();
+  events.value = response.data || [];
+}
+
 onMounted(loadServers);
 </script>
 
@@ -146,6 +155,7 @@ onMounted(loadServers);
       </div>
       <div class="header-actions">
         <ElButton v-if="can('rag:mcp:create')" type="primary" @click="openCreate">{{ $t('common.add') }}</ElButton>
+        <ElButton @click="openEvents">Events</ElButton>
         <ElButton :loading="loading" @click="loadServers">{{ $t('common.refresh') }}</ElButton>
       </div>
     </div>
@@ -255,6 +265,14 @@ onMounted(loadServers);
         <ElButton type="primary" :loading="saving" @click="save">{{ $t('common.confirm') }}</ElButton>
       </template>
     </ElDialog>
+    <ElDrawer v-model="eventVisible" title="MCP Events" direction="rtl" size="min(520px, 100vw)">
+      <ElTable :data="events" size="small">
+        <ElTableColumn prop="eventType" label="Event" min-width="160" />
+        <ElTableColumn prop="status" label="Status" width="110" />
+        <ElTableColumn prop="errorCode" label="Error" min-width="140" />
+        <ElTableColumn prop="createdAt" label="Time" min-width="160" />
+      </ElTable>
+    </ElDrawer>
   </div>
 </template>
 
