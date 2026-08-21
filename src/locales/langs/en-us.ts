@@ -1309,6 +1309,7 @@ const local: App.I18n.Schema = {
       aiStatusQueryFailed: 'The generation status could not be fetched. Click “Continue checking status” to retry.',
       aiFailedTitle: 'Skill generation did not succeed',
       aiFailedHint: 'Adjust the description or trial question according to the failure, then click “Regenerate”.',
+      aiActionCaptureBlocked: 'Automatic Skill generation currently supports read-only and other side-effect-free capabilities only. It cannot generate an action Skill that requires human approval in a background job. Use a read-only workflow, or wait for a separately audited dry-run or manual approval flow for action Skills.',
       aiReadyTitle: 'Skill draft generated but not saved',
       aiReadyHint: 'Click “Preview and confirm save” to review the basic information, execution steps, and YAML. Then click “Save” at the bottom of the editor. The draft remains disabled by default.',
       aiPreviewDraft: 'Preview and confirm save',

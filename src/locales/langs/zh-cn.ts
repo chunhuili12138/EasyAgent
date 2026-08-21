@@ -1300,6 +1300,7 @@ const local = {
       aiStatusQueryFailed: '暂时无法查询生成状态，请稍后点击“继续查询状态”重试',
       aiFailedTitle: 'Skill 未生成成功',
       aiFailedHint: '请根据失败信息调整描述或试运行问题，然后点击“重新生成”。',
+      aiActionCaptureBlocked: '当前 AI 自动生成仅支持查询和其他无副作用能力，不能在后台自动生成需要人工确认的操作型 Skill。请将目标改为只读流程；操作型 Skill 需要后续配置可审计 dry-run 或人工确认流程。',
       aiReadyTitle: 'Skill 草稿已生成，尚未保存',
       aiReadyHint: '点击“预览并确认保存”检查基本信息、执行步骤和 YAML；确认无误后，在编辑窗口底部点击“保存”。草稿默认保持禁用。',
       aiPreviewDraft: '预览并确认保存',

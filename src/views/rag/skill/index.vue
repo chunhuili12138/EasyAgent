@@ -998,6 +998,14 @@ function openCreate() {
 
 const aiTaskReady = computed(() => ['DRAFT_READY', 'COMPLETED'].includes(String(aiTask.value?.status || '')));
 const aiTaskFailed = computed(() => ['FAILED', 'CANCELLED'].includes(String(aiTask.value?.status || '')));
+const aiFailureDescription = computed(() => {
+  if (aiTask.value?.errorCode === 'skill_capture_action_requires_confirmation') {
+    const guidance = t('rag.skill.aiActionCaptureBlocked');
+    const detail = String(aiTask.value?.errorMessage || '').trim();
+    return detail && detail !== guidance ? `${guidance}\n${detail}` : guidance;
+  }
+  return aiTask.value?.errorMessage || t('rag.skill.aiFailedHint');
+});
 const aiTaskActive = computed(
   () => Boolean(aiDesignTaskId.value) && !aiTaskReady.value && !aiTaskFailed.value
 );
@@ -4073,7 +4081,7 @@ function aiFirstAttemptStatusText(status: unknown) {
         type="error"
         :closable="false"
         :title="t('rag.skill.aiFailedTitle')"
-        :description="aiTask?.errorMessage || t('rag.skill.aiFailedHint')"
+        :description="aiFailureDescription"
         show-icon
       />
       <ElAlert
@@ -4113,7 +4121,7 @@ function aiFirstAttemptStatusText(status: unknown) {
           <ElTag :type="aiStageType(aiTask)">
             {{ aiStageLabel(aiTask) }}
           </ElTag>
-          <span v-if="aiTask.errorMessage" class="ml-2 text-danger">{{ aiTask.errorMessage }}</span>
+          <span v-if="aiTask.errorMessage" class="ml-2 whitespace-pre-line text-danger">{{ aiTask.errorMessage }}</span>
         </ElFormItem>
         <ElDescriptions v-if="aiTask" class="ai-task-summary" :column="1" :label-width="240" border size="small">
           <ElDescriptionsItem :label="t('rag.skill.aiFirstAttempt')">
