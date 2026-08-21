@@ -10,7 +10,8 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
 import { FileSystemIconLoader } from 'unplugin-icons/loaders';
 
 export function setupUnplugin(viteEnv: Env.ImportMeta) {
-  const { VITE_ICON_PREFIX, VITE_ICON_LOCAL_PREFIX } = viteEnv;
+  const VITE_ICON_PREFIX = viteEnv.VITE_ICON_PREFIX || 'icon';
+  const VITE_ICON_LOCAL_PREFIX = viteEnv.VITE_ICON_LOCAL_PREFIX || `${VITE_ICON_PREFIX}-local`;
 
   const localIconPath = path.join(process.cwd(), 'src/assets/svg-icon');
 

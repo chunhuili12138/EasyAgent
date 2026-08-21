@@ -41,6 +41,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   rag_skill: () => import("@/views/rag/skill/index.vue"),
   "rag_sql-log": () => import("@/views/rag/sql-log/index.vue"),
   rag_tool: () => import("@/views/rag/tool/index.vue"),
+  rag_mcp: () => import("@/views/rag/mcp/index.vue"),
   system_department: () => import("@/views/system/department/index.vue"),
   system_dict: () => import("@/views/system/dict/index.vue"),
   system_log: () => import("@/views/system/log/index.vue"),

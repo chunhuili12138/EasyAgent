@@ -197,6 +197,7 @@ const routeMap: RouteMap = {
   "rag_skill": "/rag/skill",
   "rag_sql-log": "/rag/sql-log",
   "rag_tool": "/rag/tool",
+  "rag_mcp": "/rag/mcp",
   "system": "/system",
   "system_department": "/system/department",
   "system_dict": "/system/dict",

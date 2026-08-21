@@ -291,6 +291,15 @@ export const generatedRoutes: GeneratedRoute[] = [
           title: 'rag_tool',
           i18nKey: 'route.rag_tool'
         }
+      },
+      {
+        name: 'rag_mcp',
+        path: '/rag/mcp',
+        component: 'view.rag_mcp',
+        meta: {
+          title: 'rag_mcp',
+          i18nKey: 'route.rag_mcp'
+        }
       }
     ]
   },
