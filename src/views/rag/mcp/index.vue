@@ -11,6 +11,7 @@ import {
   fetchMcpHealth,
   fetchMcpServerPage,
   fetchMcpToolPage,
+  fetchRefreshMcpServer,
   fetchSetMcpToolEnabled,
   fetchUpdateMcpToolScope,
   fetchUpdateMcpServer,
@@ -221,7 +222,18 @@ async function validate(server: McpServer) {
 }
 
 async function refreshSelected() {
-  if (selected.value) await validate(selected.value);
+  if (!selected.value) return;
+  loading.value = true;
+  try {
+    await fetchRefreshMcpServer(selected.value.id);
+    ElMessage.success(t('page.rag_mcp'));
+    await loadServers();
+  } catch (error: any) {
+    ElMessage.error(error?.message || t('page.mcp.error'));
+    await loadServers();
+  } finally {
+    loading.value = false;
+  }
 }
 
 async function showHealth(server: McpServer) {
