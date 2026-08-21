@@ -244,6 +244,12 @@ const local: App.I18n.Schema = {
   },
   page: {
     rag_mcp: 'MCP Integration',
+    mcp: {
+      description: 'Streamable HTTP · read-only capabilities', servers: 'Servers', noServer: 'No MCP server', selectServer: 'Select a server to inspect its catalog',
+      validate: 'Validate', edit: 'Edit', disable: 'Disable', tool: 'Tool', descriptionLabel: 'Description', mode: 'Mode', readonly: 'read-only', enabled: 'enabled',
+      addServer: 'Add MCP server', editServer: 'Edit MCP server', name: 'Name', code: 'Code', endpoint: 'Public HTTPS endpoint', authentication: 'Authentication',
+      none: 'None', apiKey: 'API key', bearer: 'Bearer token', headerName: 'Header name', credential: 'Credential', keepCredential: 'Leave blank to keep the existing credential', status: 'Status', error: 'MCP request failed'
+    },
     docs: {
       button: 'User Guide',
       title: 'User Guide',

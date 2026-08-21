@@ -244,6 +244,12 @@ const local = {
   },
   page: {
     rag_mcp: 'MCP 接入',
+    mcp: {
+      description: 'Streamable HTTP · 只读能力', servers: '服务', noServer: '暂无 MCP 服务', selectServer: '请选择服务查看工具目录',
+      validate: '校验', edit: '编辑', disable: '停用', tool: '工具', descriptionLabel: '描述', mode: '模式', readonly: '只读', enabled: '已启用',
+      addServer: '新增 MCP 服务', editServer: '编辑 MCP 服务', name: '名称', code: '编码', endpoint: '公网 HTTPS 地址', authentication: '认证方式',
+      none: '无认证', apiKey: 'API Key', bearer: 'Bearer Token', headerName: '请求头名称', credential: '凭据', keepCredential: '留空表示保持原凭据', status: '状态', error: 'MCP 请求失败'
+    },
     docs: {
       button: '操作手册',
       title: '操作手册',

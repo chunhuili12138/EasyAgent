@@ -142,7 +142,7 @@ onMounted(loadServers);
     <div class="page-header">
       <div>
         <h1>{{ $t('route.rag_mcp') }}</h1>
-        <p>Streamable HTTP · read-only capabilities</p>
+        <p>{{ $t('page.mcp.description') }}</p>
       </div>
       <div class="header-actions">
         <ElButton v-if="can('rag:mcp:create')" type="primary" @click="openCreate">{{ $t('common.add') }}</ElButton>
@@ -153,10 +153,10 @@ onMounted(loadServers);
     <div class="workspace">
       <section class="servers-panel">
         <div class="section-title">
-          <span>Servers</span>
+          <span>{{ $t('page.mcp.servers') }}</span>
           <ElTag size="small">{{ servers.length }}</ElTag>
         </div>
-        <ElEmpty v-if="!loading && !servers.length" description="No MCP server" />
+        <ElEmpty v-if="!loading && !servers.length" :description="$t('page.mcp.noServer')" />
         <div
           v-for="server in servers"
           :key="server.id"
@@ -180,9 +180,9 @@ onMounted(loadServers);
             <span>{{ server.toolCount || 0 }} tools</span>
           </div>
           <div class="server-actions">
-            <ElButton v-if="can('rag:mcp:validate')" text size="small" @click.stop="validate(server)">Validate</ElButton>
-            <ElButton v-if="can('rag:mcp:update')" text size="small" @click.stop="openEdit(server)">Edit</ElButton>
-            <ElButton v-if="can('rag:mcp:delete')" text type="danger" size="small" @click.stop="remove(server)">Disable</ElButton>
+            <ElButton v-if="can('rag:mcp:validate')" text size="small" @click.stop="validate(server)">{{ $t('page.mcp.validate') }}</ElButton>
+            <ElButton v-if="can('rag:mcp:update')" text size="small" @click.stop="openEdit(server)">{{ $t('page.mcp.edit') }}</ElButton>
+            <ElButton v-if="can('rag:mcp:delete')" text type="danger" size="small" @click.stop="remove(server)">{{ $t('page.mcp.disable') }}</ElButton>
           </div>
         </div>
       </section>
@@ -197,7 +197,7 @@ onMounted(loadServers);
           </div>
           <ElAlert v-if="selected.lastError" :title="selected.lastError" type="warning" show-icon />
           <ElTable v-loading="toolsLoading" :data="tools" row-key="id" class="tool-table">
-            <ElTableColumn label="Tool" min-width="220">
+            <ElTableColumn :label="$t('page.mcp.tool')" min-width="220">
               <template #default="{ row }">
                 <div class="tool-name">
                   <strong>{{ row.title || row.externalName }}</strong>
@@ -205,50 +205,50 @@ onMounted(loadServers);
                 </div>
               </template>
             </ElTableColumn>
-            <ElTableColumn prop="description" label="Description" min-width="260" show-overflow-tooltip />
-            <ElTableColumn label="Mode" width="110">
-              <template #default="{ row }"><ElTag size="small" type="success">read-only</ElTag></template>
+            <ElTableColumn prop="description" :label="$t('page.mcp.descriptionLabel')" min-width="260" show-overflow-tooltip />
+            <ElTableColumn :label="$t('page.mcp.mode')" width="110">
+              <template #default="{ row }"><ElTag size="small" type="success">{{ $t('page.mcp.readonly') }}</ElTag></template>
             </ElTableColumn>
-            <ElTableColumn label="Enabled" width="100" align="right">
+            <ElTableColumn :label="$t('page.mcp.enabled')" width="100" align="right">
               <template #default="{ row }">
                 <ElSwitch :model-value="row.enabled === 1" :disabled="row.readonlyHint !== 1 || !can('rag:mcp:enable')" @change="toggle(row)" />
               </template>
             </ElTableColumn>
           </ElTable>
         </template>
-        <ElEmpty v-else description="Select a server to inspect its catalog" />
+        <ElEmpty v-else :description="$t('page.mcp.selectServer')" />
       </section>
     </div>
     <ElDialog
       v-model="dialogVisible"
-      :title="isEdit ? 'Edit MCP server' : 'Add MCP server'"
+      :title="isEdit ? $t('page.mcp.editServer') : $t('page.mcp.addServer')"
       width="min(560px, calc(100vw - 32px))"
     >
       <ElForm label-position="top" @submit.prevent="save">
-        <ElFormItem label="Name" required><ElInput v-model="form.name" maxlength="100" /></ElFormItem>
-        <ElFormItem label="Code" required><ElInput v-model="form.code" :disabled="isEdit" maxlength="50" /></ElFormItem>
-        <ElFormItem label="Public HTTPS endpoint" required>
+        <ElFormItem :label="$t('page.mcp.name')" required><ElInput v-model="form.name" maxlength="100" /></ElFormItem>
+        <ElFormItem :label="$t('page.mcp.code')" required><ElInput v-model="form.code" :disabled="isEdit" maxlength="50" /></ElFormItem>
+        <ElFormItem :label="$t('page.mcp.endpoint')" required>
           <ElInput v-model="form.endpoint" placeholder="https://mcp.example.com/mcp" />
         </ElFormItem>
-        <ElFormItem label="Authentication">
+        <ElFormItem :label="$t('page.mcp.authentication')">
           <ElSelect v-model="form.authType" class="full-width">
-            <ElOption label="None" value="none" />
-            <ElOption label="API key" value="api_key" />
-            <ElOption label="Bearer token" value="bearer" />
+            <ElOption :label="$t('page.mcp.none')" value="none" />
+            <ElOption :label="$t('page.mcp.apiKey')" value="api_key" />
+            <ElOption :label="$t('page.mcp.bearer')" value="bearer" />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem v-if="form.authType === 'api_key'" label="Header name">
+        <ElFormItem v-if="form.authType === 'api_key'" :label="$t('page.mcp.headerName')">
           <ElInput v-model="form.authHeaderName" />
         </ElFormItem>
-        <ElFormItem v-if="form.authType !== 'none'" label="Credential">
+        <ElFormItem v-if="form.authType !== 'none'" :label="$t('page.mcp.credential')">
           <ElInput
             v-model="form.authConfig"
             type="password"
             show-password
-            placeholder="Leave blank to keep the existing credential"
+            :placeholder="$t('page.mcp.keepCredential')"
           />
         </ElFormItem>
-        <ElFormItem label="Status"><ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" /></ElFormItem>
+        <ElFormItem :label="$t('page.mcp.status')"><ElSwitch v-model="form.status" :active-value="1" :inactive-value="0" /></ElFormItem>
       </ElForm>
       <template #footer>
         <ElButton @click="dialogVisible = false">{{ $t('common.cancel') }}</ElButton>
