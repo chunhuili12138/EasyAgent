@@ -209,6 +209,7 @@ const local: App.I18n.Schema = {
     rag_skill: 'Skill Management',
     rag_datasource: 'Data Source',
     rag_tool: 'Tool Management',
+    rag_mcp: 'MCP Integration',
     rag_experience: 'Experience Pool',
     'rag_sql-log': 'SQL Audit',
     'rag_bad-case': 'Bad Case Analysis',
@@ -242,6 +243,7 @@ const local: App.I18n.Schema = {
     exception_500: '500'
   },
   page: {
+    rag_mcp: 'MCP Integration',
     docs: {
       button: 'User Guide',
       title: 'User Guide',

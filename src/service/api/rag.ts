@@ -197,6 +197,16 @@ export function fetchSkills(params?: { page?: number; size?: number; keyword?: s
   return request<{ records: any[]; total: number }>({ url: '/rag/skills', method: 'get', params });
 }
 
+export interface McpServer { id: number; name: string; code: string; endpoint: string; transport: string; authType: string; status: number; healthStatus: string; toolCount: number; lastError?: string; }
+export interface McpTool { id: number; serverId: number; externalName: string; exposedName: string; title?: string; description?: string; inputSchema: string; readonlyHint: number; enabled: number; }
+export function fetchMcpServers() { return request<McpServer[]>({ url: '/rag/mcp/servers', method: 'get' }); }
+export function fetchCreateMcpServer(data: Record<string, unknown>) { return request<McpServer>({ url: '/rag/mcp/servers', method: 'post', data }); }
+export function fetchUpdateMcpServer(id: number, data: Record<string, unknown>) { return request<void>({ url: `/rag/mcp/servers/${id}`, method: 'put', data }); }
+export function fetchDeleteMcpServer(id: number) { return request<void>({ url: `/rag/mcp/servers/${id}`, method: 'delete' }); }
+export function fetchValidateMcpServer(id: number) { return request<McpServer>({ url: `/rag/mcp/servers/${id}/validate`, method: 'post', timeout: 60000 }); }
+export function fetchMcpTools(id: number) { return request<McpTool[]>({ url: `/rag/mcp/servers/${id}/tools`, method: 'get' }); }
+export function fetchSetMcpToolEnabled(id: number, enabled: boolean) { return request<void>({ url: `/rag/mcp/tools/${id}/enabled`, method: 'put', data: { enabled } }); }
+
 export function fetchSkillDetail(id: number) {
   return request<any>({ url: `/rag/skills/${id}`, method: 'get' });
 }

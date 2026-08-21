@@ -209,6 +209,7 @@ const local = {
     rag_skill: 'Skill 管理',
     rag_datasource: '数据源管理',
     rag_tool: '工具管理',
+    rag_mcp: 'MCP 接入',
     rag_experience: '经验池',
     'rag_sql-log': 'SQL 审计',
     'rag_bad-case': 'Bad Case 分析',
@@ -242,6 +243,7 @@ const local = {
     exception_500: '500'
   },
   page: {
+    rag_mcp: 'MCP 接入',
     docs: {
       button: '操作手册',
       title: '操作手册',
