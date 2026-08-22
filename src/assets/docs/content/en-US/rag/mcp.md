@@ -9,8 +9,7 @@ This pilot supports read-only tools only. Remote tools that write, delete, send,
 - **Role**: `AGENT_ADMIN`. This role receives the MCP menu and create, edit, delete, validate, refresh, enable, and audit permissions by default.
 - **Ordinary users**: cannot manage MCP Servers. Whether a tool can be used in chat also depends on tenant ownership, enabled state, and the tool visibility scope.
 - **Remote prerequisite**: a Streamable HTTP MCP Server exposing read-only tools.
-- **Production endpoint**: public HTTPS on an allowlisted host. EasyAgent resolves DNS immediately before requests and rejects private, loopback, or link-local addresses.
-- **Local testing**: only `local`/`test` profiles may use `http://127.0.0.1` or `http://localhost` mocks. Never carry that setting into production.
+- **Production endpoint**: public HTTPS. EasyAgent resolves DNS immediately before requests and rejects private, loopback, link-local, or multicast addresses; tenants do not need a server restart when adding a public MCP endpoint.
 
 ## Recommended workflow
 
@@ -82,19 +81,6 @@ mcp__enterprise_assets__list_assets_f4c249db
 
 The model uses the stable platform name; EasyAgent maps it to the remote `lookup_asset` or `list_assets`. Do not edit the exposed name manually.
 
-### Local mock Server
-
-Use only with a local or test profile:
-
-```text
-Name: Local MCP test
-Code: local_mcp
-Endpoint: http://127.0.0.1:9089/mcp
-Authentication: None
-```
-
-The local mock validates handshake, paginated discovery, Schema, and audit behavior. It is not a production security configuration.
-
 ## Schema and execution boundaries
 
 - EasyAgent stores the input Schema, output Schema, annotations, and Schema hash.
@@ -116,7 +102,7 @@ The local mock validates handshake, paginated discovery, Schema, and audit behav
 
 **The endpoint is rejected as non-public HTTPS**
 
-Check for HTTP, a custom port, user info, query string, fragment, or a private hostname. Production cannot use loopback; local mocks require a local/test profile.
+Check for HTTP, a custom port, user info, query string, fragment, or a private hostname. Production cannot use loopback.
 
 **Refresh returns no tools**
 
@@ -128,7 +114,7 @@ This is intentional protection. Review the new Schema and read-only contract, th
 
 **A tool call fails**
 
-Check Server health and audit error codes first, then the allowlist, DNS result, credential, protocol version, timeout, and output Schema. Never print or submit credentials in a request header.
+Check Server health and audit error codes first, then the DNS result, credential, protocol version, timeout, and output Schema. Never print or submit credentials in a request header.
 
 **How do I confirm that a call was recorded?**
 

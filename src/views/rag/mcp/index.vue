@@ -25,7 +25,8 @@ defineOptions({ name: 'RagMcp' });
 const t = $t;
 const { hasAuth } = useAuth();
 const authStore = useAuthStore();
-const can = (permission: string) => hasAuth(permission) || authStore.userInfo.roles.some(role => ['AGENT_ADMIN', 'SYS_ADMIN'].includes(role));
+const can = (permission: string) =>
+  hasAuth(permission) || authStore.userInfo.roles.some(role => ['AGENT_ADMIN', 'SYS_ADMIN'].includes(role));
 const servers = ref<McpServer[]>([]);
 const tools = ref<McpTool[]>([]);
 const selected = ref<McpServer | null>(null);
@@ -63,7 +64,9 @@ const eventStatus = ref('');
 const scopeVisible = ref(false);
 const scopeSaving = ref(false);
 const scopeTool = ref<McpTool | null>(null);
-const scopeForm = ref<{ visibility: string; departmentId?: number; postId?: number; userId?: number }>({ visibility: 'public' });
+const scopeForm = ref<{ visibility: string; departmentId?: number; postId?: number; userId?: number }>({
+  visibility: 'public'
+});
 const schemaVisible = ref(false);
 const schemaTool = ref<McpTool | null>(null);
 
@@ -73,7 +76,12 @@ async function loadServers(page = serverPage.value) {
   loading.value = true;
   try {
     serverPage.value = page;
-    const response = await fetchMcpServerPage({ page, size: 10, keyword: serverKeyword.value || undefined, healthStatus: serverHealth.value || undefined });
+    const response = await fetchMcpServerPage({
+      page,
+      size: 10,
+      keyword: serverKeyword.value || undefined,
+      healthStatus: serverHealth.value || undefined
+    });
     servers.value = response.data?.records || [];
     serverTotal.value = response.data?.total || 0;
     if (!selected.value || !servers.value.some(server => server.id === selected.value?.id))
@@ -91,7 +99,12 @@ async function loadTools(server: McpServer) {
   toolPage.value = 1;
   toolsLoading.value = true;
   try {
-    const response = await fetchMcpToolPage(server.id, { page: toolPage.value, size: 10, keyword: toolKeyword.value || undefined, enabled: toolEnabled.value === '' ? undefined : Number(toolEnabled.value) });
+    const response = await fetchMcpToolPage(server.id, {
+      page: toolPage.value,
+      size: 10,
+      keyword: toolKeyword.value || undefined,
+      enabled: toolEnabled.value === '' ? undefined : Number(toolEnabled.value)
+    });
     tools.value = response.data?.records || [];
     toolTotal.value = response.data?.total || 0;
   } catch (error: any) {
@@ -111,7 +124,12 @@ async function loadToolsPage() {
   if (!selected.value) return;
   toolsLoading.value = true;
   try {
-    const response = await fetchMcpToolPage(selected.value.id, { page: toolPage.value, size: 10, keyword: toolKeyword.value || undefined, enabled: toolEnabled.value === '' ? undefined : Number(toolEnabled.value) });
+    const response = await fetchMcpToolPage(selected.value.id, {
+      page: toolPage.value,
+      size: 10,
+      keyword: toolKeyword.value || undefined,
+      enabled: toolEnabled.value === '' ? undefined : Number(toolEnabled.value)
+    });
     tools.value = response.data?.records || [];
     toolTotal.value = response.data?.total || 0;
   } catch (error: any) {
@@ -154,19 +172,30 @@ function openEdit(server: McpServer) {
 }
 
 async function save() {
+  // Ignore rapid repeated clicks while the first create/update request is in flight.
+  if (saving.value) return;
   if (!validateFormStep(3)) return;
   saving.value = true;
   formError.value = '';
   try {
     const data: Record<string, unknown> = { ...form.value };
     if (!data.authConfig) delete data.authConfig;
-    if (isEdit.value && selected.value) await fetchUpdateMcpServer(selected.value.id, data);
-    else await fetchCreateMcpServer(data);
+    const response =
+      isEdit.value && selected.value
+        ? await fetchUpdateMcpServer(selected.value.id, data)
+        : await fetchCreateMcpServer(data);
+    // The shared request interceptor reports backend business errors and resolves
+    // them as null. Do not close the dialog or show success for that response.
+    if (!response) {
+      formError.value = t('page.mcp.saveFailed');
+      return;
+    }
     dialogVisible.value = false;
     ElMessage.success(t('page.rag_mcp'));
     await loadServers();
   } catch (error: any) {
     formError.value = error?.message || t('page.mcp.saveFailed');
+    ElMessage.error(formError.value);
   } finally {
     saving.value = false;
   }
@@ -179,14 +208,17 @@ function validateFormStep(step: number) {
     return false;
   }
   if (step >= 2 && !/^https:\/\/[^\s/?#]+(?:\/[^\s?#]*)?$/.test(form.value.endpoint.trim())) {
-    const localEndpoint = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(?:\/[^\s?#]*)?$/.test(form.value.endpoint.trim());
+    const localEndpoint = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(?:\/[^\s?#]*)?$/.test(
+      form.value.endpoint.trim()
+    );
     const localMode = import.meta.env.MODE !== 'prod';
     if (!localMode || !localEndpoint) {
       formError.value = t('page.mcp.endpointInvalid');
       return false;
     }
   }
-  const keepingExistingCredential = isEdit.value && selected.value?.credentialConfigured && !form.value.authConfig.trim();
+  const keepingExistingCredential =
+    isEdit.value && selected.value?.credentialConfigured && !form.value.authConfig.trim();
   if (step >= 2 && form.value.authType !== 'none' && !form.value.authConfig.trim() && !keepingExistingCredential) {
     formError.value = t('page.mcp.credentialRequired');
     return false;
@@ -268,7 +300,12 @@ async function toggle(tool: McpTool) {
 
 function openScope(tool: McpTool) {
   scopeTool.value = tool;
-  scopeForm.value = { visibility: tool.visibility || 'public', departmentId: tool.departmentId, postId: tool.postId, userId: tool.userId };
+  scopeForm.value = {
+    visibility: tool.visibility || 'public',
+    departmentId: tool.departmentId,
+    postId: tool.postId,
+    userId: tool.userId
+  };
   scopeVisible.value = true;
 }
 
@@ -291,7 +328,12 @@ async function openEvents(page = 1) {
   eventVisible.value = true;
   eventPage.value = page;
   try {
-    const response = await fetchMcpEventPage({ page, size: 15, eventType: eventType.value || undefined, status: eventStatus.value || undefined });
+    const response = await fetchMcpEventPage({
+      page,
+      size: 15,
+      eventType: eventType.value || undefined,
+      status: eventStatus.value || undefined
+    });
     events.value = response.data?.records || [];
     eventTotal.value = response.data?.total || 0;
   } catch (error: any) {
@@ -339,7 +381,12 @@ onMounted(loadServers);
           <ElTag size="small">{{ servers.length }}</ElTag>
         </div>
         <div class="filters">
-          <ElInput v-model="serverKeyword" clearable :placeholder="$t('page.mcp.searchServers')" @keyup.enter="loadServers(1)" />
+          <ElInput
+            v-model="serverKeyword"
+            clearable
+            :placeholder="$t('page.mcp.searchServers')"
+            @keyup.enter="loadServers(1)"
+          />
           <ElSelect v-model="serverHealth" clearable :placeholder="$t('page.mcp.health')" @change="loadServers(1)">
             <ElOption :label="$t('page.mcp.healthy')" value="healthy" />
             <ElOption :label="$t('page.mcp.unhealthy')" value="unhealthy" />
@@ -371,9 +418,15 @@ onMounted(loadServers);
           </div>
           <div class="server-actions">
             <ElButton text size="small" @click.stop="showHealth(server)">{{ $t('page.mcp.health') }}</ElButton>
-            <ElButton v-if="can('rag:mcp:validate')" text size="small" @click.stop="validate(server)">{{ $t('page.mcp.validate') }}</ElButton>
-            <ElButton v-if="can('rag:mcp:update')" text size="small" @click.stop="openEdit(server)">{{ $t('page.mcp.edit') }}</ElButton>
-            <ElButton v-if="can('rag:mcp:delete')" text type="danger" size="small" @click.stop="remove(server)">{{ $t('page.mcp.disable') }}</ElButton>
+            <ElButton v-if="can('rag:mcp:validate')" text size="small" @click.stop="validate(server)">
+              {{ $t('page.mcp.validate') }}
+            </ElButton>
+            <ElButton v-if="can('rag:mcp:update')" text size="small" @click.stop="openEdit(server)">
+              {{ $t('page.mcp.edit') }}
+            </ElButton>
+            <ElButton v-if="can('rag:mcp:delete')" text type="danger" size="small" @click.stop="remove(server)">
+              {{ $t('page.mcp.disable') }}
+            </ElButton>
           </div>
         </div>
         <ElPagination
@@ -397,12 +450,24 @@ onMounted(loadServers);
           </div>
           <ElAlert v-if="selected.lastError" :title="selected.lastError" type="warning" show-icon />
           <div class="filters tool-filters">
-            <ElInput v-model="toolKeyword" clearable :placeholder="$t('page.mcp.searchTools')" @keyup.enter="loadToolsPage" />
-            <ElSelect v-model="toolEnabled" clearable :placeholder="$t('page.mcp.enabledFilter')" @change="loadToolsPage">
+            <ElInput
+              v-model="toolKeyword"
+              clearable
+              :placeholder="$t('page.mcp.searchTools')"
+              @keyup.enter="loadToolsPage"
+            />
+            <ElSelect
+              v-model="toolEnabled"
+              clearable
+              :placeholder="$t('page.mcp.enabledFilter')"
+              @change="loadToolsPage"
+            >
               <ElOption :label="$t('page.mcp.enabledOnly')" value="1" />
               <ElOption :label="$t('page.mcp.disabledOnly')" value="0" />
             </ElSelect>
-            <ElButton v-if="can('rag:mcp:refresh')" :loading="loading" @click="refreshSelected">{{ $t('page.mcp.refreshCatalog') }}</ElButton>
+            <ElButton v-if="can('rag:mcp:refresh')" :loading="loading" @click="refreshSelected">
+              {{ $t('page.mcp.refreshCatalog') }}
+            </ElButton>
           </div>
           <ElTable v-loading="toolsLoading" :data="tools" row-key="id" class="tool-table">
             <ElTableColumn :label="$t('page.mcp.tool')" min-width="220">
@@ -413,24 +478,46 @@ onMounted(loadServers);
                 </div>
               </template>
             </ElTableColumn>
-            <ElTableColumn prop="description" :label="$t('page.mcp.descriptionLabel')" min-width="260" show-overflow-tooltip />
+            <ElTableColumn
+              prop="description"
+              :label="$t('page.mcp.descriptionLabel')"
+              min-width="260"
+              show-overflow-tooltip
+            />
             <ElTableColumn :label="$t('page.mcp.mode')" width="110">
-              <template #default><ElTag size="small" type="success">{{ $t('page.mcp.readonly') }}</ElTag></template>
+              <template #default>
+                <ElTag size="small" type="success">{{ $t('page.mcp.readonly') }}</ElTag>
+              </template>
             </ElTableColumn>
             <ElTableColumn :label="$t('page.mcp.enabled')" width="100" align="right">
               <template #default="{ row }">
-                <ElSwitch :model-value="row.enabled === 1" :disabled="row.readonlyHint !== 1 || !can('rag:mcp:enable')" @change="toggle(row)" />
+                <ElSwitch
+                  :model-value="row.enabled === 1"
+                  :disabled="row.readonlyHint !== 1 || !can('rag:mcp:enable')"
+                  @change="toggle(row)"
+                />
               </template>
             </ElTableColumn>
             <ElTableColumn :label="$t('page.mcp.access')" width="120" align="right">
               <template #default="{ row }">
-                <ElButton v-if="can('rag:mcp:update')" text size="small" @click="openScope(row)">{{ row.visibility || 'public' }}</ElButton>
+                <ElButton v-if="can('rag:mcp:update')" text size="small" @click="openScope(row)">
+                  {{ row.visibility || 'public' }}
+                </ElButton>
                 <span v-else>{{ row.visibility || 'public' }}</span>
               </template>
             </ElTableColumn>
             <ElTableColumn :label="$t('page.mcp.catalogStatus')" width="130">
               <template #default="{ row }">
-                <ElTag size="small" :type="row.catalogStatus === 'ACTIVE' ? 'success' : row.catalogStatus === 'SCHEMA_CHANGED' ? 'warning' : 'danger'">
+                <ElTag
+                  size="small"
+                  :type="
+                    row.catalogStatus === 'ACTIVE'
+                      ? 'success'
+                      : row.catalogStatus === 'SCHEMA_CHANGED'
+                        ? 'warning'
+                        : 'danger'
+                  "
+                >
                   {{ row.catalogStatus || 'UNKNOWN' }}
                 </ElTag>
               </template>
@@ -471,7 +558,12 @@ onMounted(loadServers);
           <div class="field-hint">{{ $t('page.mcp.nameHelp') }}</div>
         </ElFormItem>
         <ElFormItem :label="$t('page.mcp.code')" required>
-          <ElInput v-model="form.code" :disabled="isEdit" maxlength="50" :placeholder="$t('page.mcp.codePlaceholder')" />
+          <ElInput
+            v-model="form.code"
+            :disabled="isEdit"
+            maxlength="50"
+            :placeholder="$t('page.mcp.codePlaceholder')"
+          />
           <div class="field-hint">{{ $t('page.mcp.codeHelp') }}</div>
         </ElFormItem>
         <ElFormItem :label="$t('page.mcp.endpoint')" required>
@@ -492,7 +584,12 @@ onMounted(loadServers);
           <ElInput v-model="form.authHeaderName" />
         </ElFormItem>
         <ElFormItem v-if="form.authType !== 'none'" :label="$t('page.mcp.credential')">
-          <ElInput v-model="form.authConfig" type="password" show-password :placeholder="$t('page.mcp.keepCredential')" />
+          <ElInput
+            v-model="form.authConfig"
+            type="password"
+            show-password
+            :placeholder="$t('page.mcp.keepCredential')"
+          />
           <div class="field-hint">{{ $t('page.mcp.credentialHelp') }}</div>
         </ElFormItem>
         <ElFormItem :label="$t('page.mcp.status')">
@@ -507,7 +604,9 @@ onMounted(loadServers);
           <ElDescriptionsItem :label="$t('page.mcp.code')">{{ form.code }}</ElDescriptionsItem>
           <ElDescriptionsItem :label="$t('page.mcp.endpoint')">{{ form.endpoint }}</ElDescriptionsItem>
           <ElDescriptionsItem :label="$t('page.mcp.authentication')">{{ authLabel(form.authType) }}</ElDescriptionsItem>
-          <ElDescriptionsItem :label="$t('page.mcp.credential')">{{ form.authType === 'none' ? $t('page.mcp.none') : $t('page.mcp.credentialConfigured') }}</ElDescriptionsItem>
+          <ElDescriptionsItem :label="$t('page.mcp.credential')">
+            {{ form.authType === 'none' ? $t('page.mcp.none') : $t('page.mcp.credentialConfigured') }}
+          </ElDescriptionsItem>
         </ElDescriptions>
       </div>
       <template #footer>
@@ -545,9 +644,15 @@ onMounted(loadServers);
             <ElOption label="user" value="user" />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem v-if="scopeForm.visibility === 'department'" :label="$t('page.mcp.departmentId')"><ElInputNumber v-model="scopeForm.departmentId" :min="1" class="full-width" /></ElFormItem>
-        <ElFormItem v-if="scopeForm.visibility === 'post'" :label="$t('page.mcp.postId')"><ElInputNumber v-model="scopeForm.postId" :min="1" class="full-width" /></ElFormItem>
-        <ElFormItem v-if="scopeForm.visibility === 'user'" :label="$t('page.mcp.userId')"><ElInputNumber v-model="scopeForm.userId" :min="1" class="full-width" /></ElFormItem>
+        <ElFormItem v-if="scopeForm.visibility === 'department'" :label="$t('page.mcp.departmentId')">
+          <ElInputNumber v-model="scopeForm.departmentId" :min="1" class="full-width" />
+        </ElFormItem>
+        <ElFormItem v-if="scopeForm.visibility === 'post'" :label="$t('page.mcp.postId')">
+          <ElInputNumber v-model="scopeForm.postId" :min="1" class="full-width" />
+        </ElFormItem>
+        <ElFormItem v-if="scopeForm.visibility === 'user'" :label="$t('page.mcp.userId')">
+          <ElInputNumber v-model="scopeForm.userId" :min="1" class="full-width" />
+        </ElFormItem>
       </ElForm>
       <template #footer>
         <ElButton @click="scopeVisible = false">{{ $t('common.cancel') }}</ElButton>

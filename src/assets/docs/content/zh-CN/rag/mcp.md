@@ -9,8 +9,7 @@ MCP（Model Context Protocol）配置用于把租户自有的只读 MCP Server �
 - **适用角色**：`AGENT_ADMIN`。该角色默认拥有 MCP 菜单以及创建、编辑、删除、校验、刷新、启用和审计权限。
 - **普通用户**：不能管理 MCP Server。能否在 Agent 对话中使用某个工具，还要同时满足租户、工具启用状态和工具可见范围。
 - **远端准备**：准备一个支持 Streamable HTTP 的 MCP Server，并确认它只暴露只读工具。
-- **生产地址**：必须是公网 HTTPS 地址，主机必须加入平台 allowlist。平台会在请求前重新解析 DNS，解析到内网、回环或链路本地地址时拒绝请求。
-- **本地测试地址**：仅 `local`/`test` profile 可使用 `http://127.0.0.1` 或 `http://localhost` 的 mock；不能把这个配置带到生产环境。
+- **生产地址**：必须是公网 HTTPS 地址。平台会在请求前重新解析 DNS，解析到内网、回环、链路本地或组播地址时拒绝请求；租户新增公网 MCP 不需要修改服务端域名配置。
 
 ## 推荐流程
 
@@ -82,19 +81,6 @@ mcp__enterprise_assets__list_assets_f4c249db
 
 模型使用的是平台生成的稳定名称，平台再把调用映射到远端的 `lookup_asset` 或 `list_assets`。不要手工修改 exposed name。
 
-### 本地 mock Server
-
-仅本地或测试 profile 使用：
-
-```text
-名称：本地 MCP 测试
-编码：local_mcp
-Endpoint：http://127.0.0.1:9089/mcp
-认证：无认证
-```
-
-本地 mock 只用于验证握手、分页目录、Schema 和审计链路，不代表生产安全配置。
-
 ## Schema 与调用边界
 
 - 平台会保存输入 Schema、输出 Schema、注解和 Schema hash。
@@ -116,7 +102,7 @@ Endpoint：http://127.0.0.1:9089/mcp
 
 **校验提示 endpoint 必须是公网 HTTPS**
 
-检查是否误用了 HTTP、端口、用户名、查询串或内网域名。生产环境不能使用回环地址；本地 mock 只能在 local/test profile 中使用。
+检查是否误用了 HTTP、端口、用户名、查询串或内网域名。生产环境不能使用回环地址。
 
 **刷新后没有工具**
 
@@ -128,7 +114,7 @@ Endpoint：http://127.0.0.1:9089/mcp
 
 **工具调用失败**
 
-先查看 Server 健康状态和事件审计中的错误码，再检查 allowlist、DNS、凭据、协议版本、远端超时和返回 Schema。不要在请求头中打印或提交凭据。
+先查看 Server 健康状态和事件审计中的错误码，再检查 DNS、凭据、协议版本、远端超时和返回 Schema。不要在请求头中打印或提交凭据。
 
 **如何确认调用被记录**
 

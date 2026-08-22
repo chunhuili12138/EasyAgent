@@ -474,11 +474,7 @@ async function streamChat(
   if (!streamCompleted) {
     parser.push(decoder.decode());
     parser.finish();
-    const fallback = incompleteChatStreamMessage(
-      aiMsg.content,
-      streamCompleted,
-      $t('rag.chat.streamInterrupted')
-    );
+    const fallback = incompleteChatStreamMessage(aiMsg.content, streamCompleted, $t('rag.chat.streamInterrupted'));
     if (fallback) {
       aiMsg.content = fallback;
       aiMsg.status = undefined;

@@ -38,10 +38,7 @@ test('dispatches done immediately when its event block is complete', () => {
 });
 
 test('does not silently accept a chat stream that closes without a terminal event', () => {
-  assert.equal(
-    incompleteChatStreamMessage('', false, '[连接已中断，未收到完整响应]'),
-    '[连接已中断，未收到完整响应]'
-  );
+  assert.equal(incompleteChatStreamMessage('', false, '[连接已中断，未收到完整响应]'), '[连接已中断，未收到完整响应]');
   assert.equal(
     incompleteChatStreamMessage('已收到部分结果', false, '[连接已中断，响应未完整结束]'),
     '已收到部分结果\n[连接已中断，响应未完整结束]'

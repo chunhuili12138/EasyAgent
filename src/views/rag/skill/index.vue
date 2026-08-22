@@ -4,21 +4,21 @@ import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { parse, stringify } from 'yaml';
 import {
-  fetchCreateSkill,
-  createSkillDesignTask,
   confirmSkillDesignManualReview,
-  fetchSkillDesignTask,
+  createSkillDesignTask,
+  fetchCreateSkill,
   fetchDatasources,
   fetchDeleteSkill,
   fetchParseSkillYaml,
   fetchRunSkillTest,
-  trialSkillDesignTask,
+  fetchSkillDesignTask,
   fetchSkillDetail,
   fetchSkills,
   fetchToolSchema,
   fetchTools,
   fetchUpdateSkill,
-  fetchValidateSkill
+  fetchValidateSkill,
+  trialSkillDesignTask
 } from '@/service/api/rag';
 import { $t } from '@/locales';
 import ConfigHelp from '../shared/config-help.vue';
@@ -211,27 +211,27 @@ const skillTemplates = computed(
       {
         key: 'rag_answer',
         name: t('rag.skill.templateRagName'),
-        description: t('rag.skill.templateRagDescription'),
+        description: t('rag.skill.templateRagDescription')
       },
       {
         key: 'data_query',
         name: t('rag.skill.templateDataName'),
-        description: t('rag.skill.templateDataDescription'),
+        description: t('rag.skill.templateDataDescription')
       },
       {
         key: 'api_action',
         name: t('rag.skill.templateToolName'),
-        description: t('rag.skill.templateToolDescription'),
+        description: t('rag.skill.templateToolDescription')
       },
       {
         key: 'data_transform_action',
         name: t('rag.skill.templateTransformName'),
-        description: t('rag.skill.templateTransformDescription'),
+        description: t('rag.skill.templateTransformDescription')
       },
       {
         key: 'batch_action',
         name: t('rag.skill.templateBatchName'),
-        description: t('rag.skill.templateBatchDescription'),
+        description: t('rag.skill.templateBatchDescription')
       }
     ] as const
 );
@@ -997,7 +997,9 @@ function openCreate() {
   dialogVisible.value = true;
 }
 
-const aiTaskReady = computed(() => ['DRAFT_READY', 'MANUAL_REPLAY_REQUIRED', 'COMPLETED'].includes(String(aiTask.value?.status || '')));
+const aiTaskReady = computed(() =>
+  ['DRAFT_READY', 'MANUAL_REPLAY_REQUIRED', 'COMPLETED'].includes(String(aiTask.value?.status || ''))
+);
 const aiTaskFailed = computed(() => ['FAILED', 'CANCELLED'].includes(String(aiTask.value?.status || '')));
 const aiFailureDescription = computed(() => {
   if (aiTask.value?.errorCode === 'skill_capture_action_requires_confirmation') {
@@ -1007,9 +1009,7 @@ const aiFailureDescription = computed(() => {
   }
   return aiTask.value?.errorMessage || t('rag.skill.aiFailedHint');
 });
-const aiTaskActive = computed(
-  () => Boolean(aiDesignTaskId.value) && !aiTaskReady.value && !aiTaskFailed.value
-);
+const aiTaskActive = computed(() => Boolean(aiDesignTaskId.value) && !aiTaskReady.value && !aiTaskFailed.value);
 const aiFormDisabled = computed(() => aiGenerating.value || aiTaskActive.value || aiTaskReady.value);
 
 function prepareGeneratedSkillDraft(task: any, taskId: string) {
@@ -1318,7 +1318,9 @@ function definitionFromDetail(detail: any) {
   if (!detail.yamlContent)
     return {
       description: '',
-      inputSchema: {}, goalContract: {}, steps: []
+      inputSchema: {},
+      goalContract: {},
+      steps: []
     };
   try {
     const parsed = parse(detail.yamlContent);
@@ -1331,7 +1333,9 @@ function definitionFromDetail(detail: any) {
   } catch {
     return {
       description: '',
-      inputSchema: {}, goalContract: {}, steps: []
+      inputSchema: {},
+      goalContract: {},
+      steps: []
     };
   }
 }
@@ -1400,7 +1404,9 @@ function goalContract() {
 }
 
 function validationStatusText(status: unknown) {
-  const normalized = String(status || '').trim().toUpperCase();
+  const normalized = String(status || '')
+    .trim()
+    .toUpperCase();
   if (normalized === 'VALID') return t('rag.skill.validationStatuses.valid');
   if (normalized === 'NEEDS_REVALIDATION') return t('rag.skill.validationStatuses.needsRevalidation');
   if (normalized === 'INVALID') return t('rag.skill.validationStatuses.invalid');
@@ -1408,7 +1414,9 @@ function validationStatusText(status: unknown) {
 }
 
 function validationStatusTagType(status: unknown): 'success' | 'warning' | 'danger' | 'info' {
-  const normalized = String(status || '').trim().toUpperCase();
+  const normalized = String(status || '')
+    .trim()
+    .toUpperCase();
   if (normalized === 'VALID') return 'success';
   if (normalized === 'NEEDS_REVALIDATION') return 'warning';
   if (normalized === 'INVALID') return 'danger';
@@ -2476,8 +2484,12 @@ function stepValidation(step: SkillStepForm, ids: string[]): string | null {
     const literalError = step.params.map(row => apiLiteralValidation(step, row)).find(Boolean);
     if (literalError) return literalError;
   }
-  if (step.type === 'api' && step.params.some(row => row.mode === 'binding'
-    && row.source !== 'runtime_args' && !step.dependsOn.includes(row.source))) {
+  if (
+    step.type === 'api' &&
+    step.params.some(
+      row => row.mode === 'binding' && row.source !== 'runtime_args' && !step.dependsOn.includes(row.source)
+    )
+  ) {
     return $t('rag.skill.missingDependency');
   }
   if (step.type === 'builtin' && hasDuplicateKeys(step.arguments)) return $t('rag.skill.parameterKeyDuplicate');
@@ -2566,7 +2578,9 @@ async function save() {
       manualReviewRequired: Boolean(form.value.manualReviewRequired),
       definition: definition()
     };
-    const { data, error } = isEdit.value ? await fetchUpdateSkill(form.value.id, payload) : await fetchCreateSkill(payload);
+    const { data, error } = isEdit.value
+      ? await fetchUpdateSkill(form.value.id, payload)
+      : await fetchCreateSkill(payload);
     if (error || !data) return;
     if (form.value.manualReviewRequired && currentDesignTaskId.value) {
       const confirmed = await ElMessageBox.confirm(
@@ -2643,9 +2657,8 @@ function runTextValue(field: SkillRunInputField) {
 }
 
 async function openRunTest(row?: any) {
-  runTargetSkill.value = row || (currentDesignTaskId.value
-    ? { name: form.value.name, designTaskId: currentDesignTaskId.value }
-    : null);
+  runTargetSkill.value =
+    row || (currentDesignTaskId.value ? { name: form.value.name, designTaskId: currentDesignTaskId.value } : null);
   runQuery.value = '';
   runResult.value = null;
   runExecuteActions.value = false;
@@ -2796,7 +2809,9 @@ function aiStageType(task: any) {
 }
 
 function aiFirstAttemptStatusText(status: unknown) {
-  const normalized = String(status || '').trim().toUpperCase();
+  const normalized = String(status || '')
+    .trim()
+    .toUpperCase();
   if (!normalized) return '-';
   return t(`rag.skill.aiFirstAttemptStatuses.${normalized}` as any, normalized);
 }
@@ -2971,10 +2986,18 @@ function aiFirstAttemptStatusText(status: unknown) {
               />
             </ElFormItem>
             <ElFormItem :label="$t('rag.skill.inputContract')">
-              <div class="w-full rounded border border-blue-200 bg-blue-50 p-3">
+              <div class="w-full border border-blue-200 rounded bg-blue-50 p-3">
                 <div class="mb-2 text-xs text-gray-600">{{ $t('rag.skill.inputContractHint') }}</div>
-                <div v-for="(field, index) in form.inputFields" :key="`input-field-${index}`" class="mb-2 grid grid-cols-1 gap-2 md:grid-cols-12">
-                  <ElInput v-model="field.key" class="md:col-span-3" :placeholder="$t('rag.skill.inputNamePlaceholder')" />
+                <div
+                  v-for="(field, index) in form.inputFields"
+                  :key="`input-field-${index}`"
+                  class="grid grid-cols-1 mb-2 gap-2 md:grid-cols-12"
+                >
+                  <ElInput
+                    v-model="field.key"
+                    class="md:col-span-3"
+                    :placeholder="$t('rag.skill.inputNamePlaceholder')"
+                  />
                   <ElSelect v-model="field.type" class="md:col-span-2">
                     <ElOption label="string" value="string" />
                     <ElOption label="number" value="number" />
@@ -2983,19 +3006,29 @@ function aiFirstAttemptStatusText(status: unknown) {
                     <ElOption label="array" value="array" />
                     <ElOption label="object" value="object" />
                   </ElSelect>
-                  <ElInput v-model="field.description" class="md:col-span-3" :placeholder="$t('rag.skill.inputDescriptionPlaceholder')" />
-                  <ElInput v-model="field.defaultValue" class="md:col-span-2" :placeholder="$t('rag.skill.inputDefaultPlaceholder')" />
+                  <ElInput
+                    v-model="field.description"
+                    class="md:col-span-3"
+                    :placeholder="$t('rag.skill.inputDescriptionPlaceholder')"
+                  />
+                  <ElInput
+                    v-model="field.defaultValue"
+                    class="md:col-span-2"
+                    :placeholder="$t('rag.skill.inputDefaultPlaceholder')"
+                  />
                   <div class="flex items-center gap-2 md:col-span-2">
                     <ElCheckbox v-model="field.required">{{ $t('rag.skill.inputRequired') }}</ElCheckbox>
-                    <ElButton text type="danger" @click="removeInputField(Number(index))">{{ $t('rag.common.delete') }}</ElButton>
+                    <ElButton text type="danger" @click="removeInputField(Number(index))">
+                      {{ $t('rag.common.delete') }}
+                    </ElButton>
                   </div>
                 </div>
                 <ElButton size="small" @click="addInputField">+ {{ $t('rag.skill.addInput') }}</ElButton>
               </div>
             </ElFormItem>
             <ElFormItem :label="$t('rag.skill.goalContract')">
-              <div class="w-full rounded border border-emerald-200 bg-emerald-50 p-3">
-                <div class="font-medium text-emerald-800">{{ $t('rag.skill.automaticGoalTitle') }}</div>
+              <div class="w-full border border-emerald-200 rounded bg-emerald-50 p-3">
+                <div class="text-emerald-800 font-medium">{{ $t('rag.skill.automaticGoalTitle') }}</div>
                 <div class="mt-1 text-sm text-emerald-700">
                   {{ $t('rag.skill.automaticGoalSummary', { count: steps.length }) }}
                 </div>
@@ -3327,10 +3360,23 @@ function aiFirstAttemptStatusText(status: unknown) {
                     <div v-else class="skill-api-binding-grid">
                       <ElSelect v-model="row.source" :placeholder="$t('rag.skill.bindingSource')">
                         <ElOption v-for="id in step.dependsOn" :key="id" :label="id" :value="id" />
-                        <ElOption v-if="form.inputFields?.length" :label="$t('rag.skill.skillInputSource')" value="runtime_args" />
+                        <ElOption
+                          v-if="form.inputFields?.length"
+                          :label="$t('rag.skill.skillInputSource')"
+                          value="runtime_args"
+                        />
                       </ElSelect>
-                      <ElSelect v-if="row.source === 'runtime_args'" v-model="row.path" :placeholder="$t('rag.skill.inputSelectPlaceholder')">
-                        <ElOption v-for="field in form.inputFields" :key="field.key" :label="field.key" :value="`$.${field.key}`" />
+                      <ElSelect
+                        v-if="row.source === 'runtime_args'"
+                        v-model="row.path"
+                        :placeholder="$t('rag.skill.inputSelectPlaceholder')"
+                      >
+                        <ElOption
+                          v-for="field in form.inputFields"
+                          :key="field.key"
+                          :label="field.key"
+                          :value="`$.${field.key}`"
+                        />
                       </ElSelect>
                       <ElInput v-else v-model="row.path" :placeholder="$t('rag.skill.bindingPath')" />
                       <ElSelect v-model="row.cardinality">
@@ -3669,10 +3715,19 @@ function aiFirstAttemptStatusText(status: unknown) {
                     <ElInput v-model="row.key" :placeholder="$t('rag.skill.paramName')" />
                     <ElSelect v-model="row.source" class="w-full">
                       <ElOption v-for="id in step.dependsOn" :key="id" :label="id" :value="id" />
-                      <ElOption v-if="form.inputFields?.length" :label="$t('rag.skill.skillInputSource')" value="runtime_args" />
+                      <ElOption
+                        v-if="form.inputFields?.length"
+                        :label="$t('rag.skill.skillInputSource')"
+                        value="runtime_args"
+                      />
                     </ElSelect>
                     <ElSelect v-if="row.source === 'runtime_args'" v-model="row.path" class="w-full">
-                      <ElOption v-for="field in form.inputFields" :key="field.key" :label="field.key" :value="`$.${field.key}`" />
+                      <ElOption
+                        v-for="field in form.inputFields"
+                        :key="field.key"
+                        :label="field.key"
+                        :value="`$.${field.key}`"
+                      />
                     </ElSelect>
                     <ElInput v-else v-model="row.path" placeholder="$ / $[*]" />
                     <ElSelect v-model="row.cardinality" class="w-full">
@@ -4081,13 +4136,7 @@ function aiFirstAttemptStatusText(status: unknown) {
       :show-close="!aiGenerating && !aiTaskActive"
       align-center
     >
-      <ElAlert
-        class="mb-4"
-        type="info"
-        :closable="false"
-        :title="t('rag.skill.aiIntro')"
-        show-icon
-      />
+      <ElAlert class="mb-4" type="info" :closable="false" :title="t('rag.skill.aiIntro')" show-icon />
       <ElAlert
         v-if="aiTaskReady"
         class="mb-4"
@@ -4143,7 +4192,7 @@ function aiFirstAttemptStatusText(status: unknown) {
           <ElTag :type="aiStageType(aiTask)">
             {{ aiStageLabel(aiTask) }}
           </ElTag>
-          <span v-if="aiTask.errorMessage" class="ml-2 whitespace-pre-line text-danger">{{ aiTask.errorMessage }}</span>
+          <span v-if="aiTask.errorMessage" class="text-danger ml-2 whitespace-pre-line">{{ aiTask.errorMessage }}</span>
         </ElFormItem>
         <ElDescriptions v-if="aiTask" class="ai-task-summary" :column="1" :label-width="240" border size="small">
           <ElDescriptionsItem :label="t('rag.skill.aiFirstAttempt')">
@@ -4161,7 +4210,9 @@ function aiFirstAttemptStatusText(status: unknown) {
         </ElDescriptions>
       </ElForm>
       <template #footer>
-        <ElButton :disabled="aiGenerating || aiTaskActive" @click="aiDialogVisible = false">{{ t('rag.common.cancel') }}</ElButton>
+        <ElButton :disabled="aiGenerating || aiTaskActive" @click="aiDialogVisible = false">
+          {{ t('rag.common.cancel') }}
+        </ElButton>
         <ElButton v-if="aiTaskReady" type="success" @click="openGeneratedSkillDraft">
           {{ t('rag.skill.aiPreviewDraft') }}
         </ElButton>
@@ -4191,7 +4242,7 @@ function aiFirstAttemptStatusText(status: unknown) {
         </ElFormItem>
         <ElFormItem v-if="runInputFields.length" :label="t('rag.skill.runParameters')">
           <div class="w-full space-y-2">
-            <div v-for="field in runInputFields" :key="field.key" class="rounded border border-gray-200 p-2">
+            <div v-for="field in runInputFields" :key="field.key" class="border border-gray-200 rounded p-2">
               <div class="mb-1 flex items-center gap-2 text-xs">
                 <span class="font-medium">{{ field.key }}</span>
                 <ElTag size="small">{{ field.type }}</ElTag>

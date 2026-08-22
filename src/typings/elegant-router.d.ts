@@ -48,10 +48,10 @@ declare module "@elegant-router/types" {
     "rag_bad-case": "/rag/bad-case";
     "rag_datasource": "/rag/datasource";
     "rag_experience": "/rag/experience";
+    "rag_mcp": "/rag/mcp";
     "rag_skill": "/rag/skill";
     "rag_sql-log": "/rag/sql-log";
     "rag_tool": "/rag/tool";
-    "rag_mcp": "/rag/mcp";
     "system": "/system";
     "system_department": "/system/department";
     "system_dict": "/system/dict";
@@ -150,10 +150,10 @@ declare module "@elegant-router/types" {
     | "rag_bad-case"
     | "rag_datasource"
     | "rag_experience"
+    | "rag_mcp"
     | "rag_skill"
     | "rag_sql-log"
     | "rag_tool"
-    | "rag_mcp"
     | "system_department"
     | "system_dict"
     | "system_log"
