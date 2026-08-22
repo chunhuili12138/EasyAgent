@@ -1214,6 +1214,8 @@ const local = {
       stop: '停止',
       generationStopped: '回答已停止',
       generationStoppedPartial: '已停止生成，以上为停止前收到的内容',
+      streamInterrupted: '连接已中断，未收到完整响应，请重试。',
+      streamTimeout: '执行超时，未收到完整结果，请缩小范围后重试。',
       noMessages: '发送消息开始对话',
       scope: '知识库范围',
       statusAnalyzing: '正在分析问题...',

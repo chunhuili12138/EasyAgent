@@ -1219,6 +1219,8 @@ const local: App.I18n.Schema = {
       stop: 'Stop',
       generationStopped: 'Response stopped',
       generationStoppedPartial: 'Generation stopped; the content above was received before stopping',
+      streamInterrupted: 'The connection closed before a complete response was received. Please retry.',
+      streamTimeout: 'Execution timed out before a complete result was received. Narrow the request and retry.',
       noMessages: 'Send a message to start',
       scope: 'Knowledge Base Scope',
       statusAnalyzing: 'Analyzing the question...',

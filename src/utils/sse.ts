@@ -3,6 +3,16 @@ export interface SseEvent {
   data: string;
 }
 
+export function incompleteChatStreamMessage(
+  content: string,
+  terminalEventReceived: boolean,
+  interruptedMessage: string
+) {
+  if (terminalEventReceived) return null;
+  const existing = content.trim();
+  return existing ? `${existing}\n${interruptedMessage}` : interruptedMessage;
+}
+
 export function createSseParser(onEvent: (event: SseEvent) => void) {
   let buffer = '';
   let eventName = '';

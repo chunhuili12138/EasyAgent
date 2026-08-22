@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { type SseEvent, createSseParser } from './sse';
+import { type SseEvent, createSseParser, incompleteChatStreamMessage } from './sse';
 
 test('parses Spring SseEmitter events without spaces after colons', () => {
   const events: SseEvent[] = [];
@@ -35,4 +35,16 @@ test('dispatches done immediately when its event block is complete', () => {
   parser.push('event:done\ndata:{"messageId":7}\n\n');
 
   assert.deepEqual(events, [{ event: 'done', data: '{"messageId":7}' }]);
+});
+
+test('does not silently accept a chat stream that closes without a terminal event', () => {
+  assert.equal(
+    incompleteChatStreamMessage('', false, '[连接已中断，未收到完整响应]'),
+    '[连接已中断，未收到完整响应]'
+  );
+  assert.equal(
+    incompleteChatStreamMessage('已收到部分结果', false, '[连接已中断，响应未完整结束]'),
+    '已收到部分结果\n[连接已中断，响应未完整结束]'
+  );
+  assert.equal(incompleteChatStreamMessage('完整结果', true, '[连接已中断]'), null);
 });

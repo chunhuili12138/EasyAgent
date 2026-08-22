@@ -23,7 +23,7 @@ import {
   fetchUploadSessionAttachment
 } from '@/service/api/rag';
 import { getToken } from '@/store/modules/auth/shared';
-import { createSseParser } from '@/utils/sse';
+import { createSseParser, incompleteChatStreamMessage } from '@/utils/sse';
 import {
   type ChatCitation,
   formatCitationAnchor,
@@ -454,7 +454,9 @@ async function streamChat(
   const parser = createSseParser(({ event, data }) => {
     try {
       handleSSEEvent(event === 'message' ? 'token' : event, JSON.parse(data), aiMsg);
-      if (event === 'done' || event === 'error' || event === 'cancelled') streamCompleted = true;
+      if (event === 'done' || event === 'error' || event === 'cancelled' || event === 'timeout') {
+        streamCompleted = true;
+      }
     } catch (error) {
       console.warn('Invalid chat SSE event', { event, data, error });
     }
@@ -472,6 +474,15 @@ async function streamChat(
   if (!streamCompleted) {
     parser.push(decoder.decode());
     parser.finish();
+    const fallback = incompleteChatStreamMessage(
+      aiMsg.content,
+      streamCompleted,
+      $t('rag.chat.streamInterrupted')
+    );
+    if (fallback) {
+      aiMsg.content = fallback;
+      aiMsg.status = undefined;
+    }
   }
 }
 
@@ -545,6 +556,11 @@ function handleSSEEvent(type: string, payload: any, aiMsg: Message) {
       aiMsg.streaming = false;
       aiMsg.status = undefined;
       aiMsg.generationStopped = true;
+      break;
+    case 'timeout':
+      aiMsg.content = aiMsg.content || $t('rag.chat.streamTimeout');
+      aiMsg.streaming = false;
+      aiMsg.status = undefined;
       break;
   }
 }
