@@ -467,11 +467,11 @@ onMounted(loadServers);
       <ElAlert v-if="formError" :title="formError" type="error" show-icon class="form-error" />
       <ElForm v-if="formStep === 1" label-position="top" @submit.prevent="nextFormStep">
         <ElFormItem :label="$t('page.mcp.name')" required>
-          <ElInput v-model="form.name" maxlength="100" />
+          <ElInput v-model="form.name" maxlength="100" :placeholder="$t('page.mcp.namePlaceholder')" />
           <div class="field-hint">{{ $t('page.mcp.nameHelp') }}</div>
         </ElFormItem>
         <ElFormItem :label="$t('page.mcp.code')" required>
-          <ElInput v-model="form.code" :disabled="isEdit" maxlength="50" />
+          <ElInput v-model="form.code" :disabled="isEdit" maxlength="50" :placeholder="$t('page.mcp.codePlaceholder')" />
           <div class="field-hint">{{ $t('page.mcp.codeHelp') }}</div>
         </ElFormItem>
         <ElFormItem :label="$t('page.mcp.endpoint')" required>

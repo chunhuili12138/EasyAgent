@@ -246,11 +246,11 @@ const local = {
   page: {
     rag_mcp: 'MCP 接入',
     mcp: {
-      description: 'Streamable HTTP · 只读能力', readonlyNotice: '首期仅接入只读 MCP 工具。生产环境必须使用公网 HTTPS；仅本地/测试 profile 允许 localhost 或 127.0.0.1 的 HTTP mock。',
+      description: 'Streamable HTTP · 只读能力', readonlyNotice: '首期仅接入只读 MCP 工具。生产环境必须使用公网 HTTPS。',
       helpPurposeTitle: '功能说明', helpPurpose: '注册租户自己的 MCP Server，拉取只读工具目录，并通过统一能力目录、租户隔离、工具可见范围和事件审计提供给 Agent 使用。',
       helpWorkflowTitle: '推荐流程', helpWorkflow: '注册并保存 → 校验连接 → 刷新工具目录 → 查看 Schema → 配置可见范围 → 启用需要暴露的工具。',
       helpExampleTitle: '配置示例', helpExample: '名称可填“企业资产查询”，编码使用稳定的小写编码；认证凭据只写入加密配置，不会在详情或审计页面回显。', helpExampleEndpoint: 'https://mcp.example.com/mcp',
-      nameHelp: '用于管理员识别服务，建议包含业务系统和环境，例如“企业资产查询（生产）”。', codeHelp: '稳定的英文编码，供 Agent 能力目录和审计引用；保存后不可修改。', endpointHelp: '生产必须是公网 HTTPS 且主机在 allowlist；本地/测试可使用 http://127.0.0.1:9089/mcp mock。', authHelp: '认证凭据只用于连接远端 MCP Server。不要把 Token 写入 endpoint、普通请求头或工具描述。', credentialHelp: '凭据只写不读；编辑时留空表示保留原凭据，切换认证方式必须填写完整新凭据。', statusHelp: '停用 Server 会同时停用其工具，但不会删除历史目录和审计事件。', scopeHelp: '可见范围同时约束目录发现、工具描述和实际调用；页面隐藏不是安全边界。', confirmHelp: '保存后不会自动启用远端工具。请先校验并刷新目录，确认工具为只读且 Schema 符合预期后再启用。',
+      namePlaceholder: '例如：企业资产查询（生产）', codePlaceholder: '例如：enterprise_assets', nameHelp: '用于管理员识别服务，建议包含业务系统和环境，例如“企业资产查询（生产）”。', codeHelp: '稳定的英文编码，供 Agent 能力目录和审计引用；保存后不可修改。', endpointHelp: '生产必须是公网 HTTPS 且主机在 allowlist。', authHelp: '认证凭据只用于连接远端 MCP Server。不要把 Token 写入 endpoint、普通请求头或工具描述。', credentialHelp: '凭据只写不读；编辑时留空表示保留原凭据，切换认证方式必须填写完整新凭据。', statusHelp: '停用 Server 会同时停用其工具，但不会删除历史目录和审计事件。', scopeHelp: '可见范围同时约束目录发现、工具描述和实际调用；页面隐藏不是安全边界。', confirmHelp: '保存后不会自动启用远端工具。请先校验并刷新目录，确认工具为只读且 Schema 符合预期后再启用。',
       servers: '服务', noServer: '暂无 MCP 服务', selectServer: '请选择服务查看工具目录',
       validate: '校验', edit: '编辑', disable: '停用', tool: '工具', descriptionLabel: '描述', mode: '模式', readonly: '只读', enabled: '已启用',
       events: '事件审计', searchServers: '搜索名称或编码', searchTools: '搜索工具', health: '健康状态', healthy: '健康', unhealthy: '异常', unknown: '未知',
